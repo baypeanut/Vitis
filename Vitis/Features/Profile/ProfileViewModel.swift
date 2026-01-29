@@ -19,6 +19,7 @@ final class ProfileViewModel {
     var followersCount: Int = 0
     var followingCount: Int = 0
     var recentActivity: [FeedItem] = []
+    var recentCellarItems: [CellarItem] = []
     var tasteGrapes: [TasteProfileItem] = []
     var tasteRegions: [TasteProfileItem] = []
     var tasteStyles: [TasteProfileItem] = []
@@ -74,11 +75,11 @@ final class ProfileViewModel {
         followingCount = following
 
         #if DEBUG
-        print("[ProfileViewModel] fetchActivityForUser requested userId=\(uid)")
+        print("[ProfileViewModel] fetchRecentCellarItems requested userId=\(uid)")
         #endif
-        let activity = (try? await FeedService.shared.fetchActivityForUser(userId: uid)) ?? []
+        let cellarItems = (try? await CellarService.fetchRecentCellarItems(userId: uid, limit: 30)) ?? []
         guard loadId == currentLoadId else { isLoading = false; return }
-        recentActivity = activity
+        recentCellarItems = cellarItems
 
         let t = try? await ProfileService.fetchTasteProfile(userId: uid)
         guard loadId == currentLoadId else { isLoading = false; return }

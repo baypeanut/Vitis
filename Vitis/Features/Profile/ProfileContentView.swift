@@ -255,19 +255,46 @@ struct ProfileContentView: View {
 
     private var recentActivityList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.recentActivity.isEmpty {
-                Text("No activity yet.")
+            if viewModel.recentCellarItems.isEmpty {
+                Text("No cellar activity yet.")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.secondaryText)
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity)
             } else {
-                ForEach(viewModel.recentActivity) { item in
-                    recentActivityRow(item)
+                ForEach(viewModel.recentCellarItems) { item in
+                    cellarActivityRow(item)
                     Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
                 }
             }
         }
+    }
+
+    private func cellarActivityRow(_ item: CellarItem) -> some View {
+        let username = viewModel.profile?.username ?? "User"
+        let parts = item.statementParts(username: username)
+        return HStack(alignment: .top, spacing: 12) {
+            cellarAvatarCircle()
+            VStack(alignment: .leading, spacing: 4) {
+                (Text(parts.before)
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(.primary)
+                + Text(parts.name)
+                    .font(.system(size: 15, weight: .medium, design: .serif))
+                    .foregroundStyle(VitisTheme.accent)
+                + Text(parts.after)
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(.primary))
+                .fixedSize(horizontal: false, vertical: true)
+                
+                Text(formatDate(item.createdAt))
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.secondaryText)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
     }
 
     private func recentActivityRow(_ item: FeedItem) -> some View {
@@ -289,6 +316,39 @@ struct ProfileContentView: View {
         .padding(.vertical, 12)
         .contentShape(Rectangle())
         .onTapGesture { onActivityTap?(item) }
+    }
+
+    private func cellarAvatarCircle() -> some View {
+        Group {
+            if let p = viewModel.profile, let u = p.avatarURL, let url = URL(string: u) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
+                    default: cellarAvatarPlaceholder()
+                    }
+                }
+            } else {
+                cellarAvatarPlaceholder()
+            }
+        }
+        .frame(width: 36, height: 36)
+        .clipShape(Circle())
+    }
+
+    private func cellarAvatarPlaceholder() -> some View {
+        Circle()
+            .fill(Color(white: 0.94))
+            .overlay(
+                Text(String(viewModel.profile?.displayName.prefix(1) ?? "U").uppercased())
+                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    .foregroundStyle(VitisTheme.secondaryText)
+            )
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     private func avatarCircle(_ item: FeedItem) -> some View {
