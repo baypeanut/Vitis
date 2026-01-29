@@ -45,14 +45,32 @@ enum WineService {
         let category: String?
     }
 
+    /// Extract region/country from OFF product. Tries countriesTags first, then other fields.
+    private static func extractRegion(from product: OFFProduct) -> String? {
+        // Try countriesTags first (most reliable)
+        if let countries = product.countriesTags, !countries.isEmpty {
+            let first = countries[0]
+            // Remove "en:" prefix if present
+            let cleaned = first.replacingOccurrences(of: "en:", with: "")
+                .replacingOccurrences(of: "fr:", with: "")
+                .replacingOccurrences(of: "de:", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !cleaned.isEmpty {
+                // Capitalize properly (e.g., "italy" -> "Italy", "united states" -> "United States")
+                let words = cleaned.split(separator: " ").map { $0.capitalized }
+                return words.joined(separator: " ")
+            }
+        }
+        return nil
+    }
+
     /// Upsert wine from OFF product. Returns upserted Wine.
     static func upsertFromOFF(product: OFFProduct) async throws -> Wine {
         let params = UpsertParams(
             p_off_code: product.code,
             p_name: product.productName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Unknown",
             p_producer: product.brands?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Unknown",
-            p_region: product.countriesTags?.first
-                .map { $0.replacingOccurrences(of: "en:", with: "").capitalized },
+            p_region: extractRegion(from: product),
             p_label_url: product.imageUrl,
             p_category: product.mappedCategory
         )

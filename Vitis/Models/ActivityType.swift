@@ -11,4 +11,5 @@ enum ActivityType: String, Codable, Sendable {
     case rankUpdate = "rank_update"
     case newEntry = "new_entry"
     case duelWin = "duel_win"
+    case hadWine = "had_wine"
 }

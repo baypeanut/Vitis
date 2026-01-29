@@ -17,11 +17,14 @@ struct FeedItem: Identifiable, Sendable {
     let wineProducer: String
     let wineVintage: Int?
     let wineLabelURL: String?
+    let wineRegion: String?
+    let wineCategory: String?
     let targetWineName: String?
     let targetWineProducer: String?
     let targetWineVintage: Int?
     let targetWineLabelURL: String?
     let contentText: String?
+    let tastingRating: Double?
     let createdAt: Date
     var cheersCount: Int
     var commentCount: Int
@@ -37,11 +40,14 @@ struct FeedItem: Identifiable, Sendable {
         wineProducer: String,
         wineVintage: Int?,
         wineLabelURL: String?,
+        wineRegion: String? = nil,
+        wineCategory: String? = nil,
         targetWineName: String? = nil,
         targetWineProducer: String? = nil,
         targetWineVintage: Int? = nil,
         targetWineLabelURL: String? = nil,
         contentText: String? = nil,
+        tastingRating: Double? = nil,
         createdAt: Date,
         cheersCount: Int = 0,
         commentCount: Int = 0,
@@ -56,11 +62,14 @@ struct FeedItem: Identifiable, Sendable {
         self.wineProducer = wineProducer
         self.wineVintage = wineVintage
         self.wineLabelURL = wineLabelURL
+        self.wineRegion = wineRegion
+        self.wineCategory = wineCategory
         self.targetWineName = targetWineName
         self.targetWineProducer = targetWineProducer
         self.targetWineVintage = targetWineVintage
         self.targetWineLabelURL = targetWineLabelURL
         self.contentText = contentText
+        self.tastingRating = tastingRating
         self.createdAt = createdAt
         self.cheersCount = cheersCount
         self.commentCount = commentCount
@@ -80,11 +89,14 @@ extension FeedItem {
         wineProducer: "Tenuta San Guido",
         wineVintage: 2019,
         wineLabelURL: nil,
+        wineRegion: nil,
+        wineCategory: nil,
         targetWineName: nil,
         targetWineProducer: nil,
         targetWineVintage: nil,
         targetWineLabelURL: nil,
         contentText: "Tuscany list",
+        tastingRating: nil,
         createdAt: Date(),
         cheersCount: 3,
         commentCount: 1,
@@ -101,15 +113,42 @@ extension FeedItem {
         wineProducer: "Domaine Jean-Michel Gerin",
         wineVintage: 2019,
         wineLabelURL: nil,
+        wineRegion: nil,
+        wineCategory: nil,
         targetWineName: "Barolo",
         targetWineProducer: "Giacomo Conterno",
         targetWineVintage: 2017,
         targetWineLabelURL: nil,
         contentText: nil,
+        tastingRating: nil,
         createdAt: Date().addingTimeInterval(-3600),
         cheersCount: 0,
         commentCount: 0,
         hasCheered: true
+    )
+    
+    static let previewHadWine = FeedItem(
+        id: UUID(),
+        userId: UUID(),
+        username: "Mert",
+        avatarURL: nil,
+        activityType: .hadWine,
+        wineName: "Chardonnay",
+        wineProducer: "Casillero del Diablo",
+        wineVintage: nil,
+        wineLabelURL: nil,
+        wineRegion: "Chile",
+        wineCategory: "White",
+        targetWineName: nil,
+        targetWineProducer: nil,
+        targetWineVintage: nil,
+        targetWineLabelURL: nil,
+        contentText: "Vanilla, Floral",
+        tastingRating: 8.0,
+        createdAt: Date(),
+        cheersCount: 2,
+        commentCount: 1,
+        hasCheered: false
     )
 }
 #endif
@@ -118,15 +157,19 @@ extension FeedItem {
     /// Statement parts for display (before, name, after). Name is highlighted.
     func statementParts() -> (before: String, name: String, after: String) {
         let wine = wineVintage.map { "\($0) \(wineName)" } ?? wineName
-        let list = contentText ?? "their list"
         let s: String
         switch activityType {
-        case .rankUpdate: s = "\(username) ranked \(wine) to #1 in \(list)."
-        case .newEntry: s = "\(username) discovered \(wine)."
+        case .rankUpdate:
+            let list = contentText ?? "their list"
+            s = "\(username) ranked \(wine) to #1 in \(list)."
+        case .newEntry:
+            s = "\(username) discovered \(wine)."
         case .duelWin:
             let other = targetWineVintage.map { "\($0) \(targetWineName ?? "")" }
                 ?? targetWineName ?? "another wine"
             s = "\(username) ranked \(wine) higher than \(other)."
+        case .hadWine:
+            s = "\(username) had \(wine)."
         }
         guard let r = s.range(of: username) else { return (s, "", "") }
         return (String(s[..<r.lowerBound]), username, String(s[r.upperBound...]))
@@ -147,11 +190,14 @@ extension FeedItem {
             wineProducer: w.producer,
             wineVintage: w.vintage,
             wineLabelURL: w.labelImageUrl,
+            wineRegion: w.region,
+            wineCategory: nil, // WinePayload doesn't have category
             targetWineName: tw?.name,
             targetWineProducer: tw?.producer,
             targetWineVintage: tw?.vintage,
             targetWineLabelURL: tw?.labelImageUrl,
             contentText: entry.contentText,
+            tastingRating: nil,
             createdAt: entry.createdAt,
             cheersCount: cheersCount,
             commentCount: commentCount,

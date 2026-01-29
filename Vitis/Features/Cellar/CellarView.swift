@@ -2,7 +2,7 @@
 //  CellarView.swift
 //  Vitis
 //
-//  Had | Wishlist cellar. Add wines via +; timestamps per row. Beli-style.
+//  My Cellar: tasting history with rating and notes. Add wines via +.
 //
 
 import SwiftUI
@@ -17,7 +17,6 @@ struct CellarView: View {
 
             VStack(spacing: 0) {
                 header
-                tabBar
                 content
             }
         }
@@ -27,13 +26,15 @@ struct CellarView: View {
             Task { await viewModel.load() }
         }
         .sheet(isPresented: $showAddWine) {
-            addWineSheet
+            AddWineSheet(isPresented: $showAddWine) {
+                Task { await viewModel.load() }
+            }
         }
     }
 
     private var header: some View {
         HStack(alignment: .center) {
-            Text("Cellar")
+            Text("My Cellar")
                 .font(VitisTheme.titleFont())
                 .foregroundStyle(.primary)
             Spacer()
@@ -54,38 +55,6 @@ struct CellarView: View {
         .padding(.bottom, 8)
     }
 
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach([CellarViewModel.Tab.had, .wishlist], id: \.self) { t in
-                tabButton(t)
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
-    }
-
-    private func tabButton(_ t: CellarViewModel.Tab) -> some View {
-        let label = t == .had ? "Had" : "Wishlist"
-        return Button {
-            viewModel.switchTab(to: t)
-        } label: {
-            Text(label)
-                .font(VitisTheme.uiFont(size: 15, weight: viewModel.tab == t ? .semibold : .regular))
-                .foregroundStyle(viewModel.tab == t ? VitisTheme.accent : VitisTheme.secondaryText)
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    private var addWineSheet: some View {
-        if let uid = viewModel.currentUserId, let status = CellarItem.CellarStatus(rawValue: viewModel.tab.rawValue) {
-            AddWineSheet(isPresented: $showAddWine, cellarContext: (userId: uid, status: status)) {
-                Task { await viewModel.load() }
-            }
-        }
-    }
-
     @ViewBuilder
     private var content: some View {
         if viewModel.needsAuth {
@@ -93,19 +62,19 @@ struct CellarView: View {
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let err = viewModel.errorMessage, viewModel.items.isEmpty {
+        } else if let err = viewModel.errorMessage, viewModel.tastings.isEmpty {
             Text(err)
                 .font(VitisTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
                 .multilineTextAlignment(.center)
                 .padding()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if viewModel.isLoading && viewModel.items.isEmpty {
+        } else if viewModel.isLoading && viewModel.tastings.isEmpty {
             ProgressView()
                 .progressViewStyle(.circular)
                 .tint(VitisTheme.accent)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if viewModel.items.isEmpty {
+        } else if viewModel.tastings.isEmpty {
             emptyState
         } else {
             listContent
@@ -115,9 +84,7 @@ struct CellarView: View {
     @ViewBuilder
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Text(viewModel.tab == .had
-                ? "Your cellar is empty. Add wines you had."
-                : "Save wines to try later.")
+            Text("Your cellar is empty. Add wines you've tasted.")
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -140,15 +107,15 @@ struct CellarView: View {
 
     private var listContent: some View {
         List {
-            ForEach(viewModel.items) { item in
-                cellarRow(item)
+            ForEach(viewModel.tastings) { tasting in
+                tastingRow(tasting)
                     .listRowInsets(EdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24))
                     .listRowSeparator(.visible)
                     .listRowSeparatorTint(VitisTheme.border)
                     .listRowBackground(Color.clear)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
-                            Task { await viewModel.removeItem(item) }
+                            Task { await viewModel.removeTasting(tasting) }
                         } label: {
                             Label("Remove", systemImage: "trash")
                         }
@@ -159,21 +126,42 @@ struct CellarView: View {
         .scrollContentBackground(.hidden)
     }
 
-    private func cellarRow(_ item: CellarItem) -> some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.wine.producer)
+    private func tastingRow(_ tasting: Tasting) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(tasting.wine.producer)
                     .font(VitisTheme.producerSerifFont())
                     .foregroundStyle(VitisTheme.secondaryText)
-                Text(item.wine.name)
+                Text(tasting.wine.name)
                     .font(VitisTheme.wineNameFont())
                     .foregroundStyle(.primary)
-                if let v = item.wine.vintage {
+                if let v = tasting.wine.vintage {
                     Text(String(v))
                         .font(VitisTheme.detailFont())
                         .foregroundStyle(VitisTheme.secondaryText)
                 }
-                Text(VitisTheme.compactTimestamp(item.displayDate))
+                HStack(spacing: 8) {
+                    if let r = tasting.wine.region, !r.isEmpty {
+                        Text(r)
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                        Text("·")
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                    }
+                    Text(String(format: "%.1f", tasting.rating))
+                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(VitisTheme.accent)
+                    if let notes = tasting.notesDisplay {
+                        Text("·")
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                        Text(notes)
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                    }
+                }
+                Text(VitisTheme.compactTimestamp(tasting.createdAt))
                     .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)
             }

@@ -101,7 +101,7 @@ struct ProfileContentView: View {
 
     private var statsRow: some View {
         HStack(spacing: 0) {
-            statBlock(value: "\(viewModel.rankingsCount)", label: "Rankings")
+            statBlock(value: "\(viewModel.rankingsCount)", label: "Rated")
             Rectangle().fill(VitisTheme.border).frame(width: 1).padding(.vertical, 8)
             statBlock(value: "\(viewModel.followersCount)", label: "Followers")
             Rectangle().fill(VitisTheme.border).frame(width: 1).padding(.vertical, 8)
@@ -255,39 +255,53 @@ struct ProfileContentView: View {
 
     private var recentActivityList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.recentCellarItems.isEmpty {
-                Text("No cellar activity yet.")
+            if viewModel.recentTastings.isEmpty {
+                Text("No tastings yet.")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.secondaryText)
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity)
             } else {
-                ForEach(viewModel.recentCellarItems) { item in
-                    cellarActivityRow(item)
+                ForEach(viewModel.recentTastings) { tasting in
+                    tastingActivityRow(tasting)
                     Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
                 }
             }
         }
     }
 
-    private func cellarActivityRow(_ item: CellarItem) -> some View {
+    private func tastingActivityRow(_ tasting: Tasting) -> some View {
         let username = viewModel.profile?.username ?? "User"
-        let parts = item.statementParts(username: username)
+        let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
         return HStack(alignment: .top, spacing: 12) {
             cellarAvatarCircle()
             VStack(alignment: .leading, spacing: 4) {
-                (Text(parts.before)
+                (Text("\(username) had ")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(.primary)
-                + Text(parts.name)
+                + Text(wine)
                     .font(.system(size: 15, weight: .medium, design: .serif))
                     .foregroundStyle(VitisTheme.accent)
-                + Text(parts.after)
+                + Text(".")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(.primary))
                 .fixedSize(horizontal: false, vertical: true)
                 
-                Text(formatDate(item.createdAt))
+                HStack(spacing: 8) {
+                    Text(String(format: "%.1f", tasting.rating))
+                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(VitisTheme.accent)
+                    if let notes = tasting.notesDisplay {
+                        Text("·")
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                        Text(notes)
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                    }
+                }
+                
+                Text(VitisTheme.compactTimestamp(tasting.createdAt))
                     .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)
             }

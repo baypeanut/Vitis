@@ -48,7 +48,8 @@ final class FeedService {
             pOffset: offset
         )
         let rows: [FeedRowPayload] = try await client.rpc("feed_following", params: params).execute().value
-        return rows.map { FeedItem.from(row: $0) }
+        // Filter to only had_wine activities
+        return rows.filter { $0.activityType == .hadWine }.map { FeedItem.from(row: $0) }
     }
 
     private func fetchFromView(limit: Int, offset: Int) async throws -> [FeedItem] {
@@ -56,6 +57,7 @@ final class FeedService {
         let rows: [FeedRowPayload] = try await client
             .from("feed_with_details")
             .select()
+            .eq("activity_type", value: "had_wine")
             .order("created_at", ascending: false)
             .range(from: offset, to: offset + limit - 1)
             .execute()
@@ -92,6 +94,18 @@ final class FeedService {
                 hasCheered: likedIDs.contains(r.id)
             )
         }
+    }
+
+    // MARK: - Delete
+
+    /// Delete an activity_feed row by its ID.
+    func deleteFeedActivity(activityId: UUID) async throws {
+        let client = SupabaseManager.shared.supabase
+        try await client
+            .from("activity_feed")
+            .delete()
+            .eq("id", value: activityId)
+            .execute()
     }
 
     // MARK: - Realtime

@@ -31,8 +31,9 @@ enum AuthService {
         let sessionId = (try? await supabase.auth.session)?.user.id
         #if DEBUG
         if !AppConstants.authRequired {
+            // Prefer real session, then dev account, no hardcoded fallback
             if let sid = sessionId { return sid }
-            return DevSignupService.currentDevUserId() ?? AppConstants.debugMockUserId
+            return DevSignupService.currentDevUserId()
         }
         #endif
         return sessionId
