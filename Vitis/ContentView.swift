@@ -14,6 +14,8 @@ struct ContentView: View {
                 .tabItem { Label("Cellar", systemImage: "square.stack") }
             SocialView()
                 .tabItem { Label("Social", systemImage: "person.2") }
+            ProfileView(onSignOut: {})
+                .tabItem { Label("Profile", systemImage: "person") }
         }
         .tint(VitisTheme.accent)
     }

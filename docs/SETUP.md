@@ -93,23 +93,17 @@ cp SupabaseConfig.example.swift SupabaseConfig.swift
 
 ## 6. Git workflow (sen + arkadaşın)
 
-### GitHub'a ilk push (sen, repo henüz yoksa)
+### Repo’yu sen kuruyorsan
 
-1. **GitHub'da repo oluştur**
-   - [github.com/new](https://github.com/new) → Repository name: **Vitis**
-   - Public, **README / .gitignore / License ekleme** (zaten projede var).
-   - **Create repository** tıkla.
-
-2. **Remote ekle ve push et** (terminalde proje klasöründeyken):
+1. GitHub’da **Vitis** reposu oluştur (boş veya mevcut local projeyi push’la).
+2. Local’de:
    ```bash
-   git remote add origin https://github.com/<GITHUB_KULLANICI_ADIN>/Vitis.git
+   git remote add origin https://github.com/<GITHUB_USER_OR_ORG>/Vitis.git
+   git add .
+   git commit -m "Initial project setup"
    git push -u origin main
    ```
-   `<GITHUB_KULLANICI_ADIN>` yerine kendi GitHub kullanıcı adını yaz.
-
-3. **Arkadaşını ekle**
-   - Repo sayfası → **Settings** → **Collaborators** (veya **Collaborators and teams**) → **Add people**
-   - GitHub kullanıcı adı veya e-posta yaz, **Add** de. Davet gider; kabul edince push/pull yapabilir.
+3. `.gitignore` sayesinde `build/`, `SupabaseConfig.swift` vb. push edilmez. **SupabaseConfig.swift asla commit edilmemeli.**
 
 ### Arkadaşın ilk kez katılıyor
 
@@ -163,4 +157,4 @@ Bunlar `.gitignore`’da tanımlı.
 - **Paket resolve hatası:** Xcode → **File → Packages → Reset Package Caches**, sonra **Resolve Package Versions**.
 - **Simülatör listesi boş:** Xcode → **Window → Devices and Simulators** ile uygun bir simulator indir.
 
-Bu adımlarla hem sen hem arkadaşın kendi ortamında çalışıp, değişiklikleri git üzerinden paylaşabilirsiniz.
+

@@ -128,9 +128,9 @@ final class FeedViewModel {
     func statement(for item: FeedItem) -> String {
         let name = item.username
         let wine = item.wineVintage.map { "\($0) \(item.wineName)" } ?? item.wineName
-        let list = item.contentText ?? "their list"
         switch item.activityType {
         case .rankUpdate:
+            let list = item.contentText ?? "their list"
             return "\(name) ranked \(wine) to #1 in \(list)."
         case .newEntry:
             return "\(name) discovered \(wine)."
@@ -138,6 +138,8 @@ final class FeedViewModel {
             let other = item.targetWineVintage.map { "\($0) \(item.targetWineName ?? "")" }
                 ?? item.targetWineName ?? "another wine"
             return "\(name) ranked \(wine) higher than \(other)."
+        case .hadWine:
+            return "\(name) had \(wine)."
         }
     }
 
@@ -160,5 +162,17 @@ final class FeedViewModel {
             items[i].avatarURL = p.avatarURL
         }
         FeedService.shared.saveToCache(items, mode: mode)
+    }
+
+    /// Delete a feed item (only for own posts). Removes from DB and local state.
+    func deleteFeedItem(_ item: FeedItem) async {
+        guard let uid = currentUserId, item.userId == uid else { return }
+        do {
+            try await FeedService.shared.deleteFeedActivity(activityId: item.id)
+            items.removeAll { $0.id == item.id }
+            FeedService.shared.saveToCache(items, mode: mode)
+        } catch {
+            if !isCancellation(error) { errorMessage = error.localizedDescription }
+        }
     }
 }

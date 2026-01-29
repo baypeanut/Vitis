@@ -70,7 +70,7 @@ CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE USING (auth.ui
 
 DROP POLICY IF EXISTS "dev_mock_profiles_insert" ON public.profiles;
 CREATE POLICY "dev_mock_profiles_insert" ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() IS NULL AND id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  WITH CHECK (auth.uid() IS NULL AND id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 DROP POLICY IF EXISTS "dev_mock_profiles_update" ON public.profiles;
 CREATE POLICY "dev_mock_profiles_update" ON public.profiles FOR UPDATE
   USING (auth.uid() IS NULL)
@@ -134,7 +134,7 @@ CREATE POLICY "Users can manage own follows" ON public.follows FOR ALL USING (au
 CREATE TABLE IF NOT EXISTS public.activity_feed (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  activity_type text NOT NULL CHECK (activity_type IN ('rank_update', 'new_entry', 'duel_win')),
+  activity_type text NOT NULL CHECK (activity_type IN ('rank_update', 'new_entry', 'duel_win', 'had_wine')),
   wine_id uuid NOT NULL REFERENCES public.wines(id) ON DELETE CASCADE,
   target_wine_id uuid REFERENCES public.wines(id) ON DELETE SET NULL,
   content_text text,
@@ -142,55 +142,21 @@ CREATE TABLE IF NOT EXISTS public.activity_feed (
 );
 CREATE INDEX IF NOT EXISTS idx_activity_feed_user ON public.activity_feed (user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_created ON public.activity_feed (created_at DESC);
+
+-- Update activity_type constraint to include 'had_wine' (if table already exists)
+ALTER TABLE public.activity_feed DROP CONSTRAINT IF EXISTS activity_feed_activity_type_check;
+ALTER TABLE public.activity_feed ADD CONSTRAINT activity_feed_activity_type_check
+  CHECK (activity_type IN ('rank_update', 'new_entry', 'duel_win', 'had_wine'));
 ALTER TABLE public.activity_feed ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can read activity_feed" ON public.activity_feed;
 CREATE POLICY "Anyone can read activity_feed" ON public.activity_feed FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Users can insert own activity" ON public.activity_feed;
 CREATE POLICY "Users can insert own activity" ON public.activity_feed FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete own activity" ON public.activity_feed;
+CREATE POLICY "Users can delete own activity" ON public.activity_feed FOR DELETE USING (auth.uid() = user_id);
 
 DROP FUNCTION IF EXISTS public.feed_following(uuid, int, int);
 DROP VIEW IF EXISTS public.feed_with_details;
-
-CREATE VIEW public.feed_with_details AS
-SELECT
-  a.id,
-  a.user_id,
-  a.activity_type,
-  a.wine_id,
-  a.target_wine_id,
-  a.content_text,
-  a.created_at,
-  p.username,
-  p.full_name,
-  p.avatar_url,
-  w.name AS wine_name,
-  w.producer AS wine_producer,
-  w.vintage AS wine_vintage,
-  w.label_image_url AS wine_label_url,
-  tw.name AS target_wine_name,
-  tw.producer AS target_wine_producer,
-  tw.vintage AS target_wine_vintage,
-  tw.label_image_url AS target_wine_label_url
-FROM public.activity_feed a
-INNER JOIN public.profiles p ON p.id = a.user_id
-LEFT JOIN public.wines w ON w.id = a.wine_id
-LEFT JOIN public.wines tw ON tw.id = a.target_wine_id;
-
-CREATE OR REPLACE FUNCTION public.feed_following(
-  p_follower_id uuid,
-  p_limit int DEFAULT 30,
-  p_offset int DEFAULT 0
-)
-RETURNS SETOF public.feed_with_details
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT f.*
-  FROM public.feed_with_details f
-  JOIN public.follows fo ON fo.followed_id = f.user_id AND fo.follower_id = p_follower_id
-  ORDER BY f.created_at DESC
-  LIMIT p_limit OFFSET p_offset;
-$$;
 
 -- -----------------------------------------------------------------------------
 -- comments_cheers (comment_body NULL = Cheer; non-null = Comment)
@@ -255,6 +221,101 @@ DROP POLICY IF EXISTS "comments_delete_own" ON public.comments;
 CREATE POLICY "comments_delete_own" ON public.comments FOR DELETE USING (auth.uid() = user_id);
 
 -- -----------------------------------------------------------------------------
+-- Tastings: wine logging with rating and optional notes (replaces duel/comparison)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.tastings (
+  id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  wine_id uuid NOT NULL REFERENCES public.wines(id) ON DELETE CASCADE,
+  rating double precision NOT NULL CHECK (rating >= 1.0 AND rating <= 10.0),
+  note_tags text[] NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  source text NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tastings_user_created ON public.tastings (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tastings_wine ON public.tastings (wine_id);
+
+ALTER TABLE public.tastings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tastings_select_own" ON public.tastings;
+CREATE POLICY "tastings_select_own" ON public.tastings FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "tastings_insert_own" ON public.tastings;
+CREATE POLICY "tastings_insert_own" ON public.tastings FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "tastings_update_own" ON public.tastings;
+CREATE POLICY "tastings_update_own" ON public.tastings FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "tastings_delete_own" ON public.tastings;
+CREATE POLICY "tastings_delete_own" ON public.tastings FOR DELETE USING (auth.uid() = user_id);
+
+-- Public read for feed (anyone can read all tastings for social feed)
+DROP POLICY IF EXISTS "tastings_select_public" ON public.tastings;
+CREATE POLICY "tastings_select_public" ON public.tastings FOR SELECT USING (true);
+
+-- Dev mock: allow when auth.uid() IS NULL and user_id matches debugMockUserId
+DROP POLICY IF EXISTS "dev_mock_tastings" ON public.tastings;
+CREATE POLICY "dev_mock_tastings" ON public.tastings FOR ALL
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+
+-- -----------------------------------------------------------------------------
+-- feed_with_details view (created AFTER tastings table exists)
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW public.feed_with_details AS
+SELECT DISTINCT ON (a.id)
+  a.id,
+  a.user_id,
+  a.activity_type,
+  a.wine_id,
+  a.target_wine_id,
+  a.content_text,
+  a.created_at,
+  p.username,
+  p.full_name,
+  p.avatar_url,
+  w.name AS wine_name,
+  w.producer AS wine_producer,
+  w.vintage AS wine_vintage,
+  w.label_image_url AS wine_label_url,
+  w.region AS wine_region,
+  w.category AS wine_category,
+  tw.name AS target_wine_name,
+  tw.producer AS target_wine_producer,
+  tw.vintage AS target_wine_vintage,
+  tw.label_image_url AS target_wine_label_url,
+  t.note_tags AS tasting_note_tags,
+  t.rating AS tasting_rating
+FROM public.activity_feed a
+INNER JOIN public.profiles p ON p.id = a.user_id
+LEFT JOIN public.wines w ON w.id = a.wine_id
+LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
+LEFT JOIN public.tastings t ON t.user_id = a.user_id 
+  AND t.wine_id = a.wine_id 
+  AND a.activity_type = 'had_wine'
+  AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds'
+ORDER BY a.id, 
+  CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
+  ABS(EXTRACT(EPOCH FROM (t.created_at - a.created_at)));
+
+CREATE OR REPLACE FUNCTION public.feed_following(
+  p_follower_id uuid,
+  p_limit int DEFAULT 30,
+  p_offset int DEFAULT 0
+)
+RETURNS SETOF public.feed_with_details
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT f.*
+  FROM public.feed_with_details f
+  JOIN public.follows fo ON fo.followed_id = f.user_id AND fo.follower_id = p_follower_id
+  WHERE f.activity_type = 'had_wine'
+  ORDER BY f.created_at DESC
+  LIMIT p_limit OFFSET p_offset;
+$$;
+
 -- Cellar items: Had | Wishlist (separate from rankings/activity_feed)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.cellar_items (
@@ -281,55 +342,56 @@ CREATE POLICY "cellar_items_delete_own" ON public.cellar_items FOR DELETE USING 
 
 -- -----------------------------------------------------------------------------
 -- Dev mock user RLS (auth bypass: no session, user_id = below UUID)
--- Match AppConstants.debugMockUserId. Ensure this user exists in Auth → Users.
+-- IMPORTANT: Replace the UUID below with YOUR OWN Supabase user UUID.
+-- Each developer should use their own UUID from Supabase Dashboard → Auth → Users.
 -- Remove these policies in production.
 -- -----------------------------------------------------------------------------
 DROP POLICY IF EXISTS "dev_mock_comparisons" ON public.comparisons;
 CREATE POLICY "dev_mock_comparisons" ON public.comparisons
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_rankings" ON public.rankings;
 CREATE POLICY "dev_mock_rankings" ON public.rankings
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_activity_insert" ON public.activity_feed;
 CREATE POLICY "dev_mock_activity_insert" ON public.activity_feed
   FOR INSERT
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_comments_cheers" ON public.comments_cheers;
 CREATE POLICY "dev_mock_comments_cheers" ON public.comments_cheers
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_likes" ON public.likes;
 CREATE POLICY "dev_mock_likes" ON public.likes
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_comments" ON public.comments;
 CREATE POLICY "dev_mock_comments" ON public.comments
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_cellar_items" ON public.cellar_items;
 CREATE POLICY "dev_mock_cellar_items" ON public.cellar_items
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 DROP POLICY IF EXISTS "dev_mock_follows" ON public.follows;
 CREATE POLICY "dev_mock_follows" ON public.follows
   FOR ALL
-  USING (auth.uid() IS NULL AND follower_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND follower_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid);
+  USING (auth.uid() IS NULL AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
+  WITH CHECK (auth.uid() IS NULL AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 -- -----------------------------------------------------------------------------
 -- 6. RPC: duel_next_pair (Elo proximity, info gain, cooldown, no repeats)
@@ -613,6 +675,9 @@ DROP POLICY IF EXISTS "Users can delete own avatar" ON storage.objects;
 DROP POLICY IF EXISTS "dev_mock_avatar_insert" ON storage.objects;
 DROP POLICY IF EXISTS "dev_mock_avatar_update" ON storage.objects;
 DROP POLICY IF EXISTS "dev_mock_avatar_delete" ON storage.objects;
+DROP POLICY IF EXISTS "avatars_insert" ON storage.objects;
+DROP POLICY IF EXISTS "avatars_update" ON storage.objects;
+DROP POLICY IF EXISTS "avatars_delete" ON storage.objects;
 
 -- Avatars: permissive INSERT/UPDATE/DELETE (bucket only). Fixes "new row violates RLS" on upload.
 -- Upsert needs INSERT + UPDATE; overwrite flow may use DELETE. No folder/auth checks.
@@ -651,16 +716,16 @@ CREATE POLICY "user_private_update_own" ON public.user_private
 DROP POLICY IF EXISTS "dev_user_private_insert" ON public.user_private;
 CREATE POLICY "dev_user_private_insert" ON public.user_private
   FOR INSERT WITH CHECK (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   );
 
 DROP POLICY IF EXISTS "dev_user_private_update" ON public.user_private;
 CREATE POLICY "dev_user_private_update" ON public.user_private
   FOR UPDATE USING (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   )
   WITH CHECK (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   );
 
 CREATE OR REPLACE FUNCTION public.check_username_available(p_username text)
@@ -697,42 +762,96 @@ ALTER TABLE public.likes          DROP CONSTRAINT IF EXISTS likes_user_id_fkey;
 ALTER TABLE public.comments       DROP CONSTRAINT IF EXISTS comments_user_id_fkey;
 ALTER TABLE public.user_private   DROP CONSTRAINT IF EXISTS user_private_user_id_fkey;
 ALTER TABLE public.cellar_items   DROP CONSTRAINT IF EXISTS cellar_items_user_id_fkey;
+ALTER TABLE public.tastings       DROP CONSTRAINT IF EXISTS tastings_user_id_fkey;
 
+-- Note: Many tables already have REFERENCES in CREATE TABLE, which auto-creates constraints.
+-- These ALTER TABLE statements ensure named constraints exist (for consistency and explicit drops).
+-- DROP IF EXISTS prevents "already exists" errors on re-runs.
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_id_fkey;
 ALTER TABLE public.profiles
   ADD CONSTRAINT profiles_id_fkey
   FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.comparisons
+  DROP CONSTRAINT IF EXISTS comparisons_user_id_fkey;
 ALTER TABLE public.comparisons
   ADD CONSTRAINT comparisons_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.rankings
+  DROP CONSTRAINT IF EXISTS rankings_user_id_fkey;
 ALTER TABLE public.rankings
   ADD CONSTRAINT rankings_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.follows
+  DROP CONSTRAINT IF EXISTS follows_follower_id_fkey;
 ALTER TABLE public.follows
   ADD CONSTRAINT follows_follower_id_fkey
   FOREIGN KEY (follower_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.follows
+  DROP CONSTRAINT IF EXISTS follows_followed_id_fkey;
 ALTER TABLE public.follows
   ADD CONSTRAINT follows_followed_id_fkey
   FOREIGN KEY (followed_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.activity_feed
+  DROP CONSTRAINT IF EXISTS activity_feed_user_id_fkey;
 ALTER TABLE public.activity_feed
   ADD CONSTRAINT activity_feed_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.comments_cheers
+  DROP CONSTRAINT IF EXISTS comments_cheers_user_id_fkey;
 ALTER TABLE public.comments_cheers
   ADD CONSTRAINT comments_cheers_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.likes
+  DROP CONSTRAINT IF EXISTS likes_user_id_fkey;
 ALTER TABLE public.likes
   ADD CONSTRAINT likes_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.comments
+  DROP CONSTRAINT IF EXISTS comments_user_id_fkey;
 ALTER TABLE public.comments
   ADD CONSTRAINT comments_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.user_private
+  DROP CONSTRAINT IF EXISTS user_private_user_id_fkey;
 ALTER TABLE public.user_private
   ADD CONSTRAINT user_private_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.cellar_items
+  DROP CONSTRAINT IF EXISTS cellar_items_user_id_fkey;
 ALTER TABLE public.cellar_items
   ADD CONSTRAINT cellar_items_user_id_fkey
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
+ALTER TABLE public.tastings
+  DROP CONSTRAINT IF EXISTS tastings_user_id_fkey;
+ALTER TABLE public.tastings
+  ADD CONSTRAINT tastings_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
 DELETE FROM public.profiles WHERE lower(trim(username)) = 'guest';
+
+-- -----------------------------------------------------------------------------
+-- Dev mock user check: ensure debugMockUserId exists in auth.users
+-- If this fails, manually create the user in Supabase Dashboard → Auth → Users
+-- with UUID: 1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba
+-- -----------------------------------------------------------------------------
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid) THEN
+        RAISE WARNING 'Dev mock user (1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba) does not exist in auth.users. Create it manually in Supabase Dashboard → Auth → Users, or foreign key constraints will fail.';
+    END IF;
+END $$;
 
 -- -----------------------------------------------------------------------------
 -- 10. Dev signup: dev_accounts (no Supabase Auth, no email/SMS)

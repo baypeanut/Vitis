@@ -23,21 +23,21 @@ final class ProfileStore {
         }
         #if DEBUG
         if !AppConstants.authRequired {
+            // Try dev account first (from dev_accounts table)
             if let dev = await DevSignupService.fetchDevAccount(userId: uid) {
                 currentProfile = dev
-                return
-            }
-            if uid == AppConstants.debugMockUserId {
-                currentProfile = Profile(id: uid, username: "Dev", fullName: nil, avatarURL: nil, bio: nil)
                 return
             }
         }
         #endif
         do {
+            // Try real profile from profiles table
             currentProfile = try await AuthService.getProfile(userId: uid)
         } catch {
             #if DEBUG
-            if !AppConstants.authRequired, uid == AppConstants.debugMockUserId {
+            if !AppConstants.authRequired {
+                // Fallback: create minimal profile if profile doesn't exist yet
+                // This allows dev mode to work even without a profile row
                 currentProfile = Profile(id: uid, username: "Dev", fullName: nil, avatarURL: nil, bio: nil)
             } else {
                 currentProfile = nil

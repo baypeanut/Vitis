@@ -2,44 +2,52 @@
 //  AddWineSheet.swift
 //  Vitis
 //
-//  Debounced OFF search, select → upsert. Quiet Luxury.
+//  Multi-step flow: Search -> Select -> Rate -> Notes -> Save (Cheers).
 //
 
 import SwiftUI
 
+enum TastingFlowStep {
+    case search
+    case rating(Wine)
+    case notes(Wine, Double)
+}
+
 struct AddWineSheet: View {
     @Binding var isPresented: Bool
     var onWineAdded: () -> Void
-    /// When adding from Cellar: (userId, status). Sheet upserts wine then adds to cellar.
-    var cellarContext: (userId: UUID, status: CellarItem.CellarStatus)?
 
     @State private var viewModel = AddWineViewModel()
-
-    init(isPresented: Binding<Bool>, cellarContext: (userId: UUID, status: CellarItem.CellarStatus)? = nil, onWineAdded: @escaping () -> Void) {
-        _isPresented = isPresented
-        self.cellarContext = cellarContext
-        self.onWineAdded = onWineAdded
-    }
+    @State private var flowStep: TastingFlowStep = .search
+    @State private var selectedWine: Wine?
+    @State private var rating: Double = 5.0
+    @State private var selectedNotes: Set<String> = []
+    @State private var isSaving = false
+    @State private var saveError: String?
 
     var body: some View {
         NavigationStack {
             ZStack {
                 VitisTheme.background.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    searchBar
-                    Rectangle().fill(VitisTheme.border).frame(height: 1)
-                    content
-                }
-                if viewModel.isUpserting {
+                contentForStep
+                if viewModel.isUpserting || isSaving {
                     Color.black.opacity(0.15).ignoresSafeArea()
                     ProgressView().progressViewStyle(.circular).tint(VitisTheme.accent).scaleEffect(1.2)
                 }
             }
-            .navigationTitle("Add Wine")
+            .alert("Error", isPresented: .constant(saveError != nil)) {
+                Button("OK") { saveError = nil }
+            } message: {
+                if let err = saveError {
+                    Text(err)
+                }
+            }
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button("Cancel") {
+                        resetFlow()
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
@@ -49,6 +57,45 @@ struct AddWineSheet: View {
         }
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
         .onAppear { viewModel.prefetchPopular() }
+    }
+
+    private var navigationTitle: String {
+        switch flowStep {
+        case .search: return "Add Wine"
+        case .rating: return "Rate"
+        case .notes: return "Notes"
+        }
+    }
+
+    @ViewBuilder
+    private var contentForStep: some View {
+        switch flowStep {
+        case .search:
+            searchContent
+        case .rating(let wine):
+            TastingRateView(wine: wine, rating: $rating) {
+                flowStep = .notes(wine, rating)
+            }
+        case .notes(let wine, let r):
+            NotesSelectView(wine: wine, selectedNotes: $selectedNotes) { notes in
+                Task {
+                    let notesArray = notes.isEmpty ? nil : Array(notes)
+                    await saveTasting(wine: wine, rating: r, notes: notesArray)
+                }
+            } onSkip: {
+                Task {
+                    await saveTasting(wine: wine, rating: r, notes: nil)
+                }
+            }
+        }
+    }
+
+    private var searchContent: some View {
+        VStack(spacing: 0) {
+            searchBar
+            Rectangle().fill(VitisTheme.border).frame(height: 1)
+            searchResults
+        }
     }
 
     private var searchBar: some View {
@@ -81,7 +128,7 @@ struct AddWineSheet: View {
     }
 
     @ViewBuilder
-    private var content: some View {
+    private var searchResults: some View {
         if let err = viewModel.errorMessage {
             Text(err)
                 .font(VitisTheme.uiFont(size: 14))
@@ -91,7 +138,7 @@ struct AddWineSheet: View {
             if viewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
                 Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.isLoading {
-                Text("Aranıyor…")
+                Text("Searching…")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.secondaryText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -120,11 +167,10 @@ struct AddWineSheet: View {
             Task {
                 do {
                     let wine = try await viewModel.upsert(product: p)
-                    if let ctx = cellarContext {
-                        try await CellarService.addToCellar(userId: ctx.userId, wineId: wine.id, status: ctx.status)
-                    }
-                    onWineAdded()
-                    isPresented = false
+                    selectedWine = wine
+                    rating = 5.0
+                    selectedNotes = []
+                    flowStep = .rating(wine)
                 } catch {
                     viewModel.errorMessage = error.localizedDescription
                 }
@@ -169,5 +215,40 @@ struct AddWineSheet: View {
         RoundedRectangle(cornerRadius: 8)
             .fill(Color(white: 0.94))
             .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(VitisTheme.secondaryText.opacity(0.6)))
+    }
+
+    @MainActor
+    private func saveTasting(wine: Wine, rating: Double, notes: [String]?) async {
+        guard let userId = await AuthService.currentUserId() else {
+            saveError = "Not signed in"
+            return
+        }
+        isSaving = true
+        saveError = nil
+        do {
+            _ = try await TastingService.createTasting(
+                userId: userId,
+                wineId: wine.id,
+                rating: rating,
+                noteTags: notes,
+                source: "search"
+            )
+            onWineAdded()
+            resetFlow()
+            isPresented = false
+        } catch {
+            saveError = error.localizedDescription
+        }
+        isSaving = false
+    }
+
+    private func resetFlow() {
+        flowStep = .search
+        selectedWine = nil
+        rating = 5.0
+        selectedNotes = []
+        viewModel.query = ""
+        viewModel.results = []
+        saveError = nil
     }
 }

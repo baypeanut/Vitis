@@ -20,9 +20,6 @@ enum AppConstants {
     }
 
     #if DEBUG
-    /// Replace with your Supabase user UUID (Dashboard → Auth → Users). Dev bypass only; never in production.
-    static let debugMockUserId = UUID(uuidString: "cbdc2158-6c97-4ab2-bfce-7facc315dd6f")!
-
     /// Fixed test account for "Sign in as test user" in dev. Create this user once in Supabase → Auth → Users.
     static let devTestEmail = "dev@vitis.test"
     static let devTestPassword = "DevTest1!"

@@ -63,11 +63,10 @@ enum DevSignupService {
         UserDefaults.standard.set(id.uuidString, forKey: userDefaultsKey)
     }
 
-    /// If no dev user id exists, set it to debugMockUserId once. Call from ensureGuestSessionIfNeeded.
+    /// If no dev user id exists, do nothing. Each developer should create their own dev account.
+    /// This ensures no hardcoded user IDs are shared across the team.
     static func ensureFallbackDevUserId() {
-        if currentDevUserId() == nil {
-            UserDefaults.standard.set(AppConstants.debugMockUserId.uuidString, forKey: userDefaultsKey)
-        }
+        // No-op: Each developer creates their own dev account via signup flow
     }
 
     /// Load profile from dev_accounts for the given user id. Returns nil if not found.

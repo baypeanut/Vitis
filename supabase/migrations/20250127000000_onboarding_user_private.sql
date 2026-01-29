@@ -28,16 +28,16 @@ CREATE POLICY "user_private_update_own" ON public.user_private
 DROP POLICY IF EXISTS "dev_user_private_insert" ON public.user_private;
 CREATE POLICY "dev_user_private_insert" ON public.user_private
   FOR INSERT WITH CHECK (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   );
 
 DROP POLICY IF EXISTS "dev_user_private_update" ON public.user_private;
 CREATE POLICY "dev_user_private_update" ON public.user_private
   FOR UPDATE USING (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   )
   WITH CHECK (
-    auth.uid() IS NULL AND user_id = 'cbdc2158-6c97-4ab2-bfce-7facc315dd6f'::uuid
+    auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
   );
 
 -- -----------------------------------------------------------------------------

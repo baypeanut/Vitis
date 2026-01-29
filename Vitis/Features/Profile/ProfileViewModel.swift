@@ -19,7 +19,7 @@ final class ProfileViewModel {
     var followersCount: Int = 0
     var followingCount: Int = 0
     var recentActivity: [FeedItem] = []
-    var recentCellarItems: [CellarItem] = []
+    var recentTastings: [Tasting] = []
     var tasteGrapes: [TasteProfileItem] = []
     var tasteRegions: [TasteProfileItem] = []
     var tasteStyles: [TasteProfileItem] = []
@@ -62,9 +62,9 @@ final class ProfileViewModel {
             profile = nil
         }
 
-        let rankings = await ProfileService.fetchRankingsCount(userId: uid)
+        let ratedCount = await TastingService.fetchTastingsCount(userId: uid)
         guard loadId == currentLoadId else { isLoading = false; return }
-        rankingsCount = rankings
+        rankingsCount = ratedCount
 
         let followers = await SocialService.fetchFollowerCount(userId: uid)
         guard loadId == currentLoadId else { isLoading = false; return }
@@ -75,11 +75,11 @@ final class ProfileViewModel {
         followingCount = following
 
         #if DEBUG
-        print("[ProfileViewModel] fetchRecentCellarItems requested userId=\(uid)")
+        print("[ProfileViewModel] fetchRecentTastings requested userId=\(uid)")
         #endif
-        let cellarItems = (try? await CellarService.fetchRecentCellarItems(userId: uid, limit: 30)) ?? []
+        let tastings = (try? await TastingService.fetchTastings(userId: uid, limit: 30)) ?? []
         guard loadId == currentLoadId else { isLoading = false; return }
-        recentCellarItems = cellarItems
+        recentTastings = tastings
 
         let t = try? await ProfileService.fetchTasteProfile(userId: uid)
         guard loadId == currentLoadId else { isLoading = false; return }

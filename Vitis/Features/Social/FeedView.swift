@@ -125,9 +125,9 @@ struct FeedView: View {
     }
 
     private var feedList: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(viewModel.items) { item in
+        List {
+            ForEach(viewModel.items) { item in
+                VStack(spacing: 0) {
                     FeedItemView(
                         item: item,
                         parts: viewModel.statementParts(for: item),
@@ -138,16 +138,23 @@ struct FeedView: View {
                             print("[FeedView] tap profile tappedUserId=\(item.userId) tappedUsername=\(item.username)")
                             #endif
                             profileSheetItem = ProfileSheetItem(userId: item.userId, username: item.username)
-                        }
+                        },
+                        onDelete: { Task { await viewModel.deleteFeedItem(item) } },
+                        canDelete: viewModel.currentUserId == item.userId
                     )
                     Rectangle()
                         .fill(VitisTheme.border)
                         .frame(height: 1)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                 }
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
-            .padding(.bottom, 24)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .refreshable { await viewModel.refresh() }
     }
 }
