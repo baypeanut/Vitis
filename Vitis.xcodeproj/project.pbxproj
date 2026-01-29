@@ -18,8 +18,8 @@
 		E35954732F29AA4C0010DFC1 /* Exceptions for "Vitis" folder in "Vitis" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/SupabaseConfig.example.swift,
 				Info.plist,
-				"Core/SupabaseConfig.example.swift",
 			);
 			target = E35950682F26D4010010DFC1 /* Vitis */;
 		};
