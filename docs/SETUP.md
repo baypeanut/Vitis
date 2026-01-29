@@ -93,17 +93,23 @@ cp SupabaseConfig.example.swift SupabaseConfig.swift
 
 ## 6. Git workflow (sen + arkadaşın)
 
-### Repo’yu sen kuruyorsan
+### GitHub'a ilk push (sen, repo henüz yoksa)
 
-1. GitHub’da **Vitis** reposu oluştur (boş veya mevcut local projeyi push’la).
-2. Local’de:
+1. **GitHub'da repo oluştur**
+   - [github.com/new](https://github.com/new) → Repository name: **Vitis**
+   - Public, **README / .gitignore / License ekleme** (zaten projede var).
+   - **Create repository** tıkla.
+
+2. **Remote ekle ve push et** (terminalde proje klasöründeyken):
    ```bash
-   git remote add origin https://github.com/<GITHUB_USER_OR_ORG>/Vitis.git
-   git add .
-   git commit -m "Initial project setup"
+   git remote add origin https://github.com/<GITHUB_KULLANICI_ADIN>/Vitis.git
    git push -u origin main
    ```
-3. `.gitignore` sayesinde `build/`, `SupabaseConfig.swift` vb. push edilmez. **SupabaseConfig.swift asla commit edilmemeli.**
+   `<GITHUB_KULLANICI_ADIN>` yerine kendi GitHub kullanıcı adını yaz.
+
+3. **Arkadaşını ekle**
+   - Repo sayfası → **Settings** → **Collaborators** (veya **Collaborators and teams**) → **Add people**
+   - GitHub kullanıcı adı veya e-posta yaz, **Add** de. Davet gider; kabul edince push/pull yapabilir.
 
 ### Arkadaşın ilk kez katılıyor
 
