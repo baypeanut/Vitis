@@ -64,8 +64,6 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView {
-            DuelView()
-                .tabItem { Label("Duel", systemImage: "wineglass") }
             CellarView()
                 .tabItem { Label("Cellar", systemImage: "square.stack") }
             SocialView()
