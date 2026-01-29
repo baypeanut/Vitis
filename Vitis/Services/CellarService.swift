@@ -132,4 +132,39 @@ enum CellarService {
     static func removeItem(id: UUID) async throws {
         try await supabase.from("cellar_items").delete().eq("id", value: id).execute()
     }
+
+    /// Fetch recent cellar items (both had and wishlist) for a user, sorted by date
+    static func fetchRecentCellarItems(userId: UUID, limit: Int = 30) async throws -> [CellarItem] {
+        let raw: [CellarRow] = try await supabase
+            .from("cellar_items")
+            .select("id, user_id, wine_id, status, created_at, consumed_at, wines(name, producer, vintage, region, label_image_url)")
+            .eq("user_id", value: userId)
+            .order("created_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+
+        return raw.compactMap { row -> CellarItem? in
+            guard let w = row.wines,
+                  let st = CellarItem.CellarStatus(rawValue: row.status) else { return nil }
+            let wine = Wine(
+                id: row.wine_id,
+                name: w.name,
+                producer: w.producer,
+                vintage: w.vintage,
+                variety: nil,
+                region: w.region,
+                labelImageURL: w.label_image_url
+            )
+            return CellarItem(
+                id: row.id,
+                userId: row.user_id,
+                wineId: row.wine_id,
+                status: st,
+                createdAt: row.created_at,
+                consumedAt: row.consumed_at,
+                wine: wine
+            )
+        }
+    }
 }

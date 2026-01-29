@@ -30,4 +30,24 @@ extension CellarItem {
         case .wishlist: return createdAt
         }
     }
+
+    /// Activity statement for display in profile recent activity
+    func activityStatement(username: String) -> String {
+        let producer = wine.producer
+        let wineName = wine.vintage.map { "\($0) \(wine.name)" } ?? wine.name
+        let fullName = "\(producer)'s \(wineName)"
+        switch status {
+        case .had:
+            return "\(username) had \(fullName)."
+        case .wishlist:
+            return "\(username) wants \(fullName)."
+        }
+    }
+
+    /// Statement parts for display (before, name, after). Name is highlighted.
+    func statementParts(username: String) -> (before: String, name: String, after: String) {
+        let s = activityStatement(username: username)
+        guard let r = s.range(of: username) else { return (s, "", "") }
+        return (String(s[..<r.lowerBound]), username, String(s[r.upperBound...]))
+    }
 }
