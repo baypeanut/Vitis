@@ -9,9 +9,16 @@ import SwiftUI
 
 @main
 struct VitisApp: App {
+    init() {
+        _ = SupabaseManager.shared
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .onOpenURL { url in
+                    AuthRecoveryState.shared.handleIncomingURL(url)
+                }
         }
     }
 }
