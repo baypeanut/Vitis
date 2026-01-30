@@ -21,10 +21,10 @@ struct ProfileContentView: View {
     var onFollowChanged: (() -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
-    enum TasteSubTab: String, CaseIterable { case grapes = "Grapes"; case regions = "Regions"; case styles = "Styles" }
+    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
 
     @State private var mainTab: MainTab = .recentActivity
-    @State private var tasteSubTab: TasteSubTab = .grapes
+    @State private var tasteSubTab: TasteSubTab = .regions
 
     var body: some View {
         ScrollView {
@@ -181,22 +181,41 @@ struct ProfileContentView: View {
     }
 
     private func tasteSnapshotCard(_ p: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Taste Snapshot")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
-            VStack(alignment: .leading, spacing: 8) {
-                line("Loves:", TasteSnapshotOptions.labelForLoves(id: p.tasteSnapshotLoves))
-                line("Avoids:", TasteSnapshotOptions.labelForAvoids(id: p.tasteSnapshotAvoids))
-                line("Current mood:", TasteSnapshotOptions.labelForMood(id: p.tasteSnapshotMood))
+        VStack(alignment: .leading, spacing: 8) {
+
+            HStack(spacing: 8) {
+                tasteSnapshotBox(
+                    icon: "heart.fill",
+                    value: TasteSnapshotOptions.labelForLoves(id: p.tasteSnapshotLoves)
+                )
+                tasteSnapshotBox(
+                    icon: "hand.thumbsdown.fill",
+                    value: TasteSnapshotOptions.labelForAvoids(id: p.tasteSnapshotAvoids)
+                )
+                tasteSnapshotBox(
+                    icon: "face.smiling.fill",
+                    value: TasteSnapshotOptions.labelForMood(id: p.tasteSnapshotMood)
+                )
             }
-            .font(VitisTheme.uiFont(size: 15))
-            .foregroundStyle(.primary)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    @ViewBuilder
+    private func tasteSnapshotBox(icon: String, value: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(VitisTheme.accent)
+            Text(value)
+                .font(VitisTheme.uiFont(size: 13))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
         .background(Color(white: 0.98))
-        .overlay(RoundedRectangle(cornerRadius: 1).stroke(VitisTheme.border, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(VitisTheme.border, lineWidth: 1))
     }
 
     private func line(_ label: String, _ value: String) -> some View {
@@ -408,7 +427,6 @@ struct ProfileContentView: View {
     private var tasteProfileList: some View {
         let items: [TasteProfileItem] = {
             switch tasteSubTab {
-            case .grapes: return viewModel.tasteGrapes
             case .regions: return viewModel.tasteRegions
             case .styles: return viewModel.tasteStyles
             }
