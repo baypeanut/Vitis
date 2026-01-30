@@ -17,6 +17,7 @@ private let searchCacheCap = 300
 final class AddWineViewModel {
     var query = ""
     var results: [OFFProduct] = []
+    var dbWines: [Wine] = []
     var isLoading = false
     var errorMessage: String?
     var isUpserting = false
@@ -24,6 +25,16 @@ final class AddWineViewModel {
     private var searchTask: Task<Void, Never>?
     /// Tüm başarılı API sonuçlarından birikmiş cache. "leb" yazınca "leblebi" vs. substring ile anında gösterilir.
     private var searchCache: [OFFProduct] = []
+
+    func loadDatabaseWines() async {
+        do {
+            dbWines = try await WineService.fetchAllWines(limit: 100)
+        } catch {
+            #if DEBUG
+            print("[AddWineViewModel] Failed to load database wines: \(error)")
+            #endif
+        }
+    }
 
     func search() {
         searchTask?.cancel()

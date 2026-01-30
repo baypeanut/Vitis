@@ -64,6 +64,30 @@ enum WineService {
         return nil
     }
 
+    /// Fetch all wines from database, ordered by name.
+    static func fetchAllWines(limit: Int = 100) async throws -> [Wine] {
+        let rows: [WineRow] = try await supabase
+            .from("wines")
+            .select("id, name, producer, vintage, variety, region, label_image_url, category")
+            .order("name", ascending: true)
+            .limit(limit)
+            .execute()
+            .value
+        
+        return rows.map { r in
+            Wine(
+                id: r.id,
+                name: r.name,
+                producer: r.producer,
+                vintage: r.vintage,
+                variety: r.variety,
+                region: r.region,
+                labelImageURL: r.label_image_url,
+                category: r.category
+            )
+        }
+    }
+
     /// Upsert wine from OFF product. Returns upserted Wine.
     static func upsertFromOFF(product: OFFProduct) async throws -> Wine {
         let params = UpsertParams(
