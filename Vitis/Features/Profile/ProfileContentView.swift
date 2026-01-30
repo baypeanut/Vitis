@@ -414,7 +414,7 @@ struct ProfileContentView: View {
             }
         }()
         if items.isEmpty {
-            Text("No data yet. Rank wines to build your taste profile.")
+            Text("No data yet. Rate wines to build your taste profile.")
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
                 .padding(.vertical, 24)
@@ -427,9 +427,19 @@ struct ProfileContentView: View {
                             .font(VitisTheme.uiFont(size: 15, weight: .medium))
                             .foregroundStyle(.primary)
                         Spacer()
-                        Text("\(it.count) rankings")
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                        HStack(spacing: 8) {
+                            if let avgRating = it.averageRating {
+                                Text(String(format: "%.1f", avgRating))
+                                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                                    .foregroundStyle(VitisTheme.accent)
+                                Text("·")
+                                    .font(VitisTheme.uiFont(size: 14))
+                                    .foregroundStyle(VitisTheme.secondaryText)
+                            }
+                            Text("\(it.count) \(it.count == 1 ? "tasting" : "tastings")")
+                                .font(VitisTheme.uiFont(size: 14))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                        }
                     }
                     .padding(.vertical, 12)
                     Rectangle().fill(VitisTheme.border).frame(height: 1)
