@@ -56,7 +56,10 @@ struct AddWineSheet: View {
             }
         }
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
-        .onAppear { viewModel.prefetchPopular() }
+        .onAppear {
+            viewModel.prefetchPopular()
+            Task { await viewModel.loadDatabaseWines() }
+        }
     }
 
     private var navigationTitle: String {
@@ -134,10 +137,27 @@ struct AddWineSheet: View {
                 .font(VitisTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if viewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
+            // Show database wines when query is empty
+            if viewModel.dbWines.isEmpty {
+                Text("No wines in database yet.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(viewModel.dbWines) { wine in
+                            wineRow(wine)
+                            Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
+                        }
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
+                }
+            }
         } else if viewModel.results.isEmpty {
-            if viewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
-                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.isLoading {
+            if viewModel.isLoading {
                 Text("Searching…")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.secondaryText)
@@ -160,6 +180,32 @@ struct AddWineSheet: View {
                 .padding(.bottom, 32)
             }
         }
+    }
+
+    private func wineRow(_ wine: Wine) -> some View {
+        Button {
+            selectedWine = wine
+            rating = 5.0
+            selectedNotes = []
+            flowStep = .rating(wine)
+        } label: {
+            HStack(alignment: .center, spacing: 16) {
+                thumbnail(wine.labelImageURL)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(wine.producer)
+                        .font(VitisTheme.producerSerifFont())
+                        .foregroundStyle(VitisTheme.secondaryText)
+                    Text(wine.name)
+                        .font(VitisTheme.wineNameFont())
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+        }
+        .buttonStyle(.plain)
     }
 
     private func row(_ p: OFFProduct) -> some View {
