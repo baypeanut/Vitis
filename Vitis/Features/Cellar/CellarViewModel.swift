@@ -11,6 +11,7 @@ import Foundation
 @Observable
 final class CellarViewModel {
     var tastings: [Tasting] = []
+    var groupedTastings: [(category: String, tastings: [Tasting])] = []
     var isLoading = false
     var errorMessage: String?
     var needsAuth = false
@@ -21,11 +22,13 @@ final class CellarViewModel {
         if uid == nil && AppConstants.authRequired {
             needsAuth = true
             tastings = []
+            groupedTastings = []
             return
         }
         needsAuth = false
         guard let uid else {
             tastings = []
+            groupedTastings = []
             return
         }
         currentUserId = uid
@@ -33,17 +36,42 @@ final class CellarViewModel {
         errorMessage = nil
         do {
             tastings = try await TastingService.fetchTastings(userId: uid)
+            groupTastingsByCategory()
         } catch {
             errorMessage = error.localizedDescription
             tastings = []
+            groupedTastings = []
         }
         isLoading = false
+    }
+    
+    private func groupTastingsByCategory() {
+        var categoryDict: [String: [Tasting]] = [:]
+        
+        for tasting in tastings {
+            let category = tasting.wine.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                ? tasting.wine.category!
+                : "Other"
+            categoryDict[category, default: []].append(tasting)
+        }
+        
+        // Sort categories alphabetically, but keep "Other" at the end
+        let sortedCategories = categoryDict.keys.sorted { a, b in
+            if a == "Other" { return false }
+            if b == "Other" { return true }
+            return a < b
+        }
+        
+        groupedTastings = sortedCategories.map { category in
+            (category: category, tastings: categoryDict[category]!)
+        }
     }
 
     func removeTasting(_ tasting: Tasting) async {
         do {
             try await TastingService.deleteTasting(id: tasting.id)
             tastings.removeAll { $0.id == tasting.id }
+            groupTastingsByCategory()
         } catch {
             errorMessage = error.localizedDescription
         }

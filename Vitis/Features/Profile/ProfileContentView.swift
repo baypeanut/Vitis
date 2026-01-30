@@ -49,9 +49,14 @@ struct ProfileContentView: View {
             Text(p.displayName)
                 .font(VitisTheme.wineNameFont())
                 .foregroundStyle(.primary)
-            Text("@\(p.username)")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText)
+            HStack(spacing: 8) {
+                Text("@\(p.username)")
+                    .font(VitisTheme.uiFont(size: 14))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                if let h = p.instagramHandle?.trimmingCharacters(in: .whitespacesAndNewlines), !h.isEmpty {
+                    InstagramIconButton(handle: h)
+                }
+            }
             if let b = p.bioTrimmed, !b.isEmpty {
                 Text(b)
                     .font(VitisTheme.uiFont(size: 15))
@@ -67,7 +72,6 @@ struct ProfileContentView: View {
                     .foregroundStyle(VitisTheme.accent)
                     .padding(.top, 8)
             }
-            if hasSocialLinks(p) { socialIconsRow(p) }
         }
         .frame(maxWidth: .infinity)
     }
@@ -100,29 +104,23 @@ struct ProfileContentView: View {
     }
 
     private var statsRow: some View {
-        HStack(spacing: 0) {
-            statBlock(value: "\(viewModel.rankingsCount)", label: "Rated")
-            Rectangle().fill(VitisTheme.border).frame(width: 1).padding(.vertical, 8)
-            statBlock(value: "\(viewModel.followersCount)", label: "Followers")
-            Rectangle().fill(VitisTheme.border).frame(width: 1).padding(.vertical, 8)
-            statBlock(value: "\(viewModel.followingCount)", label: "Following")
+        HStack(spacing: 16) {
+            statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
+            statItem(value: "\(viewModel.followersCount)", label: "Followers")
+            statItem(value: "\(viewModel.followingCount)", label: "Following")
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 12)
-        .background(Color(white: 0.98))
-        .overlay(RoundedRectangle(cornerRadius: 1).stroke(VitisTheme.border, lineWidth: 1))
+        .frame(maxWidth: .infinity)
     }
 
-    private func statBlock(value: String, label: String) -> some View {
-        VStack(spacing: 4) {
+    private func statItem(value: String, label: String) -> some View {
+        HStack(spacing: 4) {
             Text(value)
                 .font(VitisTheme.uiFont(size: 15, weight: .semibold))
                 .foregroundStyle(.primary)
             Text(label)
-                .font(VitisTheme.uiFont(size: 12))
+                .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
         }
-        .frame(maxWidth: .infinity)
     }
 
     private func primaryButton(_ p: Profile) -> some View {
@@ -167,18 +165,6 @@ struct ProfileContentView: View {
         p.username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "guest"
     }
 
-    private func hasSocialLinks(_ p: Profile) -> Bool {
-        let h = (p.instagramHandle?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
-        return h != nil
-    }
-
-    private func socialIconsRow(_ p: Profile) -> some View {
-        HStack(spacing: 12) {
-            if let h = p.instagramHandle?.trimmingCharacters(in: .whitespacesAndNewlines), !h.isEmpty {
-                InstagramHandleButton(handle: h)
-            }
-        }
-    }
 
     private func tasteSnapshotCard(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -483,9 +469,9 @@ struct ProfileContentView: View {
     }
 }
 
-// MARK: - Instagram handle button (app or Safari)
+// MARK: - Instagram icon button (app or Safari)
 
-private struct InstagramHandleButton: View {
+private struct InstagramIconButton: View {
     let handle: String
     @Environment(\.openURL) private var openURL
 
@@ -493,14 +479,9 @@ private struct InstagramHandleButton: View {
         Button {
             openInstagram(handle: handle)
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(VitisTheme.secondaryText)
-                Text("@\(handle)")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.accent)
-            }
+            Image(systemName: "camera.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(VitisTheme.secondaryText)
         }
         .buttonStyle(.plain)
     }
