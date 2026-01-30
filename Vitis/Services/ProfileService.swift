@@ -11,6 +11,7 @@ import Supabase
 struct TasteProfileItem: Identifiable, Sendable {
     let name: String
     let count: Int
+    let averageRating: Double?
     var id: String { name }
 }
 
@@ -36,10 +37,11 @@ enum ProfileService {
         }
     }
 
-    /// Taste profile from user's rankings: grapes (variety), regions, styles (category). Count = rankings.
+    /// Taste profile from user's tastings: grapes (variety), regions, styles (category). Count = tastings, with average ratings.
     static func fetchTasteProfile(userId: UUID) async throws -> (grapes: [TasteProfileItem], regions: [TasteProfileItem], styles: [TasteProfileItem]) {
         struct Row: Decodable {
             let wine_id: UUID
+            let rating: Double
             let wines: Wref?
             struct Wref: Decodable {
                 let variety: String?
@@ -48,29 +50,56 @@ enum ProfileService {
             }
         }
         let rows: [Row] = try await supabase
-            .from("rankings")
-            .select("wine_id, wines(variety, region, category)")
+            .from("tastings")
+            .select("wine_id, rating, wines(variety, region, category)")
             .eq("user_id", value: userId)
             .execute()
             .value
 
         var grapeCounts: [String: Int] = [:]
+        var grapeRatings: [String: [Double]] = [:]
         var regionCounts: [String: Int] = [:]
+        var regionRatings: [String: [Double]] = [:]
         var styleCounts: [String: Int] = [:]
+        var styleRatings: [String: [Double]] = [:]
 
         for r in rows {
             guard let w = r.wines else { continue }
-            let variety = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? "Unknown"
-            grapeCounts[variety, default: 0] += 1
-            let region = (w.region?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? "Unknown"
-            regionCounts[region, default: 0] += 1
-            let style = (w.category?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? "Other"
-            styleCounts[style, default: 0] += 1
+            
+            if let variety = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+                grapeCounts[variety, default: 0] += 1
+                grapeRatings[variety, default: []].append(r.rating)
+            }
+            
+            if let region = (w.region?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+                regionCounts[region, default: 0] += 1
+                regionRatings[region, default: []].append(r.rating)
+            }
+            
+            if let style = (w.category?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+                styleCounts[style, default: 0] += 1
+                styleRatings[style, default: []].append(r.rating)
+            }
         }
 
-        let grapes = grapeCounts.map { TasteProfileItem(name: $0.key, count: $0.value) }.sorted { $0.count > $1.count }
-        let regions = regionCounts.map { TasteProfileItem(name: $0.key, count: $0.value) }.sorted { $0.count > $1.count }
-        let styles = styleCounts.map { TasteProfileItem(name: $0.key, count: $0.value) }.sorted { $0.count > $1.count }
+        let grapes = grapeCounts.map { key, count -> TasteProfileItem in
+            let ratings = grapeRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+        }.sorted { $0.count > $1.count }
+        
+        let regions = regionCounts.map { key, count -> TasteProfileItem in
+            let ratings = regionRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+        }.sorted { $0.count > $1.count }
+        
+        let styles = styleCounts.map { key, count -> TasteProfileItem in
+            let ratings = styleRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+        }.sorted { $0.count > $1.count }
+        
         return (grapes, regions, styles)
     }
 
