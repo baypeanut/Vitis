@@ -10,6 +10,7 @@ import SwiftUI
 struct CellarView: View {
     @State private var viewModel = CellarViewModel()
     @State private var showAddWine = false
+    @State private var selectedCategory: String = ""
 
     var body: some View {
         ZStack {
@@ -20,15 +21,27 @@ struct CellarView: View {
                 content
             }
         }
-        .task { await viewModel.load() }
+        .task {
+            await viewModel.load()
+            updateSelectedCategory()
+        }
         .refreshable { await viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
             Task { await viewModel.load() }
+        }
+        .onChange(of: viewModel.groupedTastings.count) { _, _ in
+            updateSelectedCategory()
         }
         .sheet(isPresented: $showAddWine) {
             AddWineSheet(isPresented: $showAddWine) {
                 Task { await viewModel.load() }
             }
+        }
+    }
+
+    private func updateSelectedCategory() {
+        if selectedCategory.isEmpty || !viewModel.groupedTastings.contains(where: { $0.category == selectedCategory }) {
+            selectedCategory = viewModel.groupedTastings.first?.category ?? ""
         }
     }
 
@@ -106,24 +119,62 @@ struct CellarView: View {
     }
 
     private var listContent: some View {
-        List {
-            ForEach(viewModel.tastings) { tasting in
-                tastingRow(tasting)
-                    .listRowInsets(EdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24))
-                    .listRowSeparator(.visible)
-                    .listRowSeparatorTint(VitisTheme.border)
-                    .listRowBackground(Color.clear)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task { await viewModel.removeTasting(tasting) }
-                        } label: {
-                            Label("Remove", systemImage: "trash")
-                        }
-                    }
+        VStack(spacing: 0) {
+            if viewModel.groupedTastings.count > 1 {
+                categoryTabs
+                Rectangle().fill(VitisTheme.border).frame(height: 1)
             }
+            categoryContent
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+    }
+    
+    private var categoryTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(viewModel.groupedTastings, id: \.category) { group in
+                    Button {
+                        selectedCategory = group.category
+                    } label: {
+                        Text(group.category)
+                            .font(VitisTheme.uiFont(size: 15, weight: selectedCategory == group.category ? .semibold : .regular))
+                            .foregroundStyle(selectedCategory == group.category ? VitisTheme.accent : VitisTheme.secondaryText)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+    
+    @ViewBuilder
+    private var categoryContent: some View {
+        if let currentGroup = viewModel.groupedTastings.first(where: { $0.category == selectedCategory }) {
+            List {
+                ForEach(currentGroup.tastings) { tasting in
+                    tastingRow(tasting)
+                        .listRowInsets(EdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24))
+                        .listRowSeparator(.visible)
+                        .listRowSeparatorTint(VitisTheme.border)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await viewModel.removeTasting(tasting) }
+                            } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
+                        }
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+        } else {
+            Text("No wines in this category.")
+                .font(VitisTheme.uiFont(size: 15))
+                .foregroundStyle(VitisTheme.secondaryText)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 
     private func tastingRow(_ tasting: Tasting) -> some View {
