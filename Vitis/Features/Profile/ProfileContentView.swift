@@ -228,21 +228,37 @@ struct ProfileContentView: View {
     }
 
     private func streakGoalCard(_ p: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Streak / Goal")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
-            VStack(alignment: .leading, spacing: 8) {
-                line("Weekly goal:", TasteSnapshotOptions.labelForWeeklyGoal(id: p.weeklyGoal))
-                line("Streak:", streakLabel)
+        VStack(alignment: .leading, spacing: 8) {
+
+            HStack(spacing: 8) {
+                streakGoalBox(
+                    icon: "target",
+                    value: TasteSnapshotOptions.labelForWeeklyGoal(id: p.weeklyGoal)
+                )
+                streakGoalBox(
+                    icon: "flame.fill",
+                    value: streakLabel
+                )
             }
-            .font(VitisTheme.uiFont(size: 15))
-            .foregroundStyle(.primary)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    @ViewBuilder
+    private func streakGoalBox(icon: String, value: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(VitisTheme.accent)
+            Text(value)
+                .font(VitisTheme.uiFont(size: 13))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
         .background(Color(white: 0.98))
-        .overlay(RoundedRectangle(cornerRadius: 1).stroke(VitisTheme.border, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(VitisTheme.border, lineWidth: 1))
     }
 
     private var streakLabel: String {
