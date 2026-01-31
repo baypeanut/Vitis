@@ -22,9 +22,12 @@ struct PhotoStepView: View {
                         Image(uiImage: ui)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
+                            .frame(width: 120, height: 120)
+                            .clipShape(Circle())
                     } else {
                         Circle()
                             .fill(Color(white: 0.96))
+                            .frame(width: 120, height: 120)
                             .overlay(
                                 Image(systemName: "camera")
                                     .font(.system(size: 32))
@@ -39,12 +42,12 @@ struct PhotoStepView: View {
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundStyle(.white)
                         )
-                        .offset(x: 4, y: 4)
+                        .offset(x: -4, y: -4)
                 }
                 .frame(width: 120, height: 120)
-                .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
             .onChange(of: selectedItem) { _, new in
                 Task { await loadPickedImage(new) }
             }

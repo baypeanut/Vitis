@@ -90,6 +90,8 @@ struct EditProfileView: View {
             PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                 ZStack(alignment: .bottomTrailing) {
                     avatarImage
+                        .frame(width: 88, height: 88)
+                        .clipShape(Circle())
                     Circle()
                         .fill(VitisTheme.accent)
                         .frame(width: 32, height: 32)
@@ -98,10 +100,9 @@ struct EditProfileView: View {
                                 .font(.system(size: 14))
                                 .foregroundStyle(.white)
                         )
-                        .offset(x: 4, y: 4)
+                        .offset(x: -4, y: -4)
                 }
                 .frame(width: 88, height: 88)
-                .clipShape(Circle())
             }
             .buttonStyle(.plain)
         }
