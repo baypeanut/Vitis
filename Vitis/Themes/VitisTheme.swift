@@ -61,12 +61,12 @@ enum VitisTheme {
 
     private static let compactTimestampFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "MMM d · h:mm a"
+        f.dateFormat = "MMM d, yyyy"
         f.locale = Locale(identifier: "en_US_POSIX")
         return f
     }()
 
-    /// Compact quiet format, e.g. "Jan 28 · 9:42 PM". Comments, cellar rows.
+    /// Compact quiet format, e.g. "Jan 28, 2026". Comments, cellar rows.
     static func compactTimestamp(_ date: Date) -> String {
         compactTimestampFormatter.string(from: date)
     }
