@@ -81,13 +81,15 @@ final class OnboardingViewModel {
 
     func canContinuePhone() -> Bool {
         phoneError = nil
-        guard isPhoneValid else {
-            if !phoneRaw.trimmingCharacters(in: .whitespaces).isEmpty {
-                phoneError = "Please enter a valid phone number."
-            }
-            return false
+        let digits = phoneRaw.filter { $0.isNumber }
+        
+        // For US numbers, require exactly 10 digits
+        if countryCode == "+1" {
+            return digits.count == 10 && isPhoneValid
         }
-        return true
+        
+        // For other countries, use standard validation
+        return isPhoneValid
     }
 
     func canContinueEmail() -> Bool {
