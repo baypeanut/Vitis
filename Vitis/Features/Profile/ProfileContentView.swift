@@ -21,14 +21,14 @@ struct ProfileContentView: View {
     var onFollowChanged: (() -> Void)?
     var onFollowersTap: (() -> Void)?
     var onFollowingTap: (() -> Void)?
-    var onGrapeTap: ((String) -> Void)?
     var onRegionTap: ((String) -> Void)?
+    var onStyleTap: ((String) -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
-    enum TasteSubTab: String, CaseIterable { case grapes = "Grapes"; case regions = "Regions" }
+    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
 
     @State private var mainTab: MainTab = .recentActivity
-    @State private var tasteSubTab: TasteSubTab = .grapes
+    @State private var tasteSubTab: TasteSubTab = .regions
 
     var body: some View {
         ScrollView {
@@ -451,8 +451,8 @@ struct ProfileContentView: View {
     private var tasteProfileList: some View {
         let items: [TasteProfileItem] = {
             switch tasteSubTab {
-            case .grapes: return viewModel.tasteGrapes
             case .regions: return viewModel.tasteRegions
+            case .styles: return viewModel.tasteStyles
             }
         }()
         if items.isEmpty {
@@ -465,13 +465,13 @@ struct ProfileContentView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { it in
                     Button {
-                        if tasteSubTab == .grapes {
-                            onGrapeTap?(it.name)
-                        } else {
+                        if tasteSubTab == .regions {
                             onRegionTap?(it.name)
+                        } else {
+                            onStyleTap?(it.name)
                         }
                     } label: {
-                        tasteProfileRow(it, isGrapes: tasteSubTab == .grapes)
+                        tasteProfileRow(it)
                     }
                     .buttonStyle(.plain)
                     Rectangle().fill(VitisTheme.border).frame(height: 1)
@@ -480,13 +480,11 @@ struct ProfileContentView: View {
         }
     }
 
-    private func tasteProfileRow(_ it: TasteProfileItem, isGrapes: Bool) -> some View {
-        let nameColor: Color = isGrapes
-            ? WineColorResolver.resolveWineDisplayColor(wineName: it.name)
-            : .primary
-        let ratingColor: Color = isGrapes
-            ? WineColorResolver.resolveWineDisplayColor(wineName: it.name)
-            : WineColorResolver.resolveWineDisplayColor(category: it.dominantWineCategory, wineName: nil)
+    private func tasteProfileRow(_ it: TasteProfileItem) -> some View {
+        let nameColor: Color = .primary
+        let ratingColor: Color = tasteSubTab == .styles
+            ? WineColorResolver.resolveWineDisplayColor(category: it.name, wineName: nil)
+            : VitisTheme.accent
         return HStack {
             Text(it.name)
                 .font(VitisTheme.uiFont(size: 15, weight: .medium))

@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// Identifiable item for profile sheet. Unique id per tap so sheet/VM never reuse.
-private struct ProfileSheetItem: Identifiable {
+private struct ProfileSheetItem: Identifiable, Hashable {
     let id: UUID
     let userId: UUID
     let username: String
@@ -37,9 +37,8 @@ struct FeedView: View {
                 viewModel.patchCurrentUserOverrides()
             }
             .sheet(isPresented: $showCommentSheet) { commentSheetContent }
-            .sheet(item: $profileSheetItem) { item in
-                profileSheetContent(for: item)
-                    .id(item.userId)
+            .navigationDestination(item: $profileSheetItem) { item in
+                profileNavigationContent(for: item)
             }
             .onChange(of: commentActivityID) { _, id in showCommentSheet = id != nil }
             .onChange(of: showCommentSheet) { _, v in if !v { commentActivityID = nil } }
@@ -71,6 +70,16 @@ struct FeedView: View {
         }
         #if DEBUG
         .onAppear { print("[FeedView] profile sheet route userId=\(item.userId) username=\(item.username)") }
+        #endif
+    }
+    
+    @ViewBuilder
+    private func profileNavigationContent(for item: ProfileSheetItem) -> some View {
+        UserProfileViewContent(userId: item.userId) {
+            Task { await viewModel.refresh() }
+        }
+        #if DEBUG
+        .onAppear { print("[FeedView] profile navigation route userId=\(item.userId) username=\(item.username)") }
         #endif
     }
 
