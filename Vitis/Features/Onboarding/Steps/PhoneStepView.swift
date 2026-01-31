@@ -42,7 +42,16 @@ struct PhoneStepView: View {
                     textContentType: .telephoneNumber
                 )
             }
-            .onChange(of: vm.phoneRaw) { _, _ in vm.phoneError = nil }
+            .onChange(of: vm.phoneRaw) { _, newValue in
+                // Limit to 10 digits for US numbers
+                let digits = newValue.filter { $0.isNumber }
+                if digits.count > 10 {
+                    vm.phoneRaw = String(digits.prefix(10))
+                } else {
+                    vm.phoneRaw = digits
+                }
+                vm.phoneError = nil
+            }
 
             if let err = vm.phoneError {
                 Text(err)
