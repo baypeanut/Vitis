@@ -9,7 +9,9 @@ import SwiftUI
 
 struct SocialView: View {
     var body: some View {
-        FeedView()
+        NavigationStack {
+            FeedView()
+        }
     }
 }
 

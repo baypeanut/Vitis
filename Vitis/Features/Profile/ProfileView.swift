@@ -10,7 +10,15 @@ import SwiftUI
 private struct DrillDownTarget: Identifiable, Hashable {
     let id = UUID()
     let title: String
-    let isGrape: Bool
+    let filterType: TasteProfileDrillDownView.FilterType
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: DrillDownTarget, rhs: DrillDownTarget) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
 struct ProfileView: View {
@@ -43,8 +51,8 @@ struct ProfileView: View {
                         onSignOut: { Task { await signOut() } },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
-                        onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, isGrape: true) },
-                        onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, isGrape: false) }
+                        onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
+                        onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) }
                     )
                 } else {
                     VStack(spacing: 16) {
@@ -63,13 +71,13 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-        }
-        .navigationDestination(item: $drillDownTarget) { target in
-            TasteProfileDrillDownView(
-                title: target.title,
-                filterType: target.isGrape ? .grape(target.title) : .region(target.title),
-                tastings: viewModel?.allTastings ?? []
-            )
+            .navigationDestination(item: $drillDownTarget) { target in
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel?.allTastings ?? []
+                )
+            }
         }
         .task { await ensureAndLoad() }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in

@@ -15,15 +15,21 @@ struct TasteProfileDrillDownView: View {
     enum FilterType {
         case grape(String)
         case region(String)
+        case style(String)
     }
 
     private var filteredTastings: [Tasting] {
+        let filtered: [Tasting]
         switch filterType {
         case .grape(let name):
-            filterByGrape(tastings, grapeName: name)
+            filtered = filterByGrape(tastings, grapeName: name)
         case .region(let name):
-            filterByRegion(tastings, regionName: name)
+            filtered = filterByRegion(tastings, regionName: name)
+        case .style(let name):
+            filtered = filterByStyle(tastings, styleName: name)
         }
+        // Sort by rating, highest first
+        return filtered.sorted { $0.rating > $1.rating }
     }
 
     var body: some View {
@@ -108,6 +114,15 @@ struct TasteProfileDrillDownView: View {
         return tastings.filter { tasting in
             guard let r = tasting.wine.region?.trimmingCharacters(in: .whitespaces).lowercased(), !r.isEmpty else { return false }
             return ProfileService.regionMatchKey(r) == key
+        }
+    }
+    
+    private func filterByStyle(_ tastings: [Tasting], styleName: String) -> [Tasting] {
+        let norm = styleName.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !norm.isEmpty else { return [] }
+        return tastings.filter { tasting in
+            guard let c = tasting.wine.category?.trimmingCharacters(in: .whitespaces).lowercased(), !c.isEmpty else { return false }
+            return c == norm
         }
     }
 }

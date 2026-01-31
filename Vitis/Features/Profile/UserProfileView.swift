@@ -11,7 +11,15 @@ import SwiftUI
 private struct UserProfileDrillDownTarget: Identifiable, Hashable {
     let id = UUID()
     let title: String
-    let isGrape: Bool
+    let filterType: TasteProfileDrillDownView.FilterType
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: UserProfileDrillDownTarget, rhs: UserProfileDrillDownTarget) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
 struct UserProfileView: View {
@@ -63,8 +71,8 @@ struct UserProfileView: View {
                         },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
-                        onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, isGrape: true) },
-                        onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, isGrape: false) }
+                        onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
+                        onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -91,13 +99,13 @@ struct UserProfileView: View {
                         .foregroundStyle(VitisTheme.accent)
                 }
             }
-        }
-        .navigationDestination(item: $drillDownTarget) { target in
-            TasteProfileDrillDownView(
-                title: target.title,
-                filterType: target.isGrape ? .grape(target.title) : .region(target.title),
-                tastings: viewModel.allTastings
-            )
+            .navigationDestination(item: $drillDownTarget) { target in
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel.allTastings
+                )
+            }
         }
         .id(userId)
         .task(id: userId) {
@@ -155,6 +163,135 @@ struct UserProfileView: View {
             } else {
                 try await SocialService.followUser(targetID: userId)
             }
+        } catch {
+            isFollowing = prev
+            viewModel.followersCount += prev ? 1 : -1
+            followError = "Could not update follow."
+            onFollowChanged?()
+        }
+        isTogglingFollow = false
+    }
+}
+
+// MARK: - UserProfileViewContent (for navigation push, no NavigationStack wrapper)
+
+struct UserProfileViewContent: View {
+    let userId: UUID
+    var onFollowChanged: (() -> Void)?
+
+    @State private var viewModel: ProfileViewModel
+    @State private var currentUserId: UUID?
+    @State private var isFollowing = false
+    @State private var isTogglingFollow = false
+    @State private var followError: String?
+    @State private var commentActivityID: UUID?
+    @State private var showCommentSheet = false
+    @State private var showFollowersFollowingSheet = false
+    @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
+    @State private var drillDownTarget: UserProfileDrillDownTarget?
+
+    init(userId: UUID, onFollowChanged: (() -> Void)? = nil) {
+        self.userId = userId
+        self.onFollowChanged = onFollowChanged
+        _viewModel = State(initialValue: ProfileViewModel(userId: userId))
+    }
+
+    var body: some View {
+        ZStack {
+            VitisTheme.background.ignoresSafeArea()
+            if viewModel.isLoading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(VitisTheme.accent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.profile != nil {
+                ProfileContentView(
+                    viewModel: viewModel,
+                    isOwn: viewModel.isOwn,
+                    isFollowing: isFollowing,
+                    isTogglingFollow: isTogglingFollow,
+                    followError: followError,
+                    onFollowToggle: { Task { await toggleFollow() } },
+                    onActivityTap: { item in
+                        commentActivityID = item.id
+                        showCommentSheet = true
+                    },
+                    onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
+                    onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
+                    onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
+                    onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
+                )
+            } else {
+                VStack(spacing: 12) {
+                    Text("User not found")
+                        .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Text("This account may have been deleted.")
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $drillDownTarget) { target in
+            TasteProfileDrillDownView(
+                title: target.title,
+                filterType: target.filterType,
+                tastings: viewModel.allTastings
+            )
+        }
+        .task(id: userId) {
+            currentUserId = await AuthService.currentUserId()
+            await load()
+        }
+        .sheet(isPresented: $showFollowersFollowingSheet) {
+            FollowersFollowingView(
+                userId: userId,
+                currentUserId: currentUserId ?? UUID(),
+                initialTab: followersFollowingInitialTab,
+                onDismiss: { showFollowersFollowingSheet = false }
+            ) {
+                Task { await viewModel.load() }
+            }
+        }
+        .sheet(isPresented: $showCommentSheet) {
+            if let aid = commentActivityID, let current = currentUserId {
+                CommentSheetView(
+                    activityID: aid,
+                    postOwnerId: viewModel.userId,
+                    currentUserId: current,
+                    isPresented: $showCommentSheet,
+                    onPosted: { Task { await viewModel.load() } },
+                    onCommentsChanged: { Task { await viewModel.load() } }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    private func load() async {
+        await viewModel.load()
+        guard let current = currentUserId, current != userId else { return }
+        isFollowing = await SocialService.isFollowing(targetID: userId)
+    }
+
+    private func toggleFollow() async {
+        guard let current = currentUserId, current != userId else { return }
+        let prev = isFollowing
+        isFollowing.toggle()
+        viewModel.followersCount += isFollowing ? 1 : -1
+        isTogglingFollow = true
+        followError = nil
+        do {
+            if isFollowing {
+                try await SocialService.followUser(targetID: userId)
+            } else {
+                try await SocialService.unfollowUser(targetID: userId)
+            }
+            onFollowChanged?()
         } catch {
             isFollowing = prev
             viewModel.followersCount += prev ? 1 : -1
