@@ -29,7 +29,7 @@ struct ProfileView: View {
     @State private var didRunEnsure = false
     @State private var showEditSheet = false
     @State private var editVM = EditProfileViewModel()
-    @State private var showFollowersFollowingSheet = false
+    @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: DrillDownTarget?
 
@@ -49,8 +49,8 @@ struct ProfileView: View {
                         isFollowing: false,
                         onEdit: { showEditSheet = true },
                         onSignOut: { Task { await signOut() } },
-                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
-                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
+                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
+                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
                         onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) }
                     )
@@ -78,24 +78,23 @@ struct ProfileView: View {
                     tastings: viewModel?.allTastings ?? []
                 )
             }
+            .navigationDestination(isPresented: $showFollowersFollowing) {
+                if let vm = viewModel, let uid = currentUserId {
+                    FollowersFollowingViewContent(
+                        userId: vm.userId,
+                        currentUserId: uid,
+                        initialTab: followersFollowingInitialTab
+                    ) {
+                        Task { await vm.load() }
+                    }
+                }
+            }
         }
         .task { await ensureAndLoad() }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
             Task { await ensureAndLoad() }
         }
         .refreshable { await ensureAndLoad() }
-        .sheet(isPresented: $showFollowersFollowingSheet) {
-            if let vm = viewModel, let uid = currentUserId {
-                FollowersFollowingView(
-                    userId: vm.userId,
-                    currentUserId: uid,
-                    initialTab: followersFollowingInitialTab,
-                    onDismiss: { showFollowersFollowingSheet = false }
-                ) {
-                    Task { await vm.load() }
-                }
-            }
-        }
         .sheet(isPresented: $showEditSheet) {
             if let vm = viewModel, let p = vm.profile, let uid = currentUserId {
                 EditProfileView(
