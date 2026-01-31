@@ -33,7 +33,7 @@ struct UserProfileView: View {
     @State private var followError: String?
     @State private var commentActivityID: UUID?
     @State private var showCommentSheet = false
-    @State private var showFollowersFollowingSheet = false
+    @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var currentUserId: UUID?
@@ -69,8 +69,8 @@ struct UserProfileView: View {
                             commentActivityID = item.id
                             showCommentSheet = true
                         },
-                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
-                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
+                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
+                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                         onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
                     )
@@ -106,6 +106,15 @@ struct UserProfileView: View {
                     tastings: viewModel.allTastings
                 )
             }
+            .navigationDestination(isPresented: $showFollowersFollowing) {
+                FollowersFollowingViewContent(
+                    userId: userId,
+                    currentUserId: currentUserId,
+                    initialTab: followersFollowingInitialTab
+                ) {
+                    Task { await load() }
+                }
+            }
         }
         .id(userId)
         .task(id: userId) {
@@ -114,16 +123,6 @@ struct UserProfileView: View {
             #endif
             currentUserId = await AuthService.currentUserId()
             await load()
-        }
-        .sheet(isPresented: $showFollowersFollowingSheet) {
-            FollowersFollowingView(
-                userId: userId,
-                currentUserId: currentUserId,
-                initialTab: followersFollowingInitialTab,
-                onDismiss: { showFollowersFollowingSheet = false }
-            ) {
-                Task { await load() }
-            }
         }
         .sheet(isPresented: $showCommentSheet) {
             if let aid = commentActivityID {
@@ -186,7 +185,7 @@ struct UserProfileViewContent: View {
     @State private var followError: String?
     @State private var commentActivityID: UUID?
     @State private var showCommentSheet = false
-    @State private var showFollowersFollowingSheet = false
+    @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: UserProfileDrillDownTarget?
 
@@ -216,8 +215,8 @@ struct UserProfileViewContent: View {
                         commentActivityID = item.id
                         showCommentSheet = true
                     },
-                    onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
-                    onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
+                    onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
+                    onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                     onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
                 )
@@ -243,19 +242,18 @@ struct UserProfileViewContent: View {
                 tastings: viewModel.allTastings
             )
         }
-        .task(id: userId) {
-            currentUserId = await AuthService.currentUserId()
-            await load()
-        }
-        .sheet(isPresented: $showFollowersFollowingSheet) {
-            FollowersFollowingView(
+        .navigationDestination(isPresented: $showFollowersFollowing) {
+            FollowersFollowingViewContent(
                 userId: userId,
-                currentUserId: currentUserId ?? UUID(),
-                initialTab: followersFollowingInitialTab,
-                onDismiss: { showFollowersFollowingSheet = false }
+                currentUserId: currentUserId,
+                initialTab: followersFollowingInitialTab
             ) {
                 Task { await viewModel.load() }
             }
+        }
+        .task(id: userId) {
+            currentUserId = await AuthService.currentUserId()
+            await load()
         }
         .sheet(isPresented: $showCommentSheet) {
             if let aid = commentActivityID, let current = currentUserId {

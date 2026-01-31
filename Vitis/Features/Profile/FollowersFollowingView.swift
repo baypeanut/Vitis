@@ -275,3 +275,151 @@ private struct FollowListRowView: View {
         isToggling = false
     }
 }
+
+// MARK: - FollowersFollowingViewContent (for navigation push, no NavigationStack wrapper)
+
+struct FollowersFollowingViewContent: View {
+    let userId: UUID
+    var currentUserId: UUID?
+    var initialTab: FollowersFollowingView.Tab = .followers
+    var onFollowChanged: (() -> Void)?
+
+    @State private var tab: FollowersFollowingView.Tab = .followers
+    @State private var followers: [SocialService.FollowListUser] = []
+    @State private var following: [SocialService.FollowListUser] = []
+    @State private var isLoadingFollowers = true
+    @State private var isLoadingFollowing = true
+    @State private var followersOffset = 0
+    @State private var followingOffset = 0
+    @State private var selectedUserId: UUID?
+    private let pageSize = 30
+
+    var body: some View {
+        ZStack {
+            VitisTheme.background.ignoresSafeArea()
+            VStack(spacing: 0) {
+                tabBar
+                TabView(selection: $tab) {
+                    listContent(users: followers, isLoading: isLoadingFollowers, emptyMessage: "No followers yet.", currentUserId: currentUserId, onUserTap: { selectedUserId = $0 }, onLoad: { loadFollowers(reset: true) }, onNearBottom: { loadFollowers(reset: false) })
+                    .tag(FollowersFollowingView.Tab.followers)
+
+                    listContent(users: following, isLoading: isLoadingFollowing, emptyMessage: "Not following anyone yet.", currentUserId: currentUserId, onUserTap: { selectedUserId = $0 }, onLoad: { loadFollowing(reset: true) }, onNearBottom: { loadFollowing(reset: false) })
+                    .tag(FollowersFollowingView.Tab.following)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(item: Binding(
+            get: { selectedUserId.map { IdentifiableUUID(id: $0) } },
+            set: { selectedUserId = $0?.id }
+        )) { wrap in
+            UserProfileView(userId: wrap.id, onDismiss: { selectedUserId = nil }) {
+                onFollowChanged?()
+            }
+        }
+        .task {
+            tab = initialTab
+            loadFollowers(reset: true)
+            loadFollowing(reset: true)
+        }
+        .onChange(of: initialTab) { _, t in tab = t }
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(FollowersFollowingView.Tab.allCases, id: \.self) { t in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { tab = t }
+                } label: {
+                    Text(t.rawValue)
+                        .font(VitisTheme.uiFont(size: 15, weight: tab == t ? .semibold : .regular))
+                        .foregroundStyle(tab == t ? VitisTheme.accent : VitisTheme.secondaryText)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+    }
+
+    @ViewBuilder
+    private func listContent(
+        users: [SocialService.FollowListUser],
+        isLoading: Bool,
+        emptyMessage: String,
+        currentUserId: UUID?,
+        onUserTap: @escaping (UUID) -> Void,
+        onLoad: @escaping () -> Void,
+        onNearBottom: @escaping () -> Void
+    ) -> some View {
+        if isLoading && users.isEmpty {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(VitisTheme.accent)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if users.isEmpty {
+            Text(emptyMessage)
+                .font(VitisTheme.uiFont(size: 15))
+                .foregroundStyle(VitisTheme.secondaryText)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(users.enumerated()), id: \.element.id) { idx, u in
+                        FollowListRowView(user: u, currentUserId: currentUserId) {
+                            onFollowChanged?()
+                            updateUserInList(id: u.id, isFollowing: !u.isFollowing)
+                        } onTap: {
+                            onUserTap(u.id)
+                        }
+                        if idx < users.count - 1 {
+                            Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
+                        }
+                    }
+                    Color.clear.frame(height: 20)
+                        .onAppear { onNearBottom() }
+                }
+                .padding(.top, 8)
+            }
+        }
+    }
+
+    private func updateUserInList(id: UUID, isFollowing: Bool) {
+        if let i = followers.firstIndex(where: { $0.id == id }) {
+            followers[i] = SocialService.FollowListUser(id: followers[i].id, username: followers[i].username, fullName: followers[i].fullName, avatarUrl: followers[i].avatarUrl, isFollowing: isFollowing)
+        }
+        if let i = following.firstIndex(where: { $0.id == id }) {
+            following[i] = SocialService.FollowListUser(id: following[i].id, username: following[i].username, fullName: following[i].fullName, avatarUrl: following[i].avatarUrl, isFollowing: isFollowing)
+        }
+    }
+
+    private func loadFollowers(reset: Bool) {
+        if reset { followersOffset = 0 }
+        Task {
+            if reset { isLoadingFollowers = true }
+            do {
+                let new = try await SocialService.fetchFollowers(userId: userId, limit: pageSize, offset: followersOffset)
+                if reset { followers = new } else { followers.append(contentsOf: new) }
+                followersOffset += new.count
+            } catch {}
+            isLoadingFollowers = false
+        }
+    }
+
+    private func loadFollowing(reset: Bool) {
+        if reset { followingOffset = 0 }
+        Task {
+            if reset { isLoadingFollowing = true }
+            do {
+                let new = try await SocialService.fetchFollowing(userId: userId, limit: pageSize, offset: followingOffset)
+                if reset { following = new } else { following.append(contentsOf: new) }
+                followingOffset += new.count
+            } catch {}
+            isLoadingFollowing = false
+        }
+    }
+}
