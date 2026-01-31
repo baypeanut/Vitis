@@ -12,31 +12,33 @@ struct OnboardingFlowView: View {
     @State private var showDevLogin = false
 
     var body: some View {
-        ZStack {
-            VitisTheme.background.ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                VitisTheme.background.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                toolbar
-                stepContent
-                Spacer(minLength: 24)
-                ctaSection
-            }
+                VStack(spacing: 0) {
+                    toolbar
+                    stepContent
+                    Spacer(minLength: 24)
+                    ctaSection
+                }
 
-            if viewModel.isLoading {
-                Color.black.opacity(0.2).ignoresSafeArea()
-                ProgressView().progressViewStyle(.circular).tint(.white).scaleEffect(1.2)
+                if viewModel.isLoading {
+                    Color.black.opacity(0.2).ignoresSafeArea()
+                    ProgressView().progressViewStyle(.circular).tint(.white).scaleEffect(1.2)
+                }
             }
-        }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.currentStep)
-        .scrollDismissesKeyboard(.interactively)
-        .sheet(isPresented: $showDevLogin) {
-            AuthLoginView(isPresented: $showDevLogin)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .vitisDeepLinkResetPassword)) { _ in
-            showDevLogin = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .vitisShowLogIn)) { _ in
-            showDevLogin = true
+            .animation(.easeInOut(duration: 0.2), value: viewModel.currentStep)
+            .scrollDismissesKeyboard(.interactively)
+            .navigationDestination(isPresented: $showDevLogin) {
+                AuthLoginViewContent()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .vitisDeepLinkResetPassword)) { _ in
+                showDevLogin = false
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .vitisShowLogIn)) { _ in
+                showDevLogin = true
+            }
         }
     }
 
