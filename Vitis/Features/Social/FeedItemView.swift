@@ -11,8 +11,11 @@ struct FeedItemView: View {
     let item: FeedItem
     let parts: (before: String, name: String, after: String)
     let onCheers: () -> Void
-    let onComment: () -> Void
+    var hasWishlisted: Bool = false
+    var onWishlistToggle: (() -> Void)? = nil
+    var trustHint: String? = nil
     var onUsernameTap: (() -> Void)? = nil
+    var onComment: (() -> Void)? = nil
     var onDelete: (() -> Void)? = nil
     var canDelete: Bool = false
 
@@ -50,17 +53,24 @@ struct FeedItemView: View {
     // MARK: - Header Row
     
     private var headerRow: some View {
-        HStack(spacing: 12) {
-            avatar
-            HStack(spacing: 4) {
-                Text(item.username)
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
-                Text("tasted")
-                    .font(VitisTheme.uiFont(size: 15))
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                avatar
+                HStack(spacing: 4) {
+                    Text(item.username)
+                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                        .foregroundStyle(VitisTheme.accent)
+                    Text("tasted")
+                        .font(VitisTheme.uiFont(size: 15))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                }
+                Spacer()
+            }
+            if let hint = trustHint, !hint.isEmpty {
+                Text(hint)
+                    .font(VitisTheme.uiFont(size: 12))
                     .foregroundStyle(VitisTheme.secondaryText)
             }
-            Spacer()
         }
     }
     
@@ -112,7 +122,7 @@ struct FeedItemView: View {
                         .font(VitisTheme.producerSerifFont())
                         .foregroundStyle(VitisTheme.secondaryText)
                     
-                    Text(item.wineName)
+                    Text(VitisTheme.displayWineName(item.wineName))
                         .font(VitisTheme.wineNameFont())
                         .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
                     
@@ -220,23 +230,34 @@ struct FeedItemView: View {
             }
             .buttonStyle(.plain)
 
-            Button {
-                onComment()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "bubble.right")
-                        .font(.system(size: 14))
-                    Text("Comment")
-                        .font(VitisTheme.uiFont(size: 13))
-                    if item.commentCount > 0 {
-                        Text("\(item.commentCount)")
+            if item.activityType == .hadWine, let onWishlistToggle {
+                Button {
+                    onWishlistToggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 14))
+                        Text("Want to Try")
                             .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
                     }
+                    .foregroundStyle(hasWishlisted ? VitisTheme.accent : VitisTheme.secondaryText)
                 }
-                .foregroundStyle(VitisTheme.secondaryText)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            if let onComment {
+                Button {
+                    onComment()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.right")
+                            .font(.system(size: 14))
+                        Text("Comment")
+                            .font(VitisTheme.uiFont(size: 13))
+                    }
+                    .foregroundStyle(VitisTheme.secondaryText)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
     

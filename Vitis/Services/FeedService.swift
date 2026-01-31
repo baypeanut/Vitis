@@ -81,7 +81,6 @@ final class FeedService {
             .value
         let ids = rows.map(\.id)
         let likeCounts: [UUID: Int] = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
-        let commentCounts: [UUID: Int] = (try? await SocialService.fetchCommentCounts(activityIDs: ids)) ?? [:]
         var likedIDs: Set<UUID> = []
         if let uid = await AuthService.currentUserId() {
             likedIDs = (try? await SocialService.fetchLikedActivityIDs(userId: uid)) ?? []
@@ -90,7 +89,6 @@ final class FeedService {
             FeedItem.from(
                 row: r,
                 cheersCount: likeCounts[r.id] ?? 0,
-                commentCount: commentCounts[r.id] ?? 0,
                 hasCheered: likedIDs.contains(r.id)
             )
         }

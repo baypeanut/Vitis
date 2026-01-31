@@ -70,4 +70,11 @@ enum VitisTheme {
     static func compactTimestamp(_ date: Date) -> String {
         compactTimestampFormatter.string(from: date)
     }
+
+    /// Fix common wine name typos for display.
+    static func displayWineName(_ name: String) -> String {
+        var s = name
+        if s.contains("Cabarnet") { s = s.replacingOccurrences(of: "Cabarnet", with: "Cabernet") }
+        return s
+    }
 }

@@ -76,18 +76,20 @@ enum TastingService {
             category: w.category
         )
 
-        // Insert activity_feed row for "had_wine"
+        // Insert activity_feed row for "had_wine" with tasting_id for deterministic join
         struct ActivityInsert: Encodable {
             let user_id: UUID
             let activity_type: String
             let wine_id: UUID
             let content_text: String?
+            let tasting_id: UUID?
         }
         let activityPayload = ActivityInsert(
             user_id: userId,
             activity_type: "had_wine",
             wine_id: wineId,
-            content_text: noteTags?.isEmpty == false ? noteTags!.joined(separator: ", ") : nil
+            content_text: noteTags?.isEmpty == false ? noteTags!.joined(separator: ", ") : nil,
+            tasting_id: row.id
         )
         try await supabase
             .from("activity_feed")

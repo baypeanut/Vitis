@@ -74,7 +74,8 @@ struct UserProfileView: View {
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                         onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
-                        onRatedTap: { showUserCellar = true }
+                        onRatedTap: { showUserCellar = true },
+                        onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -228,7 +229,8 @@ struct UserProfileViewContent: View {
                     onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                     onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
-                    onRatedTap: { showUserCellar = true }
+                    onRatedTap: { showUserCellar = true },
+                    onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
                 )
             } else {
                 VStack(spacing: 12) {

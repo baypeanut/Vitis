@@ -9,13 +9,13 @@ import Foundation
 
 enum WineSearchService {
     private static let base = "https://world.openfoodfacts.org/cgi/search.pl"
-    private static let pageSize = 10
+    private static let pageSize = 20
     private static let userAgent = "VitisApp - iOS - Version 1.0 - CSProject"
     private static let timeout: TimeInterval = 4
     private static let retryDelay: UInt64 = 500_000_000  // 0.5s
 
-    /// Search OFF by query; tag-based category filter for "wines". Retries once on timeout.
-    static func search(query: String) async throws -> [OFFProduct] {
+    /// Search OFF by query; tag-based category filter for "wines". page 1-based. Retries once on timeout.
+    static func search(query: String, page: Int = 1) async throws -> [OFFProduct] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return [] }
         var components = URLComponents(string: base)!
@@ -27,7 +27,8 @@ enum WineSearchService {
             URLQueryItem(name: "search_simple", value: "1"),
             URLQueryItem(name: "action", value: "process"),
             URLQueryItem(name: "json", value: "1"),
-            URLQueryItem(name: "page_size", value: "\(pageSize)")
+            URLQueryItem(name: "page_size", value: "\(pageSize)"),
+            URLQueryItem(name: "page", value: "\(max(1, page))")
         ]
         guard let url = components.url else { return [] }
         var request = URLRequest(url: url)
@@ -56,7 +57,7 @@ enum WineSearchService {
                     #if DEBUG
                     print("DEBUG: Retry failed – \(retryErr)")
                     #endif
-                    throw NSError(domain: "WineSearchService", code: -1001, userInfo: [NSLocalizedDescriptionKey: "Arama zaman aşımına uğradı. Lütfen tekrar deneyin."])
+                    throw NSError(domain: "WineSearchService", code: -1001, userInfo: [NSLocalizedDescriptionKey: ErrorMessage.networkTimeout])
                 }
             } else {
                 #if DEBUG
@@ -65,11 +66,11 @@ enum WineSearchService {
                 if let urlError = error as? URLError {
                     switch urlError.code {
                     case .timedOut:
-                        throw NSError(domain: "WineSearchService", code: -1001, userInfo: [NSLocalizedDescriptionKey: "Arama zaman aşımına uğradı. Lütfen tekrar deneyin."])
+                        throw NSError(domain: "WineSearchService", code: -1001, userInfo: [NSLocalizedDescriptionKey: ErrorMessage.networkTimeout])
                     case .notConnectedToInternet, .networkConnectionLost:
-                        throw NSError(domain: "WineSearchService", code: -1009, userInfo: [NSLocalizedDescriptionKey: "İnternet bağlantısı yok."])
+                        throw NSError(domain: "WineSearchService", code: -1009, userInfo: [NSLocalizedDescriptionKey: ErrorMessage.noConnection])
                     default:
-                        throw NSError(domain: "WineSearchService", code: -1000, userInfo: [NSLocalizedDescriptionKey: "Ağ hatası: \(urlError.localizedDescription)"])
+                        throw NSError(domain: "WineSearchService", code: -1000, userInfo: [NSLocalizedDescriptionKey: ErrorMessage.unknown])
                     }
                 }
                 throw error

@@ -7,6 +7,11 @@
 //
 
 import Foundation
+import UIKit
+
+private func isCancellation(_ error: Error) -> Bool {
+    error is CancellationError || (error as? URLError)?.code == .cancelled
+}
 
 @MainActor
 @Observable
@@ -23,6 +28,9 @@ final class ProfileViewModel {
     var tasteGrapes: [TasteProfileItem] = []
     var tasteRegions: [TasteProfileItem] = []
     var tasteStyles: [TasteProfileItem] = []
+    var wishlistPreview: [CellarItem] = []
+    var myWishlistWineIds: Set<UUID> = []
+    var wishlistToggleError: String?
     var lastActivityDate: Date?
     var isLoadingInitial = true
     var isRefreshing = false
@@ -51,6 +59,7 @@ final class ProfileViewModel {
             isRefreshing = true
         }
         errorMessage = nil
+        wishlistToggleError = nil
         #if DEBUG
         print("[ProfileViewModel] load start userId=\(uid)")
         #endif
@@ -62,6 +71,8 @@ final class ProfileViewModel {
         var newTastings: [Tasting]?
         var newTasteProfile: (grapes: [TasteProfileItem], regions: [TasteProfileItem], styles: [TasteProfileItem])?
         var newLastActivityDate: Date?
+        var newWishlistPreview: [CellarItem]?
+        var newMyWishlistWineIds: Set<UUID>?
 
         let current = await AuthService.currentUserId()
         guard loadId == currentLoadId else {
@@ -110,6 +121,22 @@ final class ProfileViewModel {
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
             newLastActivityDate = last
         }
+        guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+
+        do {
+            let items = try await CellarService.fetchWishlist(userId: uid, limit: 15)
+            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+            newWishlistPreview = items
+        } catch {
+            if !isCancellation(error) { errorMessage = error.localizedDescription }
+        }
+        guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+
+        if let cur = current, cur != uid {
+            let ids = (try? await CellarService.fetchWishlistWineIds(userId: cur)) ?? []
+            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+            newMyWishlistWineIds = ids
+        }
 
         if loadId != currentLoadId {
             if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }
@@ -121,6 +148,8 @@ final class ProfileViewModel {
         if let f = newFollowersCount { followersCount = f }
         if let f = newFollowingCount { followingCount = f }
         if let t = newTastings { allTastings = t }
+        if let w = newWishlistPreview { wishlistPreview = w }
+        if let w = newMyWishlistWineIds { myWishlistWineIds = w }
         if let tp = newTasteProfile {
             tasteGrapes = tp.grapes
             tasteRegions = tp.regions
@@ -130,5 +159,26 @@ final class ProfileViewModel {
 
         isLoadingInitial = false
         isRefreshing = false
+    }
+
+    /// Toggle wishlist from profile (when viewing another user's Want to Try). Optimistic update; reverts on failure.
+    func toggleWishlistFromProfile(_ item: CellarItem) async {
+        guard let cur = await AuthService.currentUserId(), cur != userId else { return }
+        let wineId = item.wineId
+        let wasIn = myWishlistWineIds.contains(wineId)
+        wishlistToggleError = nil
+        myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
+        UIImpactFeedbackGenerator(style: UIImpactFeedbackGenerator.FeedbackStyle.light).impactOccurred()
+        do {
+            if wasIn {
+                try await CellarService.removeFromWishlist(userId: cur, wineId: wineId)
+            } else {
+                try await CellarService.addToWishlist(userId: cur, wineId: wineId, sourceUserId: userId)
+            }
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+        } catch {
+            myWishlistWineIds = wasIn ? myWishlistWineIds.union([wineId]) : myWishlistWineIds.filter { $0 != wineId }
+            wishlistToggleError = "Could not update."
+        }
     }
 }
