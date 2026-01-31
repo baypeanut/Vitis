@@ -78,19 +78,24 @@ enum SocialService {
 
     // MARK: - Comments
 
-    /// Add a comment. Inserts into comments; multiple comments per user/activity allowed.
-    static func addComment(activityID: UUID, body: String) async throws {
-        guard let uid = await AuthService.currentUserId() else { return }
+    /// Add a comment. Inserts into comments; returns the new comment id.
+    static func addComment(activityID: UUID, body: String) async throws -> UUID {
+        guard let uid = await AuthService.currentUserId() else { throw NSError(domain: "SocialService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not signed in"]) }
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { throw NSError(domain: "SocialService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Empty body"]) }
         struct Insert: Encodable {
             let activity_id: UUID
             let user_id: UUID
             let body: String
         }
-        try await supabase.from("comments")
+        struct Row: Decodable { let id: UUID }
+        let rows: [Row] = try await supabase.from("comments")
             .insert(Insert(activity_id: activityID, user_id: uid, body: trimmed))
+            .select("id")
             .execute()
+            .value
+        guard let id = rows.first?.id else { throw NSError(domain: "SocialService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Insert failed"]) }
+        return id
     }
 
     /// Fetch comments for an activity from comments table. JOIN profiles for full_name, avatar_url.
@@ -132,6 +137,14 @@ enum SocialService {
                 createdAt: r.created_at
             )
         }
+    }
+
+    /// Delete a comment (own comments only). Caller must verify user_id.
+    static func deleteComment(commentId: UUID) async throws {
+        try await supabase.from("comments")
+            .delete()
+            .eq("id", value: commentId)
+            .execute()
     }
 
     /// Fetch comment counts per activity. Returns [activityID: count].
@@ -202,6 +215,76 @@ enum SocialService {
             .eq("follower_id", value: userId)
             .execute().value) ?? []
         return rows.count
+    }
+
+    // MARK: - Followers / Following Lists
+
+    struct FollowListUser: Identifiable, Sendable {
+        let id: UUID
+        let username: String
+        let fullName: String?
+        let avatarUrl: String?
+        var isFollowing: Bool
+    }
+
+    /// Fetch followers of a user (who follows them). Paginated.
+    static func fetchFollowers(userId: UUID, limit: Int = 30, offset: Int = 0) async throws -> [FollowListUser] {
+        struct Row: Decodable { let follower_id: UUID; let created_at: Date }
+        let rows: [Row] = try await supabase.from("follows")
+            .select("follower_id, created_at")
+            .eq("followed_id", value: userId)
+            .order("created_at", ascending: false)
+            .range(from: offset, to: offset + limit - 1)
+            .execute().value
+
+        let ids = rows.map(\.follower_id)
+        let profiles = await fetchProfilesForIds(ids)
+        let current = await AuthService.currentUserId()
+        var result: [FollowListUser] = []
+        for uid in ids {
+            let p = profiles[uid]
+            let username = p?.username ?? "Unknown"
+            let fullName = p?.full_name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? p?.full_name : nil
+            let isFol = (current != nil && uid != current) ? (await isFollowing(targetID: uid)) : false
+            result.append(FollowListUser(id: uid, username: username, fullName: fullName, avatarUrl: p?.avatar_url, isFollowing: isFol))
+        }
+        return result
+    }
+
+    /// Fetch users that a user follows. Paginated.
+    static func fetchFollowing(userId: UUID, limit: Int = 30, offset: Int = 0) async throws -> [FollowListUser] {
+        struct Row: Decodable { let followed_id: UUID; let created_at: Date }
+        let rows: [Row] = try await supabase.from("follows")
+            .select("followed_id, created_at")
+            .eq("follower_id", value: userId)
+            .order("created_at", ascending: false)
+            .range(from: offset, to: offset + limit - 1)
+            .execute().value
+
+        let ids = rows.map(\.followed_id)
+        let profiles = await fetchProfilesForIds(ids)
+        let current = await AuthService.currentUserId()
+        var result: [FollowListUser] = []
+        for uid in ids {
+            let p = profiles[uid]
+            let username = p?.username ?? "Unknown"
+            let fullName = p?.full_name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? p?.full_name : nil
+            let isFol = (current != nil && uid != current) ? (await isFollowing(targetID: uid)) : true
+            result.append(FollowListUser(id: uid, username: username, fullName: fullName, avatarUrl: p?.avatar_url, isFollowing: isFol))
+        }
+        return result
+    }
+
+    private static func fetchProfilesForIds(_ ids: [UUID]) async -> [UUID: (username: String?, full_name: String?, avatar_url: String?)] {
+        guard !ids.isEmpty else { return [:] }
+        struct PRow: Decodable { let id: UUID; let username: String?; let full_name: String?; let avatar_url: String? }
+        let rows: [PRow] = (try? await supabase.from("profiles")
+            .select("id, username, full_name, avatar_url")
+            .in("id", values: ids)
+            .execute().value) ?? []
+        var out: [UUID: (username: String?, full_name: String?, avatar_url: String?)] = [:]
+        for r in rows { out[r.id] = (r.username, r.full_name, r.avatar_url) }
+        return out
     }
 }
 

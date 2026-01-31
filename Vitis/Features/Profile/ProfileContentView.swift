@@ -19,16 +19,28 @@ struct ProfileContentView: View {
     var onDismiss: (() -> Void)?
     var onActivityTap: ((FeedItem) -> Void)?
     var onFollowChanged: (() -> Void)?
+    var onFollowersTap: (() -> Void)?
+    var onFollowingTap: (() -> Void)?
+    var onGrapeTap: ((String) -> Void)?
+    var onRegionTap: ((String) -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
-    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
+    enum TasteSubTab: String, CaseIterable { case grapes = "Grapes"; case regions = "Regions" }
 
     @State private var mainTab: MainTab = .recentActivity
-    @State private var tasteSubTab: TasteSubTab = .regions
+    @State private var tasteSubTab: TasteSubTab = .grapes
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                if let err = viewModel.errorMessage {
+                    Text(err)
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(.red)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.08))
+                }
                 if let p = viewModel.profile {
                     header(p)
                     tasteSnapshotCard(p)
@@ -106,8 +118,18 @@ struct ProfileContentView: View {
     private var statsRow: some View {
         HStack(spacing: 16) {
             statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
-            statItem(value: "\(viewModel.followersCount)", label: "Followers")
-            statItem(value: "\(viewModel.followingCount)", label: "Following")
+            Button {
+                onFollowersTap?()
+            } label: {
+                statItem(value: "\(viewModel.followersCount)", label: "Followers")
+            }
+            .buttonStyle(.plain)
+            Button {
+                onFollowingTap?()
+            } label: {
+                statItem(value: "\(viewModel.followingCount)", label: "Following")
+            }
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
     }
@@ -276,14 +298,14 @@ struct ProfileContentView: View {
 
     private var recentActivityList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.recentTastings.isEmpty {
+            if viewModel.recentTastingsTop5.isEmpty {
                 Text("No tastings yet.")
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.secondaryText)
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity)
             } else {
-                ForEach(viewModel.recentTastings) { tasting in
+                ForEach(viewModel.recentTastingsTop5) { tasting in
                     tastingActivityRow(tasting)
                     Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
                 }
@@ -429,8 +451,8 @@ struct ProfileContentView: View {
     private var tasteProfileList: some View {
         let items: [TasteProfileItem] = {
             switch tasteSubTab {
+            case .grapes: return viewModel.tasteGrapes
             case .regions: return viewModel.tasteRegions
-            case .styles: return viewModel.tasteStyles
             }
         }()
         if items.isEmpty {
@@ -442,30 +464,49 @@ struct ProfileContentView: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { it in
-                    HStack {
-                        Text(it.name)
-                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        HStack(spacing: 8) {
-                            if let avgRating = it.averageRating {
-                                Text(String(format: "%.1f", avgRating))
-                                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                                    .foregroundStyle(VitisTheme.accent)
-                                Text("·")
-                                    .font(VitisTheme.uiFont(size: 14))
-                                    .foregroundStyle(VitisTheme.secondaryText)
-                            }
-                            Text("\(it.count) \(it.count == 1 ? "tasting" : "tastings")")
-                                .font(VitisTheme.uiFont(size: 14))
-                                .foregroundStyle(VitisTheme.secondaryText)
+                    Button {
+                        if tasteSubTab == .grapes {
+                            onGrapeTap?(it.name)
+                        } else {
+                            onRegionTap?(it.name)
                         }
+                    } label: {
+                        tasteProfileRow(it, isGrapes: tasteSubTab == .grapes)
                     }
-                    .padding(.vertical, 12)
+                    .buttonStyle(.plain)
                     Rectangle().fill(VitisTheme.border).frame(height: 1)
                 }
             }
         }
+    }
+
+    private func tasteProfileRow(_ it: TasteProfileItem, isGrapes: Bool) -> some View {
+        let nameColor: Color = isGrapes
+            ? WineColorResolver.resolveWineDisplayColor(wineName: it.name)
+            : .primary
+        let ratingColor: Color = isGrapes
+            ? WineColorResolver.resolveWineDisplayColor(wineName: it.name)
+            : WineColorResolver.resolveWineDisplayColor(category: it.dominantWineCategory, wineName: nil)
+        return HStack {
+            Text(it.name)
+                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(nameColor)
+            Spacer()
+            HStack(spacing: 8) {
+                if let avgRating = it.averageRating {
+                    Text(String(format: "%.1f", avgRating))
+                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                        .foregroundStyle(ratingColor)
+                    Text("·")
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                }
+                Text("\(it.count) \(it.count == 1 ? "tasting" : "tastings")")
+                    .font(VitisTheme.uiFont(size: 14))
+                    .foregroundStyle(VitisTheme.secondaryText)
+            }
+        }
+        .padding(.vertical, 12)
     }
 }
 

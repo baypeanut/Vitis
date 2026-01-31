@@ -24,6 +24,7 @@ struct FeedRowPayload: Codable, Sendable {
     let wineLabelUrl: String?
     let wineRegion: String?
     let wineCategory: String?
+    let wineVariety: String?
     let targetWineName: String?
     let targetWineProducer: String?
     let targetWineVintage: Int?
@@ -48,6 +49,7 @@ struct FeedRowPayload: Codable, Sendable {
         case wineLabelUrl = "wine_label_url"
         case wineRegion = "wine_region"
         case wineCategory = "wine_category"
+        case wineVariety = "wine_variety"
         case targetWineName = "target_wine_name"
         case targetWineProducer = "target_wine_producer"
         case targetWineVintage = "target_wine_vintage"
@@ -74,6 +76,7 @@ extension FeedItem {
             wineLabelURL: row.wineLabelUrl,
             wineRegion: row.wineRegion,
             wineCategory: row.wineCategory,
+            wineVariety: row.wineVariety,
             targetWineName: row.targetWineName,
             targetWineProducer: row.targetWineProducer,
             targetWineVintage: row.targetWineVintage,

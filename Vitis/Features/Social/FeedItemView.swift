@@ -114,7 +114,7 @@ struct FeedItemView: View {
                     
                     Text(item.wineName)
                         .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(wineNameColor(category: item.wineCategory, wineName: item.wineName))
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
                     
                     if let vintage = item.wineVintage {
                         Text(String(vintage))
@@ -183,67 +183,19 @@ struct FeedItemView: View {
                     default:
                         Image(systemName: "wineglass.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(thumbnailTint(category: category, wineName: wineName))
+                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
                     }
                 }
                 .frame(width: size, height: size)
             } else {
                 Image(systemName: "wineglass.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(thumbnailTint(category: category, wineName: wineName))
+                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
             }
         }
         .frame(width: size, height: size)
     }
     
-    /// Wine name text color by category; if category is nil/empty, infer from wine name. Used for wine name only.
-    private func wineNameColor(category: String?, wineName: String?) -> Color {
-        let cat = category?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
-        let name = wineName?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
-        // First try explicit category
-        if !cat.isEmpty {
-            if cat.contains("red") || cat.contains("rouge") {
-                return Color(red: 0x6B/255, green: 0x0F/255, blue: 0x1A/255) // #6B0F1A
-            }
-            if cat.contains("white") || cat.contains("blanc") {
-                return Color(red: 0x7D/255, green: 0x62/255, blue: 0x20/255) // #7D6220
-            }
-            if cat.contains("rose") || cat.contains("rosé") {
-                return Color(red: 0xB0/255, green: 0x4A/255, blue: 0x6A/255) // #B04A6A
-            }
-            if cat.contains("orange") {
-                return Color(red: 0xB4/255, green: 0x4E/255, blue: 0x1D/255) // #B44E1D
-            }
-            if cat.contains("sparkling") || cat.contains("prosecco") {
-                return Color(red: 0xA8/255, green: 0x95/255, blue: 0x6A/255) // #A8956A
-            }
-        }
-        // Fallback: infer from wine name when category is missing (e.g. API returns nil)
-        if !name.isEmpty {
-            let redGrapes = ["shiraz", "syrah", "malbec", "cabernet", "merlot", "pinot noir", "nebbiolo", "sangiovese", "tempranillo", "zinfandel", "grenache", "mourvèdre", "petit verdot"]
-            let whiteGrapes = ["chardonnay", "sauvignon", "pinot grigio", "pinot gris", "riesling", "viognier", "albariño", "grüner", "vermentino", "chenin"]
-            let sparklingNames = ["prosecco", "champagne", "cava", "crémant", "sparkling", "brut", "sec"]
-            let roseNames = ["rosé", "rose", "rosado", "blush"]
-            if redGrapes.contains(where: { name.contains($0) }) {
-                return Color(red: 0x6B/255, green: 0x0F/255, blue: 0x1A/255)
-            }
-            if whiteGrapes.contains(where: { name.contains($0) }) {
-                return Color(red: 0x7D/255, green: 0x62/255, blue: 0x20/255)
-            }
-            if sparklingNames.contains(where: { name.contains($0) }) {
-                return Color(red: 0xA8/255, green: 0x95/255, blue: 0x6A/255)
-            }
-            if roseNames.contains(where: { name.contains($0) }) {
-                return Color(red: 0xB0/255, green: 0x4A/255, blue: 0x6A/255)
-            }
-        }
-        return .primary
-    }
-    
-    /// Thumbnail icon tint; uses same category/name logic as wine name color, with opacity.
-    private func thumbnailTint(category: String?, wineName: String?) -> Color {
-        wineNameColor(category: category, wineName: wineName).opacity(0.75)
-    }
     
     // MARK: - Actions Row
     

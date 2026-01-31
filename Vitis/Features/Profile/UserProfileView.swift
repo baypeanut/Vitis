@@ -8,6 +8,12 @@
 
 import SwiftUI
 
+private struct UserProfileDrillDownTarget: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let isGrape: Bool
+}
+
 struct UserProfileView: View {
     let userId: UUID
     var onDismiss: () -> Void
@@ -19,6 +25,9 @@ struct UserProfileView: View {
     @State private var followError: String?
     @State private var commentActivityID: UUID?
     @State private var showCommentSheet = false
+    @State private var showFollowersFollowingSheet = false
+    @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
+    @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var currentUserId: UUID?
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
@@ -51,7 +60,11 @@ struct UserProfileView: View {
                         onActivityTap: { item in
                             commentActivityID = item.id
                             showCommentSheet = true
-                        }
+                        },
+                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowingSheet = true },
+                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowingSheet = true },
+                        onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, isGrape: true) },
+                        onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, isGrape: false) }
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -79,6 +92,13 @@ struct UserProfileView: View {
                 }
             }
         }
+        .navigationDestination(item: $drillDownTarget) { target in
+            TasteProfileDrillDownView(
+                title: target.title,
+                filterType: target.isGrape ? .grape(target.title) : .region(target.title),
+                tastings: viewModel.allTastings
+            )
+        }
         .id(userId)
         .task(id: userId) {
             #if DEBUG
@@ -87,15 +107,26 @@ struct UserProfileView: View {
             currentUserId = await AuthService.currentUserId()
             await load()
         }
+        .sheet(isPresented: $showFollowersFollowingSheet) {
+            FollowersFollowingView(
+                userId: userId,
+                currentUserId: currentUserId,
+                initialTab: followersFollowingInitialTab,
+                onDismiss: { showFollowersFollowingSheet = false }
+            ) {
+                Task { await load() }
+            }
+        }
         .sheet(isPresented: $showCommentSheet) {
             if let aid = commentActivityID {
                 CommentSheetView(
                     activityID: aid,
+                    postOwnerId: userId,
                     currentUserId: currentUserId,
-                    isPresented: $showCommentSheet
-                ) {
-                    onFollowChanged?()
-                }
+                    isPresented: $showCommentSheet,
+                    onPosted: { onFollowChanged?() },
+                    onCommentsChanged: { onFollowChanged?() }
+                )
                 .presentationDetents([.medium, .large])
             }
         }
@@ -114,17 +145,21 @@ struct UserProfileView: View {
         guard !isTogglingFollow else { return }
         isTogglingFollow = true
         followError = nil
+        let prev = isFollowing
+        isFollowing.toggle()
+        viewModel.followersCount += isFollowing ? 1 : -1
+        onFollowChanged?()
         do {
-            if isFollowing {
+            if prev {
                 try await SocialService.unfollowUser(targetID: userId)
-                isFollowing = false
             } else {
                 try await SocialService.followUser(targetID: userId)
-                isFollowing = true
             }
-            onFollowChanged?()
         } catch {
+            isFollowing = prev
+            viewModel.followersCount += prev ? 1 : -1
             followError = "Could not update follow."
+            onFollowChanged?()
         }
         isTogglingFollow = false
     }

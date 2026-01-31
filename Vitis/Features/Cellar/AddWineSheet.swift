@@ -197,7 +197,7 @@ struct AddWineSheet: View {
                         .foregroundStyle(VitisTheme.secondaryText)
                     Text(wine.name)
                         .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: wine))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -230,7 +230,7 @@ struct AddWineSheet: View {
                         .foregroundStyle(VitisTheme.secondaryText)
                     Text(p.productName ?? "Unknown")
                         .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

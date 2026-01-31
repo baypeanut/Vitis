@@ -44,7 +44,7 @@ struct TastingRateView: View {
                 .foregroundStyle(VitisTheme.secondaryText)
             Text(wine.name)
                 .font(VitisTheme.wineNameFont())
-                .foregroundStyle(.primary)
+                .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: wine))
             if let v = wine.vintage {
                 Text(String(v))
                     .font(VitisTheme.detailFont())

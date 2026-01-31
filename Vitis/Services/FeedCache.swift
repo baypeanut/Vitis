@@ -73,11 +73,15 @@ private struct FeedItemCacheDTO: Codable {
     let wineProducer: String
     let wineVintage: Int?
     let wineLabelURL: String?
+    let wineRegion: String?
+    let wineCategory: String?
+    let wineVariety: String?
     let targetWineName: String?
     let targetWineProducer: String?
     let targetWineVintage: Int?
     let targetWineLabelURL: String?
     let contentText: String?
+    let tastingRating: Double?
     let createdAt: Date
     let cheersCount: Int
     let commentCount: Int
@@ -87,8 +91,9 @@ private struct FeedItemCacheDTO: Codable {
         case id, userId, username, avatarURL
         case activityTypeRaw = "activityType"
         case wineName, wineProducer, wineVintage, wineLabelURL
+        case wineRegion, wineCategory, wineVariety
         case targetWineName, targetWineProducer, targetWineVintage, targetWineLabelURL
-        case contentText, createdAt, cheersCount, commentCount, hasCheered
+        case contentText, tastingRating, createdAt, cheersCount, commentCount, hasCheered
     }
 
     static func from(_ item: FeedItem) -> FeedItemCacheDTO {
@@ -102,11 +107,15 @@ private struct FeedItemCacheDTO: Codable {
             wineProducer: item.wineProducer,
             wineVintage: item.wineVintage,
             wineLabelURL: item.wineLabelURL,
+            wineRegion: item.wineRegion,
+            wineCategory: item.wineCategory,
+            wineVariety: item.wineVariety,
             targetWineName: item.targetWineName,
             targetWineProducer: item.targetWineProducer,
             targetWineVintage: item.targetWineVintage,
             targetWineLabelURL: item.targetWineLabelURL,
             contentText: item.contentText,
+            tastingRating: item.tastingRating,
             createdAt: item.createdAt,
             cheersCount: item.cheersCount,
             commentCount: item.commentCount,
@@ -126,11 +135,15 @@ private struct FeedItemCacheDTO: Codable {
             wineProducer: wineProducer,
             wineVintage: wineVintage,
             wineLabelURL: wineLabelURL,
+            wineRegion: wineRegion,
+            wineCategory: wineCategory,
+            wineVariety: wineVariety,
             targetWineName: targetWineName,
             targetWineProducer: targetWineProducer,
             targetWineVintage: targetWineVintage,
             targetWineLabelURL: targetWineLabelURL,
             contentText: contentText,
+            tastingRating: tastingRating,
             createdAt: createdAt,
             cheersCount: cheersCount,
             commentCount: commentCount,
