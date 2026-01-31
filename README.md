@@ -1,6 +1,6 @@
 # Vitis
 
-A wine logging and rating iOS app built with SwiftUI and Supabase. Users search for wines, rate them (1.0-10.0), add optional tasting notes, and share their tastings in a social feed.
+A wine logging and rating iOS app built with SwiftUI and Supabase. Users search for wines, rate them, add optional tasting notes, and share their tastings in a social feed.
 
 ---
 
@@ -724,7 +724,3 @@ Vanilla, Floral
 - **UI questions**: Check `VitisTheme.swift` for design system
 
 ---
-
-**Last updated**: January 29, 2026  
-**Version**: Post-refactor (tastings-based, no duel/comparison)  
-**Latest changes**: Feed display enhancements (rating, country, notes, date/time, icon tinting, typography)
