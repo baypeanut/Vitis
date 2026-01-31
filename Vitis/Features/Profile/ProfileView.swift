@@ -52,7 +52,8 @@ struct ProfileView: View {
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
-                        onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) }
+                        onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) },
+                        onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) }
                     )
                 } else {
                     VStack(spacing: 16) {
@@ -67,7 +68,7 @@ struct ProfileView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle(viewModel?.profile?.displayName ?? "Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)

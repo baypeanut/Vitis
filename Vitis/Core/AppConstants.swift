@@ -35,4 +35,6 @@ extension Notification.Name {
     static let vitisDeepLinkResetPassword = Notification.Name("vitisDeepLinkResetPassword")
     /// Request showing Log in sheet (e.g. after "Go to Log in" in NewPasswordView success).
     static let vitisShowLogIn = Notification.Name("vitisShowLogIn")
+    /// Request to switch to the Cellar tab (e.g. when user taps "Rated" on their own profile).
+    static let vitisSwitchToCellarTab = Notification.Name("vitisSwitchToCellarTab")
 }

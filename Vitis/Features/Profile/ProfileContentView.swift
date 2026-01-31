@@ -23,6 +23,7 @@ struct ProfileContentView: View {
     var onFollowingTap: (() -> Void)?
     var onRegionTap: ((String) -> Void)?
     var onStyleTap: ((String) -> Void)?
+    var onRatedTap: (() -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
@@ -58,9 +59,6 @@ struct ProfileContentView: View {
     private func header(_ p: Profile) -> some View {
         VStack(spacing: 12) {
             avatar(p)
-            Text(p.displayName)
-                .font(VitisTheme.wineNameFont())
-                .foregroundStyle(.primary)
             HStack(spacing: 8) {
                 Text("@\(p.username)")
                     .font(VitisTheme.uiFont(size: 14))
@@ -117,7 +115,12 @@ struct ProfileContentView: View {
 
     private var statsRow: some View {
         HStack(spacing: 16) {
-            statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
+            Button {
+                onRatedTap?()
+            } label: {
+                statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
+            }
+            .buttonStyle(.plain)
             Button {
                 onFollowersTap?()
             } label: {

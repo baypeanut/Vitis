@@ -8,11 +8,16 @@
 
 import SwiftUI
 
+enum Tab {
+    case cellar, social, notifications, profile
+}
+
 struct RootView: View {
     @State private var showOnboarding = true
     @State private var checked = false
     /// Dev mode: sign out → true → show onboarding to test sign-up.
     @State private var devSignedOut = false
+    @State private var selectedTab: Tab = .cellar
     @ObservedObject private var recovery = AuthRecoveryState.shared
 
     var body: some View {
@@ -63,17 +68,24 @@ struct RootView: View {
     }
 
     private var mainTabs: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             CellarView()
                 .tabItem { Label("Cellar", systemImage: "square.stack") }
+                .tag(Tab.cellar)
             SocialView()
                 .tabItem { Label("Social", systemImage: "person.2") }
+                .tag(Tab.social)
             NotificationsView()
                 .tabItem { Label("Notifications", systemImage: "bell") }
+                .tag(Tab.notifications)
             ProfileView(onSignOut: didSignOut)
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                .tag(Tab.profile)
         }
         .tint(VitisTheme.accent)
+        .onReceive(NotificationCenter.default.publisher(for: .vitisSwitchToCellarTab)) { _ in
+            selectedTab = .cellar
+        }
     }
 
     private func checkSession() async {

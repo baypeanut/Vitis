@@ -37,6 +37,7 @@ struct UserProfileView: View {
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var currentUserId: UUID?
+    @State private var showUserCellar = false
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -72,7 +73,8 @@ struct UserProfileView: View {
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
-                        onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
+                        onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
+                        onRatedTap: { showUserCellar = true }
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -90,7 +92,7 @@ struct UserProfileView: View {
                     #endif
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle(viewModel.profile?.displayName ?? "Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -114,6 +116,12 @@ struct UserProfileView: View {
                 ) {
                     Task { await load() }
                 }
+            }
+            .navigationDestination(isPresented: $showUserCellar) {
+                UserCellarView(
+                    userId: userId,
+                    userName: viewModel.profile?.displayName ?? "User"
+                )
             }
         }
         .id(userId)
@@ -188,6 +196,7 @@ struct UserProfileViewContent: View {
     @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: UserProfileDrillDownTarget?
+    @State private var showUserCellar = false
 
     init(userId: UUID, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -218,7 +227,8 @@ struct UserProfileViewContent: View {
                     onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                     onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
-                    onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) }
+                    onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
+                    onRatedTap: { showUserCellar = true }
                 )
             } else {
                 VStack(spacing: 12) {
@@ -233,7 +243,7 @@ struct UserProfileViewContent: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("Profile")
+        .navigationTitle(viewModel.profile?.displayName ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $drillDownTarget) { target in
             TasteProfileDrillDownView(
@@ -250,6 +260,12 @@ struct UserProfileViewContent: View {
             ) {
                 Task { await viewModel.load() }
             }
+        }
+        .navigationDestination(isPresented: $showUserCellar) {
+            UserCellarView(
+                userId: userId,
+                userName: viewModel.profile?.displayName ?? "User"
+            )
         }
         .task(id: userId) {
             currentUserId = await AuthService.currentUserId()
