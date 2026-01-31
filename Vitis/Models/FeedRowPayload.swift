@@ -60,7 +60,7 @@ struct FeedRowPayload: Codable, Sendable {
 }
 
 extension FeedItem {
-    static func from(row: FeedRowPayload, cheersCount: Int = 0, commentCount: Int = 0, hasCheered: Bool = false) -> FeedItem {
+    static func from(row: FeedRowPayload, cheersCount: Int = 0, hasCheered: Bool = false) -> FeedItem {
         let displayName = (row.fullName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? row.fullName : nil) ?? row.username ?? "Unknown"
         // For had_wine, contentText contains notes if available
         let notesText = row.activityType == .hadWine ? (row.tastingNoteTags?.isEmpty == false ? row.tastingNoteTags!.joined(separator: ", ") : nil) : row.contentText
@@ -70,6 +70,7 @@ extension FeedItem {
             username: displayName,
             avatarURL: row.avatarUrl,
             activityType: row.activityType,
+            wineId: row.wineId,
             wineName: row.wineName,
             wineProducer: row.wineProducer,
             wineVintage: row.wineVintage,
@@ -85,7 +86,6 @@ extension FeedItem {
             tastingRating: row.tastingRating,
             createdAt: row.createdAt,
             cheersCount: cheersCount,
-            commentCount: commentCount,
             hasCheered: hasCheered
         )
     }

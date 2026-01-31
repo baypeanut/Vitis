@@ -20,7 +20,10 @@ final class FeedViewModel {
 
     var tab: Tab = .global
     var items: [FeedItem] = []
-    var isLoading = false
+    var wishlistWineIds: Set<UUID> = []
+    var wishlistSourceUserIds: [UUID] = []
+    var wishlistErrorToast: String?
+    var isRefreshing = false
     var errorMessage: String?
     private var realtimeTask: RealtimeChannelTask?
     private(set) var currentUserId: UUID?
@@ -39,7 +42,7 @@ final class FeedViewModel {
 
     func refresh() async {
         loadFromCache()
-        isLoading = true
+        isRefreshing = true
         errorMessage = nil
         do {
             var fetched: [FeedItem]
@@ -51,26 +54,21 @@ final class FeedViewModel {
             }
             let ids = fetched.map(\.id)
             let likeCounts: [UUID: Int]
-            let commentCounts: [UUID: Int]
             var likedIDs: Set<UUID> = []
             let uid = await AuthService.currentUserId()
             currentUserId = uid
             if let uid = uid {
                 async let lc = SocialService.fetchLikeCounts(activityIDs: ids)
-                async let cc = SocialService.fetchCommentCounts(activityIDs: ids)
                 async let lid = SocialService.fetchLikedActivityIDs(userId: uid)
                 likeCounts = (try? await lc) ?? [:]
-                commentCounts = (try? await cc) ?? [:]
                 likedIDs = (try? await lid) ?? []
             } else {
                 likeCounts = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
-                commentCounts = (try? await SocialService.fetchCommentCounts(activityIDs: ids)) ?? [:]
             }
             for i in fetched.indices {
                 var it = fetched[i]
                 let id = it.id
                 it.cheersCount = likeCounts[id] ?? 0
-                it.commentCount = commentCounts[id] ?? 0
                 it.hasCheered = likedIDs.contains(id)
                 fetched[i] = it
             }
@@ -83,10 +81,60 @@ final class FeedViewModel {
             items = filtered
             patchCurrentUserOverrides()
             FeedService.shared.saveToCache(items, mode: mode)
+            if let uid = currentUserId {
+                do {
+                    wishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: uid)
+                } catch {
+                    if !isCancellation(error) { wishlistErrorToast = ErrorMessage.unknown }
+                }
+                wishlistSourceUserIds = (try? await CellarService.fetchWishlistSourceUserIdsInLastK(userId: uid, k: WishlistSourceStore.windowSize)) ?? []
+            }
         } catch {
-            if !isCancellation(error) { errorMessage = error.localizedDescription }
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
         }
-        isLoading = false
+        isRefreshing = false
+    }
+
+    func refreshWishlistIds() async {
+        guard let uid = currentUserId else { return }
+        wishlistWineIds = (try? await CellarService.fetchWishlistWineIds(userId: uid)) ?? wishlistWineIds
+        wishlistSourceUserIds = (try? await CellarService.fetchWishlistSourceUserIdsInLastK(userId: uid, k: WishlistSourceStore.windowSize)) ?? wishlistSourceUserIds
+    }
+
+    func isInWishlist(wineId: UUID) -> Bool { wishlistWineIds.contains(wineId) }
+
+    /// Toggle wishlist for feed item's wine. Optimistic update; reverts and shows toast on failure.
+    func toggleWishlist(_ item: FeedItem) async {
+        guard let uid = await AuthService.currentUserId() else { return }
+        let wineId = item.wineId
+        let wasIn = wishlistWineIds.contains(wineId)
+        wishlistWineIds = wasIn ? wishlistWineIds.filter { $0 != wineId } : wishlistWineIds.union([wineId])
+        wishlistErrorToast = nil
+        do {
+            if wasIn {
+                try await CellarService.removeFromWishlist(userId: uid, wineId: wineId)
+            } else {
+                try await CellarService.addToWishlist(userId: uid, wineId: wineId, sourceUserId: item.userId)
+            }
+        } catch {
+            wishlistWineIds = wasIn ? wishlistWineIds.union([wineId]) : wishlistWineIds.filter { $0 != wineId }
+            wishlistErrorToast = ErrorMessage.unknown
+        }
+        if wishlistErrorToast == nil && !wasIn {
+            wishlistSourceUserIds = [item.userId] + wishlistSourceUserIds
+            AnalyticsService.wishlistAdd(wineId: wineId)
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+        } else if wishlistErrorToast == nil && wasIn {
+            AnalyticsService.wishlistRemove(wineId: wineId)
+        }
+    }
+
+    /// Trust hint: "You often save wines from {name}" when save affinity >= threshold (backend + local).
+    func trustHint(for item: FeedItem) -> String? {
+        guard currentUserId != item.userId else { return nil }
+        let count = wishlistSourceUserIds.prefix(WishlistSourceStore.windowSize).filter { $0 == item.userId }.count
+        guard count >= WishlistSourceStore.threshold else { return nil }
+        return "You often save wines from \(item.username)"
     }
 
     func switchTab(to newTab: Tab) {
@@ -119,12 +167,13 @@ final class FeedViewModel {
             u.hasCheered.toggle()
             u.cheersCount += u.hasCheered ? 1 : -1
             items[idx] = u
+            AnalyticsService.likeToggle(activityId: item.id, added: u.hasCheered)
             FeedService.shared.saveToCache(items, mode: mode)
             if u.hasCheered, let actorId = currentUserId, actorId != item.userId {
                 Task { await NotificationService.createLikeNotification(recipientId: item.userId, actorId: actorId, postId: item.id) }
             }
         } catch {
-            if !isCancellation(error) { errorMessage = error.localizedDescription }
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
         }
     }
 
@@ -175,7 +224,7 @@ final class FeedViewModel {
             items.removeAll { $0.id == item.id }
             FeedService.shared.saveToCache(items, mode: mode)
         } catch {
-            if !isCancellation(error) { errorMessage = error.localizedDescription }
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
         }
     }
 }

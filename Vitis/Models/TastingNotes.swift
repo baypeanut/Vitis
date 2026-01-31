@@ -3,6 +3,8 @@
 //  Vitis
 //
 //  Category-based tasting notes (aromas/flavors). Curated sets for Red, White, Rose, Sparkling.
+//  TODO: Wine-specific notes when Wine API provides reliable fields (e.g. flavor_profile, aroma_tags).
+//  Threshold: use only when mappedNotes.count is 4-8; otherwise fallback to generic.
 //
 
 import Foundation

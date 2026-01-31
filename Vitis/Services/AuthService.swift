@@ -248,38 +248,38 @@ enum AuthService {
     static func friendlyMessage(for error: Error) -> String {
         let s = error.localizedDescription.lowercased()
         if s.contains("invalid login") || s.contains("invalid_credentials") || s.contains("invalid grant") {
-            return "E-posta veya şifre hatalı."
+            return "Invalid email or password."
         }
         if s.contains("email not confirmed") || s.contains("email_not_confirmed") || (s.contains("confirm") && s.contains("email")) {
-            return "Please confirm your email (or disable email confirmation in dev)."
+            return "Please confirm your email."
         }
         if s.contains("already registered") || s.contains("already exists") || s.contains("user already") || s.contains("duplicate") {
-            return "Bu e-posta adresi zaten kayıtlı. Giriş yapın veya farklı bir e-posta deneyin."
+            return "This email is already registered. Sign in or try a different email."
         }
         if s.contains("password") && (s.contains("short") || s.contains("least") || s.contains("6") || s.contains("weak")) {
-            return "Şifre en az 6 karakter olmalı."
+            return "Password must be at least 6 characters."
         }
         if s.contains("email") && (s.contains("invalid") || s.contains("valid") || s.contains("format")) {
-            return "Geçerli bir e-posta adresi girin."
+            return "Enter a valid email address."
         }
         if s.contains("network") || s.contains("connection") || s.contains("internet") || s.contains("offline") || s.contains("timed out") {
-            return "Bağlantı hatası. İnterneti ve Supabase ayarlarını kontrol edin."
+            return ErrorMessage.noConnection
         }
         if s.contains("could not connect") || s.contains("host") || s.contains("url") {
-            return "Supabase'e ulaşılamıyor. SupabaseConfig'teki URL ve anon key'i kontrol edin."
+            return "Could not reach server. Check your connection."
         }
         if s.contains("rate") || s.contains("limit") || s.contains("too many") {
-            return "Çok fazla deneme. Biraz bekleyip tekrar deneyin."
+            return "Too many attempts. Please try again later."
         }
         if s.contains("session") || s.contains("verification") {
-            return "E-posta doğrulaması gerekebilir. Supabase → Auth → Email'de \"Confirm email\"i kapatın veya gelen kutunuzu kontrol edin."
+            return "Session expired. Please sign in again."
         }
         #if DEBUG
         print("[AuthService] friendlyMessage fallback – raw: \(error.localizedDescription)")
         let ne = error as NSError
         print("[AuthService] domain=\(ne.domain) code=\(ne.code) userInfo=\(ne.userInfo)")
         #endif
-        return "Bir hata oluştu. Lütfen tekrar deneyin."
+        return ErrorMessage.unknown
     }
 }
 

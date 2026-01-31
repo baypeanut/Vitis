@@ -2,7 +2,7 @@
 //  AddWineSheet.swift
 //  Vitis
 //
-//  Multi-step flow: Search -> Select -> Rate -> Notes -> Save (Cheers).
+//  Flow: Search -> Select -> Rate (slider + notes + Cheers in one screen).
 //
 
 import SwiftUI
@@ -10,15 +10,25 @@ import SwiftUI
 enum TastingFlowStep {
     case search
     case rating(Wine)
-    case notes(Wine, Double)
 }
 
 struct AddWineSheet: View {
     @Binding var isPresented: Bool
+    var initialWine: Wine? = nil
+    var wineIdToRemoveFromWishlist: UUID? = nil
     var onWineAdded: () -> Void
 
+    init(isPresented: Binding<Bool>, initialWine: Wine? = nil, wineIdToRemoveFromWishlist: UUID? = nil, onWineAdded: @escaping () -> Void) {
+        _isPresented = isPresented
+        self.initialWine = initialWine
+        self.wineIdToRemoveFromWishlist = wineIdToRemoveFromWishlist
+        self.onWineAdded = onWineAdded
+        _flowStep = State(initialValue: initialWine.map { .rating($0) } ?? .search)
+        _selectedWine = State(initialValue: initialWine)
+    }
+
     @State private var viewModel = AddWineViewModel()
-    @State private var flowStep: TastingFlowStep = .search
+    @State private var flowStep: TastingFlowStep
     @State private var selectedWine: Wine?
     @State private var rating: Double = 5.0
     @State private var selectedNotes: Set<String> = []
@@ -57,8 +67,10 @@ struct AddWineSheet: View {
         }
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
         .onAppear {
-            viewModel.prefetchPopular()
-            Task { await viewModel.loadDatabaseWines() }
+            if initialWine == nil {
+                viewModel.prefetchPopular()
+                Task { await viewModel.loadDatabaseWines() }
+            }
         }
     }
 
@@ -66,7 +78,6 @@ struct AddWineSheet: View {
         switch flowStep {
         case .search: return "Add Wine"
         case .rating: return "Rate"
-        case .notes: return "Notes"
         }
     }
 
@@ -76,18 +87,10 @@ struct AddWineSheet: View {
         case .search:
             searchContent
         case .rating(let wine):
-            TastingRateView(wine: wine, rating: $rating) {
-                flowStep = .notes(wine, rating)
-            }
-        case .notes(let wine, let r):
-            NotesSelectView(wine: wine, selectedNotes: $selectedNotes) { notes in
+            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes) {
                 Task {
-                    let notesArray = notes.isEmpty ? nil : Array(notes)
-                    await saveTasting(wine: wine, rating: r, notes: notesArray)
-                }
-            } onSkip: {
-                Task {
-                    await saveTasting(wine: wine, rating: r, notes: nil)
+                    let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
+                    await saveTasting(wine: wine, rating: rating, notes: notesArray)
                 }
             }
         }
@@ -175,6 +178,28 @@ struct AddWineSheet: View {
                         row(p)
                         Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
                     }
+                    if viewModel.hasMorePages {
+                        Button {
+                            viewModel.loadMoreSearchResults()
+                        } label: {
+                            HStack {
+                                if viewModel.isLoadingMore {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .scaleEffect(0.8)
+                                        .tint(VitisTheme.accent)
+                                } else {
+                                    Text("Show more")
+                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                }
+                            }
+                            .foregroundStyle(VitisTheme.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.isLoadingMore)
+                    }
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 32)
@@ -218,7 +243,7 @@ struct AddWineSheet: View {
                     selectedNotes = []
                     flowStep = .rating(wine)
                 } catch {
-                    viewModel.errorMessage = error.localizedDescription
+                    viewModel.errorMessage = ErrorMessage.userFacing(for: error)
                 }
             }
         } label: {
@@ -266,7 +291,7 @@ struct AddWineSheet: View {
     @MainActor
     private func saveTasting(wine: Wine, rating: Double, notes: [String]?) async {
         guard let userId = await AuthService.currentUserId() else {
-            saveError = "Not signed in"
+            saveError = ErrorMessage.unauthorized
             return
         }
         isSaving = true
@@ -279,11 +304,16 @@ struct AddWineSheet: View {
                 noteTags: notes,
                 source: "search"
             )
+            if let wid = wineIdToRemoveFromWishlist, wid == wine.id {
+                _ = try? await CellarService.removeFromWishlist(userId: userId, wineId: wid)
+                NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            }
+            AnalyticsService.tastingCreate(wineId: wine.id, rating: rating)
             onWineAdded()
             resetFlow()
             isPresented = false
         } catch {
-            saveError = error.localizedDescription
+            saveError = ErrorMessage.userFacing(for: error)
         }
         isSaving = false
     }
