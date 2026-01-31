@@ -49,9 +49,7 @@ final class CellarViewModel {
         var categoryDict: [String: [Tasting]] = [:]
         
         for tasting in tastings {
-            let category = tasting.wine.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-                ? tasting.wine.category!
-                : "Other"
+            let category = WineCategoryResolver.resolve(wine: tasting.wine)
             categoryDict[category, default: []].append(tasting)
         }
         

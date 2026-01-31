@@ -19,6 +19,7 @@ struct FeedItem: Identifiable, Sendable {
     let wineLabelURL: String?
     let wineRegion: String?
     let wineCategory: String?
+    let wineVariety: String?
     let targetWineName: String?
     let targetWineProducer: String?
     let targetWineVintage: Int?
@@ -42,6 +43,7 @@ struct FeedItem: Identifiable, Sendable {
         wineLabelURL: String?,
         wineRegion: String? = nil,
         wineCategory: String? = nil,
+        wineVariety: String? = nil,
         targetWineName: String? = nil,
         targetWineProducer: String? = nil,
         targetWineVintage: Int? = nil,
@@ -64,6 +66,7 @@ struct FeedItem: Identifiable, Sendable {
         self.wineLabelURL = wineLabelURL
         self.wineRegion = wineRegion
         self.wineCategory = wineCategory
+        self.wineVariety = wineVariety
         self.targetWineName = targetWineName
         self.targetWineProducer = targetWineProducer
         self.targetWineVintage = targetWineVintage

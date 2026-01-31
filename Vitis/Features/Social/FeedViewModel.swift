@@ -120,6 +120,9 @@ final class FeedViewModel {
             u.cheersCount += u.hasCheered ? 1 : -1
             items[idx] = u
             FeedService.shared.saveToCache(items, mode: mode)
+            if u.hasCheered, let actorId = currentUserId, actorId != item.userId {
+                Task { await NotificationService.createLikeNotification(recipientId: item.userId, actorId: actorId, postId: item.id) }
+            }
         } catch {
             if !isCancellation(error) { errorMessage = error.localizedDescription }
         }

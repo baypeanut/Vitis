@@ -68,6 +68,8 @@ struct RootView: View {
                 .tabItem { Label("Cellar", systemImage: "square.stack") }
             SocialView()
                 .tabItem { Label("Social", systemImage: "person.2") }
+            NotificationsView()
+                .tabItem { Label("Notifications", systemImage: "bell") }
             ProfileView(onSignOut: didSignOut)
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }

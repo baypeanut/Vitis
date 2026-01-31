@@ -24,6 +24,7 @@ enum TastingService {
             let name: String
             let producer: String
             let vintage: Int?
+            let variety: String?
             let region: String?
             let label_image_url: String?
             let category: String?
@@ -56,7 +57,7 @@ enum TastingService {
         let inserted: [TastingRow] = try await supabase
             .from("tastings")
             .insert(payload)
-            .select("id, user_id, wine_id, rating, note_tags, created_at, source, wines(name, producer, vintage, region, label_image_url, category)")
+            .select("id, user_id, wine_id, rating, note_tags, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
             .execute()
             .value
 
@@ -69,7 +70,7 @@ enum TastingService {
             name: w.name,
             producer: w.producer,
             vintage: w.vintage,
-            variety: nil,
+            variety: w.variety,
             region: w.region,
             labelImageURL: w.label_image_url,
             category: w.category
@@ -120,7 +121,7 @@ enum TastingService {
     static func fetchTastings(userId: UUID, limit: Int = 100, offset: Int = 0) async throws -> [Tasting] {
         let raw: [TastingRow] = try await supabase
             .from("tastings")
-            .select("id, user_id, wine_id, rating, note_tags, created_at, source, wines(name, producer, vintage, region, label_image_url, category)")
+            .select("id, user_id, wine_id, rating, note_tags, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
             .eq("user_id", value: userId)
             .order("created_at", ascending: false)
             .range(from: offset, to: offset + limit - 1)
@@ -134,7 +135,7 @@ enum TastingService {
                 name: w.name,
                 producer: w.producer,
                 vintage: w.vintage,
-                variety: nil,
+                variety: w.variety,
                 region: w.region,
                 labelImageURL: w.label_image_url,
                 category: w.category

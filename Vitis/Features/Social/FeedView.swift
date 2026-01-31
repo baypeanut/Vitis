@@ -59,9 +59,7 @@ struct FeedView: View {
     @ViewBuilder
     private var commentSheetContent: some View {
         if let aid = commentActivityID {
-            CommentSheetView(activityID: aid, currentUserId: viewModel.currentUserId, isPresented: $showCommentSheet) {
-                Task { await viewModel.refresh() }
-            }
+            CommentSheetView(activityID: aid, postOwnerId: viewModel.items.first(where: { $0.id == aid })?.userId, currentUserId: viewModel.currentUserId, isPresented: $showCommentSheet, onPosted: { Task { await viewModel.refresh() } }, onCommentsChanged: { Task { await viewModel.refresh() } })
             .presentationDetents([.medium, .large])
         }
     }
@@ -119,14 +117,27 @@ struct FeedView: View {
                 .progressViewStyle(.circular)
                 .tint(VitisTheme.accent)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if viewModel.tab == .following && viewModel.items.isEmpty {
+            followingEmptyState
         } else {
             feedList
         }
     }
+    
+    private var followingEmptyState: some View {
+        VStack(spacing: 16) {
+            Text("Follow people to see their tastings here.")
+                .font(VitisTheme.uiFont(size: 15))
+                .foregroundStyle(VitisTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private var feedList: some View {
         List {
-            ForEach(viewModel.items) { item in
+            ForEach(viewModel.items, id: \.id) { item in
                 VStack(spacing: 0) {
                     FeedItemView(
                         item: item,

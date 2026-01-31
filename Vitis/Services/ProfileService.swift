@@ -12,6 +12,8 @@ struct TasteProfileItem: Identifiable, Sendable {
     let name: String
     let count: Int
     let averageRating: Double?
+    /// Dominant wine category for color (e.g. "Red", "White"). Used for regions; grapes infer from name.
+    let dominantWineCategory: String?
     var id: String { name }
 }
 
@@ -44,6 +46,7 @@ enum ProfileService {
             let rating: Double
             let wines: Wref?
             struct Wref: Decodable {
+                let name: String?
                 let variety: String?
                 let region: String?
                 let category: String?
@@ -51,7 +54,7 @@ enum ProfileService {
         }
         let rows: [Row] = try await supabase
             .from("tastings")
-            .select("wine_id, rating, wines(variety, region, category)")
+            .select("wine_id, rating, wines(name, variety, region, category)")
             .eq("user_id", value: userId)
             .execute()
             .value
@@ -60,20 +63,37 @@ enum ProfileService {
         var grapeRatings: [String: [Double]] = [:]
         var regionCounts: [String: Int] = [:]
         var regionRatings: [String: [Double]] = [:]
+        var regionCategories: [String: [String]] = [:]
         var styleCounts: [String: Int] = [:]
         var styleRatings: [String: [Double]] = [:]
 
+        let knownGrapes = ["Shiraz", "Syrah", "Malbec", "Cabernet", "Merlot", "Pinot Noir", "Nebbiolo", "Sangiovese", "Chardonnay", "Sauvignon", "Riesling", "Pinot Grigio", "Prosecco", "Grenache", "Tempranillo", "Zinfandel", "Viognier", "Barbera", "Gamay"]
+        
         for r in rows {
             guard let w = r.wines else { continue }
             
-            if let variety = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
+            if grape == nil, let name = w.name?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines), !name.isEmpty {
+                let lower = name.lowercased()
+                for g in knownGrapes {
+                    if lower.contains(g.lowercased()) {
+                        grape = g
+                        break
+                    }
+                }
+            }
+            if let variety = grape {
                 grapeCounts[variety, default: 0] += 1
                 grapeRatings[variety, default: []].append(r.rating)
             }
             
             if let region = (w.region?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
-                regionCounts[region, default: 0] += 1
-                regionRatings[region, default: []].append(r.rating)
+                let normRegion = Self.normalizeRegion(region)
+                regionCounts[normRegion, default: 0] += 1
+                regionRatings[normRegion, default: []].append(r.rating)
+                if let cat = w.category?.trimmingCharacters(in: .whitespacesAndNewlines), !cat.isEmpty {
+                    regionCategories[normRegion, default: []].append(cat)
+                }
             }
             
             if let style = (w.category?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
@@ -82,22 +102,23 @@ enum ProfileService {
             }
         }
 
-        let grapes = grapeCounts.map { key, count -> TasteProfileItem in
+        let grapes = grapeCounts.map { (key, count) -> TasteProfileItem in
             let ratings = grapeRatings[key] ?? []
             let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
-            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: nil)
         }.sorted { $0.count > $1.count }
         
-        let regions = regionCounts.map { key, count -> TasteProfileItem in
+        let regions = regionCounts.map { (key, count) -> TasteProfileItem in
             let ratings = regionRatings[key] ?? []
             let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
-            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+            let dominant = Self.dominantCategory(from: regionCategories[key] ?? [])
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: dominant)
         }.sorted { $0.count > $1.count }
         
-        let styles = styleCounts.map { key, count -> TasteProfileItem in
+        let styles = styleCounts.map { (key, count) -> TasteProfileItem in
             let ratings = styleRatings[key] ?? []
             let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
-            return TasteProfileItem(name: key, count: count, averageRating: avgRating)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: nil)
         }.sorted { $0.count > $1.count }
         
         return (grapes, regions, styles)
@@ -125,5 +146,33 @@ enum ProfileService {
             .eq("user_id", value: userId)
             .execute().value) ?? []
         return rows.count
+    }
+
+    private static func normalizeRegion(_ raw: String) -> String {
+        let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let canonical = regionMatchKey(lower)
+        let displayMap: [String: String] = [
+            "united states": "United States", "united kingdom": "United Kingdom"
+        ]
+        return displayMap[canonical] ?? raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Canonical key for region matching (USA/United States collapse).
+    static func regionMatchKey(_ lowercased: String) -> String {
+        let m: [String: String] = [
+            "usa": "united states", "united states": "united states",
+            "uk": "united kingdom", "united kingdom": "united kingdom",
+        ]
+        return m[lowercased] ?? lowercased
+    }
+
+    private static func dominantCategory(from categories: [String]) -> String? {
+        guard !categories.isEmpty else { return nil }
+        var counts: [String: Int] = [:]
+        for c in categories {
+            let n = c.trimmingCharacters(in: .whitespaces).lowercased()
+            if !n.isEmpty { counts[n, default: 0] += 1 }
+        }
+        return counts.max(by: { $0.value < $1.value })?.key
     }
 }

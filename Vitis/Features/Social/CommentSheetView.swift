@@ -9,9 +9,11 @@ import SwiftUI
 
 struct CommentSheetView: View {
     let activityID: UUID
+    var postOwnerId: UUID?
     var currentUserId: UUID?
     @Binding var isPresented: Bool
     var onPosted: (() -> Void)?
+    var onCommentsChanged: (() -> Void)?
 
     @State private var comments: [CommentWithProfile] = []
     @State private var inputText = ""
@@ -147,6 +149,15 @@ struct CommentSheetView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 20)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if c.userId == currentUserId {
+                Button(role: .destructive) {
+                    Task { await deleteComment(c) }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private func commentAvatar(_ urlString: String?, displayName: String) -> some View {
@@ -193,13 +204,28 @@ struct CommentSheetView: View {
         isPosting = true
         errorMessage = nil
         do {
-            try await SocialService.addComment(activityID: activityID, body: text)
+            let commentId = try await SocialService.addComment(activityID: activityID, body: text)
+            if let ownerId = postOwnerId, let actorId = currentUserId {
+                Task { await NotificationService.createCommentNotification(recipientId: ownerId, actorId: actorId, postId: activityID, commentId: commentId, commentPreview: text) }
+            }
             inputText = ""
             await load()
             onPosted?()
+            onCommentsChanged?()
         } catch {
             errorMessage = error.localizedDescription
         }
         isPosting = false
+    }
+    
+    private func deleteComment(_ c: CommentWithProfile) async {
+        do {
+            try await SocialService.deleteComment(commentId: c.id)
+            comments.removeAll { $0.id == c.id }
+            onPosted?()
+            onCommentsChanged?()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

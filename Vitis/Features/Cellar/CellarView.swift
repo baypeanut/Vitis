@@ -185,7 +185,7 @@ struct CellarView: View {
                     .foregroundStyle(VitisTheme.secondaryText)
                 Text(tasting.wine.name)
                     .font(VitisTheme.wineNameFont())
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
                 if let v = tasting.wine.vintage {
                     Text(String(v))
                         .font(VitisTheme.detailFont())
