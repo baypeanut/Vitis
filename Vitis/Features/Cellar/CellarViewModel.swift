@@ -63,7 +63,9 @@ final class CellarViewModel {
         }
         
         groupedTastings = sortedCategories.map { category in
-            (category: category, tastings: categoryDict[category]!)
+            // Sort tastings within each category by rating (highest first)
+            let sortedTastings = categoryDict[category]!.sorted { $0.rating > $1.rating }
+            return (category: category, tastings: sortedTastings)
         }
     }
 
