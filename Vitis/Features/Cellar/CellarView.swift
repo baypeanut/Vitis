@@ -243,13 +243,6 @@ struct CellarView: View {
                             .font(VitisTheme.detailFont())
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
-                    HStack(spacing: 8) {
-                        if let notes = tasting.notesDisplay {
-                            Text(notes)
-                                .font(VitisTheme.uiFont(size: 13))
-                                .foregroundStyle(VitisTheme.secondaryText)
-                        }
-                    }
                     if let comment = tasting.comment, !comment.isEmpty {
                         Text(comment)
                             .font(VitisTheme.uiFont(size: 13).italic())
