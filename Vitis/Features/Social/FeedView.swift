@@ -56,7 +56,6 @@ struct FeedView: View {
         ZStack {
             VitisTheme.background.ignoresSafeArea()
             VStack(spacing: 0) {
-                header
                 tabBar
                 feedContent
             }
@@ -83,45 +82,14 @@ struct FeedView: View {
         #endif
     }
 
-    private var header: some View {
-        HStack {
-            Text("Curated by")
-                .font(VitisTheme.titleFont())
-                .foregroundStyle(.primary)
-            Spacer()
-            Button {
-                Task { await openNotificationSheet() }
-            } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                        .font(.system(size: 20))
-                        .foregroundStyle(VitisTheme.accent)
-                    if unreadCount > 0 {
-                        Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
-                            .font(VitisTheme.uiFont(size: 10, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(VitisTheme.accent)
-                            .clipShape(Capsule())
-                            .offset(x: 6, y: -6)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
-    }
-
     private var tabBar: some View {
         HStack(spacing: 0) {
             tabButton(.global, label: "Global")
             tabButton(.following, label: "Following")
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 8)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
     }
 
     private func tabButton(_ tab: FeedViewModel.Tab, label: String) -> some View {

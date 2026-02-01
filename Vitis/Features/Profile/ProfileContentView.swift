@@ -77,12 +77,8 @@ struct ProfileContentView: View {
                     .lineLimit(3)
             }
             statsRow
-            primaryButton(p)
-            if isOwn {
-                Button("Sign out") { onSignOut?() }
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
-                    .padding(.top, 8)
+            if !isOwn {
+                primaryButton(p)
             }
         }
         .frame(maxWidth: .infinity)
@@ -152,15 +148,7 @@ struct ProfileContentView: View {
 
     private func primaryButton(_ p: Profile) -> some View {
         Group {
-            if isOwn {
-                Button("Edit Profile") { onEdit?() }
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 12)
-                    .background(VitisTheme.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            } else if isGuestProfile(p) {
+            if isGuestProfile(p) {
                 Text("User not found")
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
                     .foregroundStyle(VitisTheme.secondaryText)

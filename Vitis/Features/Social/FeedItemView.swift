@@ -168,21 +168,17 @@ struct FeedItemView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // RIGHT COLUMN: date (subtle, above), rating, region (trailing)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(VitisTheme.compactTimestamp(item.createdAt))
-                    .font(VitisTheme.uiFont(size: 10, weight: .regular))
-                    .foregroundStyle(VitisTheme.tertiaryText)
+            // RIGHT COLUMN: rating, timestamp (trailing)
+            VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.tastingRating {
                     Text(String(format: "%.1f", rating))
                         .font(VitisTheme.uiFont(size: 22, weight: .semibold))
                         .foregroundStyle(VitisTheme.accent)
                 }
-                if let region = item.wineRegion, !region.isEmpty {
-                    Text(region)
-                        .font(VitisTheme.uiFont(size: 11))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                }
+                
+                Text(VitisTheme.compactTimestamp(item.createdAt))
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.secondaryText)
             }
             .frame(width: 80, alignment: .trailing)
         }
