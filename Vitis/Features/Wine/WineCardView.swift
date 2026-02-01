@@ -173,28 +173,35 @@ struct WineCardView: View {
     // MARK: - Ratings Section
     
     private var ratingsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .center, spacing: 16) {
             sectionDivider
             
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 16) {
                 Text("Ratings")
                     .font(VitisTheme.uiFont(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 
-                VStack(spacing: 12) {
+                HStack(spacing: 0) {
                     // You
                     if let tasting = userTasting {
-                        ratingRow(label: "You", rating: tasting.rating, timestamp: tasting.createdAt)
+                        ratingColumn(label: "You", rating: tasting.rating)
+                    } else {
+                        ratingColumn(label: "You", rating: nil)
                     }
                     
                     // Friends
                     if let avgRating = friendsAverageRating {
-                        ratingRow(label: "Friends", rating: avgRating, count: friendsTastings.count)
+                        ratingColumn(label: "Friends", rating: avgRating)
+                    } else {
+                        ratingColumn(label: "Friends", rating: nil)
                     }
                     
                     // Global
                     if let avgRating = globalAverageRating {
-                        ratingRow(label: "Global", rating: avgRating, count: globalTastingsCount)
+                        ratingColumn(label: "Global", rating: avgRating)
+                    } else {
+                        ratingColumn(label: "Global", rating: nil)
                     }
                 }
             }
@@ -203,29 +210,23 @@ struct WineCardView: View {
         }
     }
     
-    private func ratingRow(label: String, rating: Double, timestamp: Date? = nil, count: Int? = nil) -> some View {
-        HStack(alignment: .center) {
+    private func ratingColumn(label: String, rating: Double?) -> some View {
+        VStack(spacing: 8) {
             Text(label)
                 .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 80, alignment: .leading)
+                .foregroundStyle(VitisTheme.secondaryText)
             
-            Text(String(format: "%.1f", rating))
-                .font(VitisTheme.uiFont(size: 24, weight: .semibold))
-                .foregroundStyle(VitisTheme.accent)
-            
-            Spacer()
-            
-            if let timestamp = timestamp {
-                Text(VitisTheme.compactTimestamp(timestamp))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.tertiaryText)
-            } else if let count = count {
-                Text("\(count) user\(count == 1 ? "" : "s")")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.tertiaryText)
+            if let rating = rating {
+                Text(String(format: "%.1f", rating))
+                    .font(VitisTheme.uiFont(size: 28, weight: .semibold))
+                    .foregroundStyle(VitisTheme.accent)
+            } else {
+                Text("—")
+                    .font(VitisTheme.uiFont(size: 28, weight: .semibold))
+                    .foregroundStyle(VitisTheme.border)
             }
         }
+        .frame(maxWidth: .infinity)
     }
     
     // MARK: - User Notes Section
