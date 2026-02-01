@@ -2,7 +2,7 @@
 //  ProfileView.swift
 //  Vitis
 //
-//  My profile tab. Beli-style layout via ProfileContentView. Edit → EditProfileView sheet.
+//  My profile tab. Beli-style layout via ProfileContentView. Edit → EditProfileView page.
 //
 
 import SwiftUI
@@ -27,7 +27,7 @@ struct ProfileView: View {
     @State private var viewModel: ProfileViewModel?
     @State private var currentUserId: UUID?
     @State private var didRunEnsure = false
-    @State private var showEditSheet = false
+    @State private var showEditProfile = false
     @State private var editVM = EditProfileViewModel()
     @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
@@ -48,7 +48,7 @@ struct ProfileView: View {
                         viewModel: vm,
                         isOwn: true,
                         isFollowing: false,
-                        onEdit: { showEditSheet = true },
+                        onEdit: { showEditProfile = true },
                         onSignOut: { Task { await signOut() } },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
@@ -85,9 +85,27 @@ struct ProfileView: View {
             }
             .navigationDestination(isPresented: $showSettings) {
                 ProfileSettingsView(
-                    onEdit: { showEditSheet = true },
+                    onEdit: { showEditProfile = true },
                     onSignOut: { Task { await signOut() } }
                 )
+            }
+            .navigationDestination(isPresented: $showEditProfile) {
+                if let vm = viewModel, let p = vm.profile, let uid = currentUserId {
+                    EditProfileView(
+                        viewModel: editVM,
+                        profile: p,
+                        userId: uid,
+                        onSaved: {
+                            showEditProfile = false
+                            Task {
+                                await vm.load()
+                                await ProfileStore.shared.load()
+                                NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
+                            }
+                        },
+                        onCancel: { showEditProfile = false }
+                    )
+                }
             }
             .navigationDestination(item: $drillDownTarget) { target in
                 TasteProfileDrillDownView(
@@ -113,24 +131,6 @@ struct ProfileView: View {
             Task { await ensureAndLoad() }
         }
         .refreshable { await ensureAndLoad() }
-        .sheet(isPresented: $showEditSheet) {
-            if let vm = viewModel, let p = vm.profile, let uid = currentUserId {
-                EditProfileView(
-                    viewModel: editVM,
-                    profile: p,
-                    userId: uid,
-                    onSaved: {
-                        showEditSheet = false
-                        Task {
-                            await vm.load()
-                            await ProfileStore.shared.load()
-                            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
-                        }
-                    },
-                    onCancel: { showEditSheet = false }
-                )
-            }
-        }
     }
 
     private func ensureAndLoad() async {
