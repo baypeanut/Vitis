@@ -19,6 +19,20 @@ struct FeedItemView: View {
     var canDelete: Bool = false
 
     @State private var showTrustHintPopover = false
+    
+    /// Construct Wine object from FeedItem for navigation.
+    private var wine: Wine {
+        Wine(
+            id: item.wineId,
+            name: item.wineName,
+            producer: item.wineProducer,
+            vintage: item.wineVintage,
+            variety: item.wineVariety,
+            region: item.wineRegion,
+            labelImageURL: item.wineLabelURL,
+            category: item.wineCategory
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -132,41 +146,52 @@ struct FeedItemView: View {
     
     private var twoColumnLayout: some View {
         HStack(alignment: .top, spacing: 12) {
-            // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes)
-            HStack(alignment: .top, spacing: 8) {
-                wineThumbnailSquare(
-                    labelURL: item.wineLabelURL,
-                    category: item.wineCategory,
-                    wineName: item.wineName
-                )
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.wineProducer)
-                        .font(VitisTheme.uiFont(size: 11, weight: .regular))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Text(VitisTheme.displayWineName(item.wineName))
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.9)
-                    if let vintage = item.wineVintage {
-                        Text(String(vintage))
-                            .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
-                    }
-                    if let notes = formattedNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(VitisTheme.uiFont(size: 12))
+            // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes) - wrapped in NavigationLink
+            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: item.userId)) {
+                HStack(alignment: .top, spacing: 8) {
+                    wineThumbnailSquare(
+                        labelURL: item.wineLabelURL,
+                        category: item.wineCategory,
+                        wineName: item.wineName
+                    )
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.wineProducer)
+                            .font(VitisTheme.uiFont(size: 11, weight: .regular))
                             .foregroundStyle(VitisTheme.secondaryText)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                            .padding(.top, 2)
+                        Text(VitisTheme.displayWineName(item.wineName))
+                            .font(VitisTheme.wineNameFont())
+                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.9)
+                        if let vintage = item.wineVintage {
+                            Text(String(vintage))
+                                .font(VitisTheme.detailFont())
+                                .foregroundStyle(VitisTheme.secondaryText)
+                        }
+                        if let notes = formattedNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(VitisTheme.uiFont(size: 12))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .padding(.top, 2)
+                        }
+                        if let comment = item.tastingComment, !comment.isEmpty {
+                            Text(comment)
+                                .font(VitisTheme.uiFont(size: 12).italic())
+                                .foregroundStyle(VitisTheme.secondaryText)
+                                .lineLimit(2)
+                                .truncationMode(.tail)
+                                .padding(.top, 2)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
             
             // RIGHT COLUMN: rating, timestamp (trailing)
             VStack(alignment: .trailing, spacing: 4) {

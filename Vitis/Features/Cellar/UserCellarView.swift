@@ -137,6 +137,12 @@ struct UserCellarView: View {
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
                 }
+                if let comment = tasting.comment, !comment.isEmpty {
+                    Text(comment)
+                        .font(VitisTheme.uiFont(size: 13).italic())
+                        .foregroundStyle(VitisTheme.secondaryText)
+                        .lineLimit(3)
+                }
                 Text(VitisTheme.compactTimestamp(tasting.createdAt))
                     .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)

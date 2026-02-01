@@ -69,9 +69,11 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            CellarView()
-                .tabItem { Image(systemName: "wineglass") }
-                .tag(Tab.cellar)
+            NavigationStack {
+                CellarView()
+            }
+            .tabItem { Image(systemName: "wineglass") }
+            .tag(Tab.cellar)
             SocialView()
                 .tabItem { Image(systemName: "person.2") }
                 .tag(Tab.social)

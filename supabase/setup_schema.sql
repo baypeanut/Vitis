@@ -156,7 +156,7 @@ DROP POLICY IF EXISTS "Users can delete own activity" ON public.activity_feed;
 CREATE POLICY "Users can delete own activity" ON public.activity_feed FOR DELETE USING (auth.uid() = user_id);
 
 DROP FUNCTION IF EXISTS public.feed_following(uuid, int, int);
-DROP VIEW IF EXISTS public.feed_with_details;
+DROP VIEW IF EXISTS public.feed_with_details CASCADE;
 
 -- -----------------------------------------------------------------------------
 -- comments_cheers (comment_body NULL = Cheer; non-null = Comment)
@@ -255,8 +255,12 @@ CREATE TABLE IF NOT EXISTS public.tastings (
   source text NULL
 );
 
+-- Add comment column (2025-02-02)
+ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS comment text NULL;
+
 CREATE INDEX IF NOT EXISTS idx_tastings_user_created ON public.tastings (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tastings_wine ON public.tastings (wine_id);
+CREATE INDEX IF NOT EXISTS idx_tastings_comment ON public.tastings USING gin(to_tsvector('english', comment)) WHERE comment IS NOT NULL;
 
 ALTER TABLE public.tastings ENABLE ROW LEVEL SECURITY;
 
@@ -315,7 +319,8 @@ SELECT DISTINCT ON (a.id)
   tw.vintage AS target_wine_vintage,
   tw.label_image_url AS target_wine_label_url,
   t.note_tags AS tasting_note_tags,
-  t.rating AS tasting_rating
+  t.rating AS tasting_rating,
+  t.comment AS tasting_comment
 FROM public.activity_feed a
 INNER JOIN public.profiles p ON p.id = a.user_id
 LEFT JOIN public.wines w ON w.id = a.wine_id

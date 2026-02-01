@@ -31,6 +31,7 @@ struct FeedRowPayload: Codable, Sendable {
     let targetWineLabelUrl: String?
     let tastingNoteTags: [String]?
     let tastingRating: Double?
+    let tastingComment: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -56,6 +57,7 @@ struct FeedRowPayload: Codable, Sendable {
         case targetWineLabelUrl = "target_wine_label_url"
         case tastingNoteTags = "tasting_note_tags"
         case tastingRating = "tasting_rating"
+        case tastingComment = "tasting_comment"
     }
 }
 
@@ -84,6 +86,7 @@ extension FeedItem {
             targetWineLabelURL: row.targetWineLabelUrl,
             contentText: notesText,
             tastingRating: row.tastingRating,
+            tastingComment: row.tastingComment,
             createdAt: row.createdAt,
             cheersCount: cheersCount,
             hasCheered: hasCheered
