@@ -50,35 +50,27 @@ struct TasteProfileDrillDownView: View {
     }
 
     private func drillDownRow(_ tasting: Tasting) -> some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tasting.wine.producer)
                     .font(VitisTheme.producerSerifFont())
                     .foregroundStyle(VitisTheme.secondaryText)
-                Text(tasting.wine.name)
-                    .font(VitisTheme.wineNameFont())
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
+                HStack(alignment: .center) {
+                    Text(tasting.wine.name)
+                        .font(VitisTheme.wineNameFont())
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(String(format: "%.1f", tasting.rating))
+                        .font(VitisTheme.uiFont(size: 24, weight: .semibold))
+                        .foregroundStyle(VitisTheme.accent)
+                }
                 if let v = tasting.wine.vintage {
                     Text(String(v))
                         .font(VitisTheme.detailFont())
                         .foregroundStyle(VitisTheme.secondaryText)
                 }
                 HStack(spacing: 8) {
-                    if let r = tasting.wine.region, !r.isEmpty {
-                        Text(r)
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
-                        Text("·")
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
-                    }
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
                     if let notes = tasting.notesDisplay {
-                        Text("·")
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
                         Text(notes)
                             .font(VitisTheme.uiFont(size: 13))
                             .foregroundStyle(VitisTheme.secondaryText)
@@ -88,8 +80,6 @@ struct TasteProfileDrillDownView: View {
                     .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer(minLength: 0)
         }
     }
 
