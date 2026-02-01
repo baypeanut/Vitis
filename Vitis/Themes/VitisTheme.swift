@@ -24,6 +24,9 @@ enum VitisTheme {
     /// Subtle border or divider.
     static let border = Color(white: 0.92)
 
+    /// Tertiary/muted text for low-emphasis elements (e.g. timestamps).
+    static let tertiaryText = Color(white: 0.58)
+
     // MARK: - Typography
 
     /// Producer: small caps, minimal, understated.

@@ -2,7 +2,7 @@
 //  CellarService.swift
 //  Vitis
 //
-//  Fetch user's ranking list (My Ranking). Cellar Had | Wishlist (cellar_items).
+//  Cellar Had | Wishlist (cellar_items).
 //
 
 import Foundation
@@ -10,45 +10,6 @@ import Supabase
 
 enum CellarService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
-
-    private struct FlatRow: Decodable {
-        let wine_id: UUID
-        let position: Int
-        let elo_score: Double
-        let wines: WineRef?
-        struct WineRef: Decodable {
-            let name: String
-            let producer: String
-            let vintage: Int?
-            let region: String?
-            let label_image_url: String?
-        }
-    }
-
-    /// Fetch current user's ranked wines (rankings + wines). Returns [] when not logged in.
-    static func fetchMyRanking(userId: UUID) async throws -> [RankingItem] {
-        let flat: [FlatRow] = try await supabase
-            .from("rankings")
-            .select("wine_id, position, elo_score, wines(name, producer, vintage, region, label_image_url)")
-            .eq("user_id", value: userId)
-            .order("position", ascending: true)
-            .execute()
-            .value
-
-        return flat.compactMap { row -> RankingItem? in
-            guard let w = row.wines else { return nil }
-            let wine = Wine(
-                id: row.wine_id,
-                name: w.name,
-                producer: w.producer,
-                vintage: w.vintage,
-                variety: nil,
-                region: w.region,
-                labelImageURL: w.label_image_url
-            )
-            return RankingItem(wineId: row.wine_id, position: row.position, eloScore: row.elo_score, wine: wine)
-        }
-    }
 
     // MARK: - Cellar (Had | Wishlist)
 

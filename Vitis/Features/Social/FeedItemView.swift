@@ -15,30 +15,31 @@ struct FeedItemView: View {
     var onWishlistToggle: (() -> Void)? = nil
     var trustHint: String? = nil
     var onUsernameTap: (() -> Void)? = nil
-    var onComment: (() -> Void)? = nil
     var onDelete: (() -> Void)? = nil
     var canDelete: Bool = false
+
+    @State private var showTrustHintPopover = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if item.activityType == .hadWine {
-                // Header row: avatar + username + "tasted"
                 headerRow
-                
-                // Two column layout: left = thumbnail + wine identity + notes; right = rating, region, timestamp (10-12pt below header)
                 twoColumnLayout
-                    .padding(.top, 10)
-                
-                // Actions row (8-10pt below main block)
+                    .padding(.top, 6)
                 actionsRow
-                    .padding(.top, 8)
+                    .padding(.top, 5)
             } else {
-                // Fallback for non-had_wine activities (keep old style)
                 legacyContent
             }
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 24)
+        .padding(.vertical, 11)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(white: 0.985))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             if canDelete, let onDelete = onDelete {
                 Button(role: .destructive) {
@@ -53,23 +54,19 @@ struct FeedItemView: View {
     // MARK: - Header Row
     
     private var headerRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
                 avatar
-                HStack(spacing: 4) {
-                    Text(item.username)
-                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
-                    Text("tasted")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                }
+                (Text(item.username)
+                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    .foregroundStyle(VitisTheme.accent)
+                + Text(" tasted")
+                    .font(VitisTheme.uiFont(size: 14))
+                    .foregroundStyle(VitisTheme.secondaryText))
                 Spacer()
             }
             if let hint = trustHint, !hint.isEmpty {
-                Text(hint)
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                trustHintBadge(fullText: hint)
             }
         }
     }
@@ -88,7 +85,7 @@ struct FeedItemView: View {
                 avatarPlaceholder
             }
         }
-        .frame(width: 40, height: 40)
+        .frame(width: 30, height: 30)
         .clipShape(Circle())
         .contentShape(Circle())
         .onTapGesture {
@@ -101,17 +98,42 @@ struct FeedItemView: View {
             .fill(Color(white: 0.94))
             .overlay(
                 Text(String(item.username.prefix(1)).uppercased())
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
                     .foregroundStyle(VitisTheme.secondaryText)
             )
+    }
+
+    private func trustHintBadge(fullText: String) -> some View {
+        HStack(spacing: 4) {
+            Text("Often saved")
+                .font(VitisTheme.uiFont(size: 11, weight: .medium))
+                .foregroundStyle(VitisTheme.tertiaryText)
+            Button {
+                showTrustHintPopover = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(VitisTheme.tertiaryText)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showTrustHintPopover) {
+                Text(fullText)
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(.primary)
+                    .padding(12)
+                    .frame(maxWidth: 240)
+                    .presentationCompactAdaptation(.popover)
+            }
+            .accessibilityLabel("Trust hint: \(fullText)")
+        }
     }
     
     // MARK: - Two Column Layout
     
     private var twoColumnLayout: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
             // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes)
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: 8) {
                 wineThumbnailSquare(
                     labelURL: item.wineLabelURL,
                     category: item.wineCategory,
@@ -119,49 +141,50 @@ struct FeedItemView: View {
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.wineProducer)
-                        .font(VitisTheme.producerSerifFont())
+                        .font(VitisTheme.uiFont(size: 11, weight: .regular))
                         .foregroundStyle(VitisTheme.secondaryText)
-                    
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     Text(VitisTheme.displayWineName(item.wineName))
                         .font(VitisTheme.wineNameFont())
                         .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
-                    
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.9)
                     if let vintage = item.wineVintage {
                         Text(String(vintage))
                             .font(VitisTheme.detailFont())
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
-                    
                     if let notes = formattedNotes, !notes.isEmpty {
                         Text(notes)
-                            .font(VitisTheme.uiFont(size: 13))
+                            .font(VitisTheme.uiFont(size: 12))
                             .foregroundStyle(VitisTheme.secondaryText)
-                            .padding(.top, 6)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .padding(.top, 2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // RIGHT COLUMN: rating, region, timestamp (trailing)
-            VStack(alignment: .trailing, spacing: 4) {
+            // RIGHT COLUMN: date (subtle, above), rating, region (trailing)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(VitisTheme.compactTimestamp(item.createdAt))
+                    .font(VitisTheme.uiFont(size: 10, weight: .regular))
+                    .foregroundStyle(VitisTheme.tertiaryText)
                 if let rating = item.tastingRating {
                     Text(String(format: "%.1f", rating))
-                        .font(VitisTheme.uiFont(size: 24, weight: .semibold))
+                        .font(VitisTheme.uiFont(size: 22, weight: .semibold))
                         .foregroundStyle(VitisTheme.accent)
                 }
-                
                 if let region = item.wineRegion, !region.isEmpty {
                     Text(region)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(VitisTheme.uiFont(size: 11))
                         .foregroundStyle(VitisTheme.secondaryText)
                 }
-                
-                Text(VitisTheme.compactTimestamp(item.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
             }
-            .frame(width: 100, alignment: .trailing)
+            .frame(width: 80, alignment: .trailing)
         }
     }
     
@@ -179,7 +202,7 @@ struct FeedItemView: View {
     
     /// Small thumbnail (32-36pt) for left column; label image or category icon.
     private func wineThumbnailSquare(labelURL: String?, category: String?, wineName: String?) -> some View {
-        let size: CGFloat = 34
+        let size: CGFloat = 28
         let cornerRadius: CGFloat = 6
         return ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
@@ -192,14 +215,14 @@ struct FeedItemView: View {
                         img.resizable().aspectRatio(contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     default:
                         Image(systemName: "wineglass.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 12))
                             .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
                     }
                 }
                 .frame(width: size, height: size)
             } else {
                 Image(systemName: "wineglass.fill")
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))
                     .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
             }
         }
@@ -207,56 +230,45 @@ struct FeedItemView: View {
     }
     
     
-    // MARK: - Actions Row
-    
+    // MARK: - Actions Row (icon-first, minimal)
+
     private var actionsRow: some View {
-        HStack(spacing: 24) {
+        HStack(spacing: 16) {
             Button {
                 onCheers()
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: item.hasCheered ? "wineglass.fill" : "wineglass")
-                        .font(.system(size: 14))
-                        .foregroundStyle(item.hasCheered ? VitisTheme.accent : VitisTheme.secondaryText)
-                    Text("Cheers")
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(.system(size: 15))
                         .foregroundStyle(item.hasCheered ? VitisTheme.accent : VitisTheme.secondaryText)
                     if item.cheersCount > 0 {
                         Text("\(item.cheersCount)")
-                            .font(VitisTheme.uiFont(size: 13))
+                            .font(VitisTheme.uiFont(size: 12))
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
                 }
+                .contentShape(Rectangle())
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Cheers\(item.cheersCount > 0 ? ", \(item.cheersCount)" : "")")
+            .accessibilityHint(item.hasCheered ? "Double tap to remove" : "Double tap to cheer")
 
-            if item.activityType == .hadWine, let onWishlistToggle {
+            if item.activityType == .hadWine, let onWishlist = onWishlistToggle {
                 Button {
-                    onWishlistToggle()
+                    onWishlist()
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
-                            .font(.system(size: 14))
-                        Text("Want to Try")
-                            .font(VitisTheme.uiFont(size: 13))
-                    }
-                    .foregroundStyle(hasWishlisted ? VitisTheme.accent : VitisTheme.secondaryText)
+                    Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 15))
+                        .foregroundStyle(hasWishlisted ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
-            }
-            if let onComment {
-                Button {
-                    onComment()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
-                            .font(.system(size: 14))
-                        Text("Comment")
-                            .font(VitisTheme.uiFont(size: 13))
-                    }
-                    .foregroundStyle(VitisTheme.secondaryText)
-                }
-                .buttonStyle(.plain)
+                .accessibilityLabel(hasWishlisted ? "In wishlist" : "Want to try")
+                .accessibilityHint("Double tap to \(hasWishlisted ? "remove from wishlist" : "add to wishlist")")
             }
         }
     }

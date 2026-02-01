@@ -21,8 +21,6 @@ private struct ProfileSheetItem: Identifiable, Hashable {
 
 struct FeedView: View {
     @State private var viewModel = FeedViewModel()
-    @State private var commentActivityID: UUID?
-    @State private var showCommentSheet = false
     @State private var profileSheetItem: ProfileSheetItem?
     @State private var showNotificationSheet = false
     @State private var unreadCount = 0
@@ -44,7 +42,6 @@ struct FeedView: View {
             .sheet(isPresented: $showNotificationSheet) {
                 notificationSheetContent
             }
-            .sheet(isPresented: $showCommentSheet) { commentSheetContent }
             .navigationDestination(item: $profileSheetItem) { item in
                 profileNavigationContent(for: item)
             }
@@ -63,14 +60,6 @@ struct FeedView: View {
                 tabBar
                 feedContent
             }
-        }
-    }
-
-    @ViewBuilder
-    private var commentSheetContent: some View {
-        if let aid = commentActivityID {
-            CommentSheetView(activityID: aid, postOwnerId: viewModel.items.first(where: { $0.id == aid })?.userId, currentUserId: viewModel.currentUserId, isPresented: $showCommentSheet, onPosted: { Task { await viewModel.refresh() } }, onCommentsChanged: { Task { await viewModel.refresh() } })
-            .presentationDetents([.medium, .large])
         }
     }
 
@@ -122,8 +111,8 @@ struct FeedView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 20)
-        .padding(.bottom, 8)
+        .padding(.top, 16)
+        .padding(.bottom, 4)
     }
 
     private var tabBar: some View {
@@ -132,7 +121,7 @@ struct FeedView: View {
             tabButton(.following, label: "Following")
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
     }
 
     private func tabButton(_ tab: FeedViewModel.Tab, label: String) -> some View {
@@ -180,8 +169,11 @@ struct FeedView: View {
 
     private var feedList: some View {
         List {
-            ForEach(viewModel.items, id: \.id) { item in
+            ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
                 VStack(spacing: 0) {
+                    if index > 0 && index % 5 == 0 {
+                        editorialPause
+                    }
                     FeedItemView(
                         item: item,
                         parts: viewModel.statementParts(for: item),
@@ -195,15 +187,12 @@ struct FeedView: View {
                             #endif
                             profileSheetItem = ProfileSheetItem(userId: item.userId, username: item.username)
                         },
-                        onComment: { commentActivityID = item.id },
                         onDelete: { Task { await viewModel.deleteFeedItem(item) } },
                         canDelete: viewModel.currentUserId == item.userId
                     )
-                    Rectangle()
-                        .fill(VitisTheme.border)
-                        .frame(height: 1)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                    .padding(.horizontal, 16)
+                    .padding(.top, index > 0 && index % 5 == 0 ? 0 : 6)
+                    .padding(.bottom, 6)
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
@@ -213,6 +202,18 @@ struct FeedView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .refreshable { await viewModel.refresh() }
+    }
+
+    private var editorialPause: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(VitisTheme.border)
+                .frame(height: 1)
+                .padding(.horizontal, 24)
+            Spacer()
+                .frame(height: 10)
+        }
+        .padding(.top, 6)
     }
 
     private func openNotificationSheet() async {
@@ -262,9 +263,6 @@ struct FeedView: View {
                 Task { unreadCount = await NotificationService.fetchUnreadCount() }
             }
         }
-        .onChange(of: showCommentSheet) { _, v in
-            if !v { commentActivityID = nil }
-        }
     }
 
     private func notificationRow(_ n: NotificationItem) -> some View {
@@ -282,12 +280,7 @@ struct FeedView: View {
         .padding(.vertical, 16)
         .contentShape(Rectangle())
         .onTapGesture {
-            commentActivityID = n.postId
             showNotificationSheet = false
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 400_000_000)
-                showCommentSheet = true
-            }
         }
     }
 

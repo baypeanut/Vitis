@@ -20,7 +20,7 @@ final class ProfileViewModel {
     var isOwn: Bool = false
 
     var profile: Profile?
-    var rankingsCount: Int = 0
+    var ratedCount: Int = 0
     var followersCount: Int = 0
     var followingCount: Int = 0
     var recentActivity: [FeedItem] = []
@@ -65,7 +65,7 @@ final class ProfileViewModel {
         #endif
 
         var newProfile: Profile?
-        var newRankingsCount: Int?
+        var newRatedCount: Int?
         var newFollowersCount: Int?
         var newFollowingCount: Int?
         var newTastings: [Tasting]?
@@ -97,7 +97,7 @@ final class ProfileViewModel {
 
         let countResult = await TastingService.fetchTastingsCount(userId: uid)
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-        newRankingsCount = countResult
+        newRatedCount = countResult
 
         let followersResult = await SocialService.fetchFollowerCount(userId: uid)
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
@@ -144,7 +144,7 @@ final class ProfileViewModel {
         }
 
         if let p = newProfile { profile = p }
-        if let c = newRankingsCount { rankingsCount = c }
+        if let c = newRatedCount { ratedCount = c }
         if let f = newFollowersCount { followersCount = f }
         if let f = newFollowingCount { followingCount = f }
         if let t = newTastings { allTastings = t }

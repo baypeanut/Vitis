@@ -65,35 +65,6 @@ final class FeedService {
         return rows.map { FeedItem.from(row: $0) }
     }
 
-    /// Recent activity for a specific user (their rankings / duel wins). Used in profile "Recent Activity" tab.
-    func fetchActivityForUser(userId: UUID, limit: Int = 30, offset: Int = 0) async throws -> [FeedItem] {
-        #if DEBUG
-        print("[FeedService] fetchActivityForUser requested userId=\(userId)")
-        #endif
-        let client = SupabaseManager.shared.supabase
-        let rows: [FeedRowPayload] = try await client
-            .from("feed_with_details")
-            .select()
-            .eq("user_id", value: userId)
-            .order("created_at", ascending: false)
-            .range(from: offset, to: offset + limit - 1)
-            .execute()
-            .value
-        let ids = rows.map(\.id)
-        let likeCounts: [UUID: Int] = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
-        var likedIDs: Set<UUID> = []
-        if let uid = await AuthService.currentUserId() {
-            likedIDs = (try? await SocialService.fetchLikedActivityIDs(userId: uid)) ?? []
-        }
-        return rows.map { r in
-            FeedItem.from(
-                row: r,
-                cheersCount: likeCounts[r.id] ?? 0,
-                hasCheered: likedIDs.contains(r.id)
-            )
-        }
-    }
-
     // MARK: - Delete
 
     /// Delete an activity_feed row by its ID.

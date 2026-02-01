@@ -52,7 +52,7 @@ struct ProfileView: View {
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
-                        onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) },
+                        onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) }
                     )
                 } else {
@@ -72,12 +72,22 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .navigationDestination(item: $drillDownTarget) { target in
-                TasteProfileDrillDownView(
-                    title: target.title,
-                    filterType: target.filterType,
-                    tastings: viewModel?.allTastings ?? []
-                )
+            .sheet(item: $drillDownTarget) { target in
+                NavigationStack {
+                    TasteProfileDrillDownView(
+                        title: target.title,
+                        filterType: target.filterType,
+                        tastings: viewModel?.allTastings ?? []
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { drillDownTarget = nil }
+                                .font(VitisTheme.uiFont(size: 15))
+                                .foregroundStyle(VitisTheme.accent)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
                 if let vm = viewModel, let uid = currentUserId {

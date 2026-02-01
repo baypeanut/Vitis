@@ -98,9 +98,8 @@ Vitis/
 │   │   ├── Cellar/              # My Cellar (tasting history)
 │   │   │   ├── CellarView.swift
 │   │   │   ├── CellarViewModel.swift
-│   │   │   ├── AddWineSheet.swift      # Multi-step: Search → Rate → Notes
-│   │   │   ├── TastingRateView.swift   # Rating slider
-│   │   │   └── NotesSelectView.swift   # Notes chips
+│   │   │   ├── AddWineSheet.swift      # Multi-step: Search → Rate+Notes
+│   │   │   └── TastingRateView.swift   # Rating slider + notes chips
 │   │   │
 │   │   ├── Social/              # Social feed
 │   │   │   ├── FeedView.swift
@@ -270,7 +269,7 @@ cd Vitis
 
 ### 1. Add Wine & Rate Flow
 
-**Path**: Cellar → + → Search → Select → Rate → Notes → Save
+**Path**: Cellar → + → Search → Select → Rate+Notes → Save
 
 1. User taps **+** in Cellar tab
 2. `AddWineSheet` opens → Search wines (OFF API)
@@ -279,14 +278,12 @@ cd Vitis
    - Wine info (producer, name, vintage, region)
    - Rating slider (1.0-10.0, step 0.1)
    - Wine glass icon as thumb (tinted by category: red/white/rose/sparkling)
-5. User taps **Next** → `NotesSelectView` shows:
-   - Category-based chips (e.g., Red: "Blackberry", "Cherry", "Vanilla", etc.)
-   - User selects 0+ notes
-   - **Cheers** button (saves) or **Skip** (saves without notes)
-6. `TastingService.createTasting`:
+   - Category-based notes chips (optional; e.g., Red: "Blackberry", "Cherry", "Vanilla")
+   - **Cheers** button (saves)
+5. `TastingService.createTasting`:
    - Inserts row into `tastings` table
    - Inserts row into `activity_feed` (`activity_type = 'had_wine'`, notes in `content_text`)
-7. Sheet closes → Cellar refreshes → New tasting appears at top
+6. Sheet closes → Cellar refreshes → New tasting appears at top
 
 ### 2. Social Feed Flow
 
@@ -299,7 +296,6 @@ cd Vitis
    - Orders by `created_at DESC`
 3. For each item, fetches:
    - Like counts (`SocialService.fetchLikeCounts`)
-   - Comment counts (`SocialService.fetchCommentCounts`)
    - User's liked status (`SocialService.fetchLikedActivityIDs`)
 4. `FeedItemView` renders:
    - Statement: "Mert had 2019 Chardonnay." (name in serif, burgundy)
@@ -444,20 +440,15 @@ struct Wine: Identifiable {
 #### `AddWineSheet`
 - Multi-step flow via `TastingFlowStep` enum:
   - `.search`: Search bar + results list
-  - `.rating(Wine)`: `TastingRateView`
-  - `.notes(Wine, Double)`: `NotesSelectView`
+  - `.rating(Wine)`: `TastingRateView` (rating + optional notes)
 - On save: Calls `TastingService.createTasting`
 
 #### `TastingRateView`
 - Wine info display
 - Custom slider: Wine glass icon thumb, category-tinted
 - Rating value display (e.g., "8.5")
-- **Next** button
-
-#### `NotesSelectView`
-- Chip-based selection
-- Category-based notes (`TastingNotes.notesForCategory`)
-- **Cheers** button (wine glass icon) + **Skip**
+- Optional notes chips (`TastingNotes.notesForCategory`)
+- **Cheers** button (saves)
 
 #### `FeedView`
 - Global/Following tabs
@@ -629,9 +620,8 @@ PostgreSQL feature enforced by Supabase:
 | `RootView.swift` | Auth gate, shows TabView or Onboarding |
 | `ContentView.swift` | Main TabView (Cellar, Social, Profile) |
 | `CellarView.swift` | My Cellar - tasting history list |
-| `AddWineSheet.swift` | Multi-step: Search → Rate → Notes → Save |
-| `TastingRateView.swift` | Rating slider (1.0-10.0) |
-| `NotesSelectView.swift` | Notes chip selection |
+| `AddWineSheet.swift` | Multi-step: Search → Rate+Notes → Save |
+| `TastingRateView.swift` | Rating slider + notes chips |
 | `FeedView.swift` | Social feed (Global/Following) |
 | `FeedItemView.swift` | Single feed item display (rating, country, notes, date/time) |
 | `ProfileView.swift` | User profile (own or other) |
@@ -703,7 +693,7 @@ Vanilla, Floral
 3. **Run the app** and test the flow (Add wine → Rate → Notes → Save)
 4. **Explore the code**:
    - Start with `RootView.swift` → `ContentView.swift` → `CellarView.swift`
-   - Follow the flow: `AddWineSheet` → `TastingRateView` → `NotesSelectView` → `TastingService`
+   - Follow the flow: `AddWineSheet` → `TastingRateView` → `TastingService`
    - Check `FeedItemView.hadWineDetails` to see how feed items are rendered
 5. **Check Supabase Dashboard**:
    - Table Editor → See `tastings`, `activity_feed`, `wines` tables
