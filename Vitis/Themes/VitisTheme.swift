@@ -66,8 +66,41 @@ enum VitisTheme {
         return f
     }()
 
-    /// Compact quiet format, e.g. "Jan 28, 2026". Comments, cellar rows.
+    /// Relative time format: "5 minutes ago", "1 hour ago", "a week ago", or full date if too old.
     static func compactTimestamp(_ date: Date) -> String {
-        compactTimestampFormatter.string(from: date)
+        let now = Date()
+        let seconds = now.timeIntervalSince(date)
+        
+        // Less than a minute
+        if seconds < 60 {
+            return "just now"
+        }
+        
+        // Less than an hour
+        let minutes = Int(seconds / 60)
+        if minutes < 60 {
+            return minutes == 1 ? "1 minute ago" : "\(minutes) minutes ago"
+        }
+        
+        // Less than a day
+        let hours = Int(seconds / 3600)
+        if hours < 24 {
+            return hours == 1 ? "1 hour ago" : "\(hours) hours ago"
+        }
+        
+        // Less than a week
+        let days = Int(seconds / 86400)
+        if days < 7 {
+            return days == 1 ? "1 day ago" : "\(days) days ago"
+        }
+        
+        // Less than 4 weeks
+        let weeks = Int(seconds / 604800)
+        if weeks < 4 {
+            return weeks == 1 ? "a week ago" : "\(weeks) weeks ago"
+        }
+        
+        // More than 4 weeks, show full date
+        return compactTimestampFormatter.string(from: date)
     }
 }

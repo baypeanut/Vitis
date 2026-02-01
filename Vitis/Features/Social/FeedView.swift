@@ -48,7 +48,6 @@ struct FeedView: View {
         ZStack {
             VitisTheme.background.ignoresSafeArea()
             VStack(spacing: 0) {
-                header
                 tabBar
                 feedContent
             }
@@ -83,22 +82,14 @@ struct FeedView: View {
         #endif
     }
 
-    private var header: some View {
-        Text("Curated by")
-            .font(VitisTheme.titleFont())
-            .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 20)
-            .padding(.bottom, 8)
-    }
-
     private var tabBar: some View {
         HStack(spacing: 0) {
             tabButton(.global, label: "Global")
             tabButton(.following, label: "Following")
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 12)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
     }
 
     private func tabButton(_ tab: FeedViewModel.Tab, label: String) -> some View {

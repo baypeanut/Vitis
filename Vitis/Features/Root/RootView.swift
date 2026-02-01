@@ -70,16 +70,16 @@ struct RootView: View {
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
             CellarView()
-                .tabItem { Label("Cellar", systemImage: "square.stack") }
+                .tabItem { Image(systemName: "wineglass") }
                 .tag(Tab.cellar)
             SocialView()
-                .tabItem { Label("Social", systemImage: "person.2") }
+                .tabItem { Image(systemName: "person.2") }
                 .tag(Tab.social)
             NotificationsView()
-                .tabItem { Label("Notifications", systemImage: "bell") }
+                .tabItem { Image(systemName: "bell") }
                 .tag(Tab.notifications)
             ProfileView(onSignOut: didSignOut)
-                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                .tabItem { Image(systemName: "person.crop.circle") }
                 .tag(Tab.profile)
         }
         .tint(VitisTheme.accent)
