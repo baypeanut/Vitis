@@ -10,6 +10,7 @@ import SwiftUI
 struct CellarView: View {
     @State private var viewModel = CellarViewModel()
     @State private var showAddWine = false
+    @State private var showFilters = false
     @State private var selectedCategory: String = ""
 
     var body: some View {
@@ -43,6 +44,13 @@ struct CellarView: View {
                 Task { await viewModel.load() }
             }
         }
+        .sheet(isPresented: $showFilters) {
+            CellarFilterSheet(
+                sortOption: $viewModel.sortOption,
+                ratingFilter: $viewModel.ratingFilter,
+                isPresented: $showFilters
+            )
+        }
     }
 
     private func updateSelectedCategory() {
@@ -58,14 +66,26 @@ struct CellarView: View {
                 .foregroundStyle(.primary)
             Spacer()
             if !viewModel.needsAuth, let _ = viewModel.currentUserId {
-                Button {
-                    showAddWine = true
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 22))
-                        .foregroundStyle(VitisTheme.accent)
+                HStack(spacing: 12) {
+                    if !viewModel.tastings.isEmpty {
+                        Button {
+                            showFilters = true
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .font(.system(size: 22))
+                                .foregroundStyle(VitisTheme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Button {
+                        showAddWine = true
+                    } label: {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 22))
+                            .foregroundStyle(VitisTheme.accent)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity)
@@ -126,51 +146,12 @@ struct CellarView: View {
 
     private var listContent: some View {
         VStack(spacing: 0) {
-            quickFilters
             if viewModel.groupedTastings.count > 1 {
                 categoryTabs
                 Rectangle().fill(VitisTheme.border).frame(height: 1)
             }
             categoryContent
         }
-    }
-
-    private var quickFilters: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                ForEach(CellarViewModel.SortOption.allCases, id: \.self) { opt in
-                    Button {
-                        viewModel.sortOption = opt
-                    } label: {
-                        Text(opt.rawValue)
-                            .font(VitisTheme.uiFont(size: 13, weight: viewModel.sortOption == opt ? .semibold : .regular))
-                    }
-                    .foregroundStyle(viewModel.sortOption == opt ? VitisTheme.accent : VitisTheme.secondaryText)
-                    .buttonStyle(.plain)
-                }
-                Spacer()
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(CellarViewModel.RatingFilter.allCases, id: \.self) { f in
-                        Button {
-                            viewModel.ratingFilter = f
-                        } label: {
-                            Text(f.rawValue)
-                                .font(VitisTheme.uiFont(size: 13))
-                        }
-                        .foregroundStyle(viewModel.ratingFilter == f ? .white : VitisTheme.secondaryText)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(viewModel.ratingFilter == f ? VitisTheme.accent : Color(white: 0.96))
-                        .clipShape(Capsule())
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
     }
     
     private var categoryTabs: some View {
@@ -256,6 +237,95 @@ struct CellarView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+struct CellarFilterSheet: View {
+    @Binding var sortOption: CellarViewModel.SortOption
+    @Binding var ratingFilter: CellarViewModel.RatingFilter
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Sort Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Sort By")
+                            .font(VitisTheme.uiFont(size: 15, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        
+                        ForEach(CellarViewModel.SortOption.allCases, id: \.self) { option in
+                            Button {
+                                sortOption = option
+                            } label: {
+                                HStack {
+                                    Text(option.rawValue)
+                                        .font(VitisTheme.uiFont(size: 15))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    if sortOption == option {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(VitisTheme.accent)
+                                    }
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(sortOption == option ? VitisTheme.accent.opacity(0.1) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 8)
+                    
+                    // Rating Filter Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Rating Filter")
+                            .font(VitisTheme.uiFont(size: 15, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        
+                        ForEach(CellarViewModel.RatingFilter.allCases, id: \.self) { filter in
+                            Button {
+                                ratingFilter = filter
+                            } label: {
+                                HStack {
+                                    Text(filter.rawValue)
+                                        .font(VitisTheme.uiFont(size: 15))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    if ratingFilter == filter {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(VitisTheme.accent)
+                                    }
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(ratingFilter == filter ? VitisTheme.accent.opacity(0.1) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                .padding(24)
+            }
+            .background(VitisTheme.background)
+            .navigationTitle("Filter & Sort")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        isPresented = false
+                    }
+                    .foregroundStyle(VitisTheme.accent)
+                }
+            }
+        }
     }
 }
 

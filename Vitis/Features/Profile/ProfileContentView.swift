@@ -27,7 +27,7 @@ struct ProfileContentView: View {
     var onWantToTryTap: (() -> Void)?
     var onWantToTryToggle: ((CellarItem) async -> Void)?
 
-    enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
+    enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
 
     @State private var mainTab: MainTab = .recentActivity
