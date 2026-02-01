@@ -14,13 +14,14 @@ struct EditProfileView: View {
     var userId: UUID
     var onSaved: () -> Void
     var onCancel: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var showCropSheet = false
     @State private var pickedImage: UIImage?
 
     var body: some View {
-        NavigationStack {
             ZStack {
                 VitisTheme.background.ignoresSafeArea()
                 ScrollView {
@@ -51,13 +52,6 @@ struct EditProfileView: View {
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onCancel() }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent)
-                }
-            }
             .onAppear { viewModel.apply(profile: profile) }
             .onChange(of: selectedItem) { _, new in
                 Task { await loadPickedImage(new) }
@@ -79,7 +73,6 @@ struct EditProfileView: View {
                     )
                 }
             }
-        }
     }
 
     private var avatarSection: some View {
@@ -242,6 +235,7 @@ struct EditProfileView: View {
     private func save() async {
         await viewModel.save(userId: userId)
         if viewModel.saveError == nil {
+            dismiss()
             onSaved()
         }
     }
