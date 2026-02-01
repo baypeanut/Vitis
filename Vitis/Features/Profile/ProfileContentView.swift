@@ -367,41 +367,35 @@ struct ProfileContentView: View {
     }
 
     private func tastingActivityRow(_ tasting: Tasting) -> some View {
-        let username = viewModel.profile?.username ?? "User"
         let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
         return HStack(alignment: .top, spacing: 12) {
             cellarAvatarCircle()
             VStack(alignment: .leading, spacing: 4) {
-                (Text("\(username) had ")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(.primary)
-                + Text(wine)
-                    .font(.system(size: 15, weight: .medium, design: .serif))
-                    .foregroundStyle(VitisTheme.accent)
-                + Text(".")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(.primary))
-                .fixedSize(horizontal: false, vertical: true)
-                
-                HStack(spacing: 8) {
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
-                    if let notes = tasting.notesDisplay {
-                        Text("·")
-                            .font(VitisTheme.uiFont(size: 13))
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tasting.wine.producer)
+                            .font(VitisTheme.producerSerifFont())
                             .foregroundStyle(VitisTheme.secondaryText)
-                        Text(notes)
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                        Text(wine)
+                            .font(.system(size: 15, weight: .medium, design: .serif))
+                            .foregroundStyle(VitisTheme.accent)
                     }
+                    Spacer(minLength: 8)
+                    Text(String(format: "%.1f", tasting.rating))
+                        .font(VitisTheme.uiFont(size: 18, weight: .semibold))
+                        .foregroundStyle(VitisTheme.accent)
+                }
+                
+                if let notes = tasting.notesDisplay {
+                    Text(notes)
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText)
                 }
                 
                 Text(VitisTheme.compactTimestamp(tasting.createdAt))
                     .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)
             }
-            Spacer(minLength: 0)
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
