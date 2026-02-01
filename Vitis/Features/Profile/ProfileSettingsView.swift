@@ -8,9 +8,13 @@
 import SwiftUI
 
 struct ProfileSettingsView: View {
-    var onEdit: () -> Void
+    var profile: Profile?
+    var userId: UUID?
     var onSignOut: () -> Void
+    var onProfileUpdated: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var showEditProfile = false
+    @State private var editVM = EditProfileViewModel()
     
     var body: some View {
         ZStack {
@@ -21,8 +25,7 @@ struct ProfileSettingsView: View {
                     title: "Edit Profile",
                     icon: "pencil",
                     action: {
-                        dismiss()
-                        onEdit()
+                        showEditProfile = true
                     }
                 )
                 
@@ -47,6 +50,20 @@ struct ProfileSettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showEditProfile) {
+            if let p = profile, let uid = userId {
+                EditProfileView(
+                    viewModel: editVM,
+                    profile: p,
+                    userId: uid,
+                    onSaved: {
+                        showEditProfile = false
+                        onProfileUpdated()
+                    },
+                    onCancel: { showEditProfile = false }
+                )
+            }
+        }
     }
     
     private func settingsButton(title: String, icon: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {

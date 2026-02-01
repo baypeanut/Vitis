@@ -27,8 +27,6 @@ struct ProfileView: View {
     @State private var viewModel: ProfileViewModel?
     @State private var currentUserId: UUID?
     @State private var didRunEnsure = false
-    @State private var showEditProfile = false
-    @State private var editVM = EditProfileViewModel()
     @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: DrillDownTarget?
@@ -48,7 +46,6 @@ struct ProfileView: View {
                         viewModel: vm,
                         isOwn: true,
                         isFollowing: false,
-                        onEdit: { showEditProfile = true },
                         onSignOut: { Task { await signOut() } },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
@@ -85,27 +82,17 @@ struct ProfileView: View {
             }
             .navigationDestination(isPresented: $showSettings) {
                 ProfileSettingsView(
-                    onEdit: { showEditProfile = true },
-                    onSignOut: { Task { await signOut() } }
+                    profile: viewModel?.profile,
+                    userId: currentUserId,
+                    onSignOut: { Task { await signOut() } },
+                    onProfileUpdated: {
+                        Task {
+                            await viewModel?.load()
+                            await ProfileStore.shared.load()
+                            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
+                        }
+                    }
                 )
-            }
-            .navigationDestination(isPresented: $showEditProfile) {
-                if let vm = viewModel, let p = vm.profile, let uid = currentUserId {
-                    EditProfileView(
-                        viewModel: editVM,
-                        profile: p,
-                        userId: uid,
-                        onSaved: {
-                            showEditProfile = false
-                            Task {
-                                await vm.load()
-                                await ProfileStore.shared.load()
-                                NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
-                            }
-                        },
-                        onCancel: { showEditProfile = false }
-                    )
-                }
             }
             .navigationDestination(item: $drillDownTarget) { target in
                 TasteProfileDrillDownView(
