@@ -98,7 +98,8 @@ struct ProfileView: View {
                 TasteProfileDrillDownView(
                     title: target.title,
                     filterType: target.filterType,
-                    tastings: viewModel?.allTastings ?? []
+                    tastings: viewModel?.allTastings ?? [],
+                    currentUserId: currentUserId
                 )
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
