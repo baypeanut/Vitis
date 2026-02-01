@@ -32,6 +32,7 @@ struct ProfileView: View {
     @State private var showFollowersFollowing = false
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: DrillDownTarget?
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -71,7 +72,23 @@ struct ProfileView: View {
             .navigationTitle(viewModel?.profile?.displayName ?? "Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 18))
+                            .foregroundStyle(VitisTheme.accent)
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                ProfileSettingsView(
+                    onEdit: { showEditSheet = true },
+                    onSignOut: { Task { await signOut() } }
+                )
+            }
             .navigationDestination(item: $drillDownTarget) { target in
                 TasteProfileDrillDownView(
                     title: target.title,

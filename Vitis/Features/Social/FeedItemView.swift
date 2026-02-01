@@ -133,18 +133,12 @@ struct FeedItemView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // RIGHT COLUMN: rating, region, timestamp (trailing)
+            // RIGHT COLUMN: rating, timestamp (trailing)
             VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.tastingRating {
                     Text(String(format: "%.1f", rating))
                         .font(VitisTheme.uiFont(size: 24, weight: .semibold))
                         .foregroundStyle(VitisTheme.accent)
-                }
-                
-                if let region = item.wineRegion, !region.isEmpty {
-                    Text(region)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
                 }
                 
                 Text(VitisTheme.compactTimestamp(item.createdAt))
