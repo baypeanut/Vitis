@@ -9,7 +9,7 @@
 import SwiftUI
 
 enum Tab {
-    case cellar, social, profile
+    case cellar, social, notifications, profile
 }
 
 struct RootView: View {
