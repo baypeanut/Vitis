@@ -14,10 +14,44 @@ struct WineCardView: View {
     
     @State private var userTasting: Tasting?
     @State private var otherTastings: [TastingWithProfile] = []
+    @State private var friendsTastings: [TastingWithProfile] = []
     @State private var activityComments: [CommentWithProfile] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
+    
+    private var friendsAverageRating: Double? {
+        guard !friendsTastings.isEmpty else { return nil }
+        let sum = friendsTastings.reduce(0.0) { $0 + $1.rating }
+        return sum / Double(friendsTastings.count)
+    }
+    
+    private var globalAverageRating: Double? {
+        var allRatings: [Double] = []
+        
+        // Include user's own rating if they have one
+        if let userRating = userTasting?.rating {
+            allRatings.append(userRating)
+        }
+        
+        // Add friends' ratings
+        allRatings.append(contentsOf: friendsTastings.map { $0.rating })
+        
+        // Add other users' ratings
+        allRatings.append(contentsOf: otherTastings.map { $0.rating })
+        
+        guard !allRatings.isEmpty else { return nil }
+        let sum = allRatings.reduce(0.0, +)
+        return sum / Double(allRatings.count)
+    }
+    
+    private var globalTastingsCount: Int {
+        var count = 0
+        if userTasting != nil { count += 1 }
+        count += friendsTastings.count
+        count += otherTastings.count
+        return count
+    }
     
     private var wineColor: Color {
         WineColorResolver.resolveWineDisplayColor(wine: wine)
@@ -36,8 +70,12 @@ struct WineCardView: View {
                     VStack(spacing: 0) {
                         wineHeader
                         
-                        if let tasting = userTasting {
-                            userTastingSection(tasting)
+                        // Combined ratings section
+                        ratingsSection
+                        
+                        // User's tasting notes and comment
+                        if let tasting = userTasting, (tasting.noteTags?.isEmpty == false || tasting.comment?.isEmpty == false) {
+                            userNotesSection(tasting)
                         }
                         
                         if activityId != nil && !activityComments.isEmpty {
@@ -58,8 +96,8 @@ struct WineCardView: View {
                 }
             }
         }
-        .navigationTitle(wine.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadData()
         }
@@ -132,27 +170,71 @@ struct WineCardView: View {
         }
     }
     
-    // MARK: - User Tasting Section
+    // MARK: - Ratings Section
     
-    private func userTastingSection(_ tasting: Tasting) -> some View {
+    private var ratingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionDivider
+            
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Ratings")
+                    .font(VitisTheme.uiFont(size: 18, weight: .semibold))
+                    .foregroundStyle(.primary)
+                
+                VStack(spacing: 12) {
+                    // You
+                    if let tasting = userTasting {
+                        ratingRow(label: "You", rating: tasting.rating, timestamp: tasting.createdAt)
+                    }
+                    
+                    // Friends
+                    if let avgRating = friendsAverageRating {
+                        ratingRow(label: "Friends", rating: avgRating, count: friendsTastings.count)
+                    }
+                    
+                    // Global
+                    if let avgRating = globalAverageRating {
+                        ratingRow(label: "Global", rating: avgRating, count: globalTastingsCount)
+                    }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+        }
+    }
+    
+    private func ratingRow(label: String, rating: Double, timestamp: Date? = nil, count: Int? = nil) -> some View {
+        HStack(alignment: .center) {
+            Text(label)
+                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 80, alignment: .leading)
+            
+            Text(String(format: "%.1f", rating))
+                .font(VitisTheme.uiFont(size: 24, weight: .semibold))
+                .foregroundStyle(VitisTheme.accent)
+            
+            Spacer()
+            
+            if let timestamp = timestamp {
+                Text(VitisTheme.compactTimestamp(timestamp))
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.tertiaryText)
+            } else if let count = count {
+                Text("\(count) user\(count == 1 ? "" : "s")")
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.tertiaryText)
+            }
+        }
+    }
+    
+    // MARK: - User Notes Section
+    
+    private func userNotesSection(_ tasting: Tasting) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionDivider
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("Your Tasting")
-                    .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                    .foregroundStyle(.primary)
-                
-                // Rating
-                HStack(alignment: .center, spacing: 12) {
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 36, weight: .semibold))
-                        .foregroundStyle(VitisTheme.accent)
-                    Text("/ 10")
-                        .font(VitisTheme.uiFont(size: 18))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                }
-                
                 // Tasting notes
                 if let notes = tasting.noteTags, !notes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -184,10 +266,6 @@ struct WineCardView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
-                
-                Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.tertiaryText)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 20)
@@ -372,23 +450,44 @@ struct WineCardView: View {
         isLoading = true
         errorMessage = nil
         
-        async let userTastingTask: Tasting? = {
-            guard let userId = currentUserId else { return nil }
-            return try? await TastingService.fetchUserTastingForWine(userId: userId, wineId: wine.id)
-        }()
+        // Fetch user's tasting
+        let userTastingResult: Tasting?
+        if let userId = currentUserId {
+            userTastingResult = try? await TastingService.fetchUserTastingForWine(userId: userId, wineId: wine.id)
+        } else {
+            userTastingResult = nil
+        }
         
-        async let otherTastingsTask: [TastingWithProfile] = {
-            return (try? await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: currentUserId, limit: 20)) ?? []
-        }()
+        // Fetch following user IDs
+        let followingIds: Set<UUID>
+        if let userId = currentUserId {
+            let following = (try? await SocialService.fetchFollowing(userId: userId, limit: 1000)) ?? []
+            followingIds = Set(following.map { $0.id })
+        } else {
+            followingIds = []
+        }
         
-        async let activityCommentsTask: [CommentWithProfile] = {
-            guard let actId = activityId else { return [] }
-            return (try? await SocialService.fetchComments(activityID: actId)) ?? []
-        }()
+        // Fetch all tastings for this wine (excluding current user for the "others" section)
+        let allTastings = (try? await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: nil, limit: 100)) ?? []
         
-        let (userTastingResult, otherTastingsResult, activityCommentsResult) = await (userTastingTask, otherTastingsTask, activityCommentsTask)
+        // Separate into friends and others (excluding current user)
+        let friendsTastingsResult = allTastings.filter { 
+            followingIds.contains($0.userId) && $0.userId != currentUserId 
+        }
+        let otherTastingsResult = allTastings.filter { 
+            !followingIds.contains($0.userId) && $0.userId != currentUserId 
+        }
+        
+        // Fetch activity comments
+        let activityCommentsResult: [CommentWithProfile]
+        if let actId = activityId {
+            activityCommentsResult = (try? await SocialService.fetchComments(activityID: actId)) ?? []
+        } else {
+            activityCommentsResult = []
+        }
         
         userTasting = userTastingResult
+        friendsTastings = friendsTastingsResult
         otherTastings = otherTastingsResult
         activityComments = activityCommentsResult
         
