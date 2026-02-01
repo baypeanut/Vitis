@@ -19,8 +19,12 @@ final class AddWineViewModel {
     var results: [OFFProduct] = []
     var dbWines: [Wine] = []
     var isLoading = false
+    var isLoadingMore = false
     var errorMessage: String?
     var isUpserting = false
+    var hasMorePages = false
+    private var currentSearchPage = 1
+    private var lastSearchTerm = ""
 
     private var searchTask: Task<Void, Never>?
     /// Tüm başarılı API sonuçlarından birikmiş cache. "leb" yazınca "leblebi" vs. substring ile anında gösterilir.
@@ -93,50 +97,59 @@ final class AddWineViewModel {
         }
     }
 
-    private func performSearch(term: String) async {
+    private func performSearch(term: String, page: Int = 1) async {
         errorMessage = nil
         let hadCacheHits = !results.isEmpty
+        let isFirstPage = page == 1
 
         if term.count < minQueryLengthForAPI {
             if !hadCacheHits { results = [] }
+            hasMorePages = false
             return
         }
 
-        isLoading = true
+        if isFirstPage { isLoading = true } else { isLoadingMore = true }
         do {
-            var api = try await WineSearchService.search(query: term)
+            var api = try await WineSearchService.search(query: term, page: page)
             api = filterAndRank(products: api, query: term)
+            hasMorePages = api.count >= 20
             if !api.isEmpty { mergeIntoCache(api) }
-            let combined = allMatching(term)
-            if !combined.isEmpty {
-                results = filterAndRank(products: combined, query: term)
-            } else if !api.isEmpty {
-                results = api
-            } else if !hadCacheHits {
-                results = []
+            if isFirstPage {
+                let combined = allMatching(term)
+                if !combined.isEmpty {
+                    results = filterAndRank(products: combined, query: term)
+                } else if !api.isEmpty {
+                    results = api
+                } else if !hadCacheHits {
+                    results = []
+                }
+                lastSearchTerm = term
+                currentSearchPage = 1
+            } else {
+                var seen = Set(results.map(\.code))
+                for p in api where seen.insert(p.code).inserted {
+                    results.append(p)
+                }
+                results = filterAndRank(products: results, query: term)
+                currentSearchPage = page
             }
         } catch {
-            if let nsError = error as NSError?, nsError.domain == "WineSearchService" {
-                errorMessage = nsError.localizedDescription
-            } else if let urlError = error as? URLError {
-                switch urlError.code {
-                case .timedOut:
-                    errorMessage = "Arama zaman aşımına uğradı. Tekrar deneyin."
-                case .notConnectedToInternet, .networkConnectionLost:
-                    errorMessage = "İnternet bağlantısı yok."
-                default:
-                    errorMessage = "Arama yapılamadı. Tekrar deneyin."
-                }
-            } else {
-                errorMessage = "Arama yapılamadı. Tekrar deneyin."
-            }
-            // API hata verirse yerel + cache eşleşmesi varsa göster; sadece mesajı ekle.
-            if results.isEmpty {
+            errorMessage = ErrorMessage.userFacing(for: error)
+            if results.isEmpty && isFirstPage {
                 applyCacheFilter(term: term)
-                if !results.isEmpty { errorMessage = "Ağ hatası; yerel/önbellekten gösteriliyor." }
+                if !results.isEmpty { errorMessage = ErrorMessage.unknown }
             }
         }
         isLoading = false
+        isLoadingMore = false
+    }
+
+    func loadMoreSearchResults() {
+        guard hasMorePages, !isLoadingMore, !lastSearchTerm.isEmpty else { return }
+        let nextPage = currentSearchPage + 1
+        Task {
+            await performSearch(term: lastSearchTerm, page: nextPage)
+        }
     }
 
     private func productsMatching(_ term: String) -> [OFFProduct] {

@@ -69,6 +69,7 @@ private struct FeedItemCacheDTO: Codable {
     let username: String
     let avatarURL: String?
     let activityTypeRaw: String
+    let wineId: UUID
     let wineName: String
     let wineProducer: String
     let wineVintage: Int?
@@ -84,16 +85,15 @@ private struct FeedItemCacheDTO: Codable {
     let tastingRating: Double?
     let createdAt: Date
     let cheersCount: Int
-    let commentCount: Int
     let hasCheered: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, userId, username, avatarURL
         case activityTypeRaw = "activityType"
-        case wineName, wineProducer, wineVintage, wineLabelURL
+        case wineId, wineName, wineProducer, wineVintage, wineLabelURL
         case wineRegion, wineCategory, wineVariety
         case targetWineName, targetWineProducer, targetWineVintage, targetWineLabelURL
-        case contentText, tastingRating, createdAt, cheersCount, commentCount, hasCheered
+        case contentText, tastingRating, createdAt, cheersCount, hasCheered
     }
 
     static func from(_ item: FeedItem) -> FeedItemCacheDTO {
@@ -103,6 +103,7 @@ private struct FeedItemCacheDTO: Codable {
             username: item.username,
             avatarURL: item.avatarURL,
             activityTypeRaw: item.activityType.rawValue,
+            wineId: item.wineId,
             wineName: item.wineName,
             wineProducer: item.wineProducer,
             wineVintage: item.wineVintage,
@@ -118,7 +119,6 @@ private struct FeedItemCacheDTO: Codable {
             tastingRating: item.tastingRating,
             createdAt: item.createdAt,
             cheersCount: item.cheersCount,
-            commentCount: item.commentCount,
             hasCheered: item.hasCheered
         )
     }
@@ -131,6 +131,7 @@ private struct FeedItemCacheDTO: Codable {
             username: username,
             avatarURL: avatarURL,
             activityType: type,
+            wineId: wineId,
             wineName: wineName,
             wineProducer: wineProducer,
             wineVintage: wineVintage,
@@ -146,7 +147,6 @@ private struct FeedItemCacheDTO: Codable {
             tastingRating: tastingRating,
             createdAt: createdAt,
             cheersCount: cheersCount,
-            commentCount: commentCount,
             hasCheered: hasCheered
         )
     }

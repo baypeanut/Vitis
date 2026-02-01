@@ -22,11 +22,13 @@ struct ProfileContentView: View {
     var onFollowersTap: (() -> Void)?
     var onFollowingTap: (() -> Void)?
     var onRegionTap: ((String) -> Void)?
-    var onStyleTap: ((String) -> Void)?
+    var onGrapeTap: ((String) -> Void)?
     var onRatedTap: (() -> Void)?
+    var onWantToTryTap: (() -> Void)?
+    var onWantToTryToggle: ((CellarItem) async -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
-    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
+    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
 
     @State private var mainTab: MainTab = .recentActivity
     @State private var tasteSubTab: TasteSubTab = .regions
@@ -114,7 +116,7 @@ struct ProfileContentView: View {
             Button {
                 onRatedTap?()
             } label: {
-                statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
+                statItem(value: "\(viewModel.ratedCount)", label: "Rated")
             }
             .buttonStyle(.plain)
             Button {
@@ -281,10 +283,70 @@ struct ProfileContentView: View {
     private var tabContent: some View {
         switch mainTab {
         case .recentActivity:
-            recentActivityList
+            VStack(alignment: .leading, spacing: 24) {
+                recentActivityList
+                wantToTrySection
+            }
         case .tasteProfile:
             tasteProfileContent
         }
+    }
+
+    @ViewBuilder
+    private var wantToTrySection: some View {
+        if !viewModel.wishlistPreview.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Want to Try")
+                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(viewModel.wishlistPreview) { item in
+                        wantToTryRow(item)
+                        Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
+                    }
+                }
+                if let err = viewModel.wishlistToggleError {
+                    Text(err)
+                        .font(VitisTheme.uiFont(size: 12))
+                        .foregroundStyle(.red)
+                }
+            }
+            .padding(.top, 8)
+        }
+    }
+
+    private func wantToTryRow(_ item: CellarItem) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.wine.producer)
+                    .font(VitisTheme.producerSerifFont())
+                    .foregroundStyle(VitisTheme.secondaryText)
+                Text(VitisTheme.displayWineName(item.wine.name))
+                    .font(VitisTheme.detailFont())
+                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: item.wine))
+                if let r = item.wine.region, !r.isEmpty {
+                    Text(r)
+                        .font(VitisTheme.uiFont(size: 12))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if !isOwn, let onWantToTryToggle = onWantToTryToggle {
+                Button {
+                    Task { await onWantToTryToggle(item) }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 12))
+                        Text("Want to try")
+                            .font(VitisTheme.uiFont(size: 13))
+                    }
+                    .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 10)
     }
 
     private var recentActivityList: some View {
@@ -443,7 +505,7 @@ struct ProfileContentView: View {
         let items: [TasteProfileItem] = {
             switch tasteSubTab {
             case .regions: return viewModel.tasteRegions
-            case .styles: return viewModel.tasteStyles
+            case .grapes: return viewModel.tasteGrapes
             }
         }()
         if items.isEmpty {
@@ -459,7 +521,7 @@ struct ProfileContentView: View {
                         if tasteSubTab == .regions {
                             onRegionTap?(it.name)
                         } else {
-                            onStyleTap?(it.name)
+                            onGrapeTap?(it.name)
                         }
                     } label: {
                         tasteProfileRow(it)
@@ -473,8 +535,8 @@ struct ProfileContentView: View {
 
     private func tasteProfileRow(_ it: TasteProfileItem) -> some View {
         let nameColor: Color = .primary
-        let ratingColor: Color = tasteSubTab == .styles
-            ? WineColorResolver.resolveWineDisplayColor(category: it.name, wineName: nil)
+        let ratingColor: Color = tasteSubTab == .grapes
+            ? WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name)
             : VitisTheme.accent
         return HStack {
             Text(it.name)

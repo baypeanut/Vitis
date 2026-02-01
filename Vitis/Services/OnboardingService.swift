@@ -13,11 +13,11 @@ enum OnboardingService {
 
     private static func userFacing(_ key: String) -> String {
         switch key {
-        case "signup": return "Kayıt yapılamadı."
-        case "session": return "Oturum alınamadı. Lütfen tekrar deneyin."
-        case "profile": return "Profil güncellenemedi. Lütfen tekrar deneyin."
-        case "phone": return "Telefon numarası kaydedilemedi. Lütfen tekrar deneyin."
-        default: return "Bir hata oluştu. Lütfen tekrar deneyin."
+        case "signup": return "Sign up failed. Please try again."
+        case "session": return "Could not get session. Please try again."
+        case "profile": return "Could not update profile. Please try again."
+        case "phone": return "Could not save phone number. Please try again."
+        default: return ErrorMessage.unknown
         }
     }
 

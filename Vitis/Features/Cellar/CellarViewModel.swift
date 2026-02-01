@@ -10,8 +10,13 @@ import Foundation
 @MainActor
 @Observable
 final class CellarViewModel {
+    enum SortOption: String, CaseIterable { case newest = "Newest"; case highestRated = "Highest Rated" }
+    enum RatingFilter: String, CaseIterable { case all = "All"; case eightPlus = "8.0+"; case ninePlus = "9.0+" }
+
     var tastings: [Tasting] = []
     var groupedTastings: [(category: String, tastings: [Tasting])] = []
+    var sortOption: SortOption = .newest
+    var ratingFilter: RatingFilter = .all
     var isLoading = false
     var errorMessage: String?
     var needsAuth = false
@@ -35,35 +40,38 @@ final class CellarViewModel {
         isLoading = true
         errorMessage = nil
         do {
-            tastings = try await TastingService.fetchTastings(userId: uid)
+            let fetched = try await TastingService.fetchTastings(userId: uid)
+            tastings = fetched
             groupTastingsByCategory()
         } catch {
-            errorMessage = error.localizedDescription
-            tastings = []
-            groupedTastings = []
+            errorMessage = ErrorMessage.userFacing(for: error)
+            // Keep last-known-good state; do not clear tastings
         }
         isLoading = false
     }
     
-    private func groupTastingsByCategory() {
+    func groupTastingsByCategory() {
+        var filtered = tastings
+        switch ratingFilter {
+        case .all: break
+        case .eightPlus: filtered = filtered.filter { $0.rating >= 8.0 }
+        case .ninePlus: filtered = filtered.filter { $0.rating >= 9.0 }
+        }
         var categoryDict: [String: [Tasting]] = [:]
-        
-        for tasting in tastings {
+        for tasting in filtered {
             let category = WineCategoryResolver.resolve(wine: tasting.wine)
             categoryDict[category, default: []].append(tasting)
         }
-        
-        // Sort categories alphabetically, but keep "Other" at the end
         let sortedCategories = categoryDict.keys.sorted { a, b in
             if a == "Other" { return false }
             if b == "Other" { return true }
             return a < b
         }
-        
+        let sorter: (Tasting, Tasting) -> Bool = sortOption == .newest
+            ? { $0.createdAt > $1.createdAt }
+            : { $0.rating > $1.rating }
         groupedTastings = sortedCategories.map { category in
-            // Sort tastings within each category by rating (highest first)
-            let sortedTastings = categoryDict[category]!.sorted { $0.rating > $1.rating }
-            return (category: category, tastings: sortedTastings)
+            (category: category, tastings: categoryDict[category]!.sorted(by: sorter))
         }
     }
 
@@ -73,7 +81,7 @@ final class CellarViewModel {
             tastings.removeAll { $0.id == tasting.id }
             groupTastingsByCategory()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorMessage.userFacing(for: error)
         }
     }
 }

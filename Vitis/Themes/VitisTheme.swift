@@ -24,6 +24,9 @@ enum VitisTheme {
     /// Subtle border or divider.
     static let border = Color(white: 0.92)
 
+    /// Tertiary/muted text for low-emphasis elements (e.g. timestamps).
+    static let tertiaryText = Color(white: 0.58)
+
     // MARK: - Typography
 
     /// Producer: small caps, minimal, understated.
@@ -102,5 +105,12 @@ enum VitisTheme {
         
         // More than 4 weeks, show full date
         return compactTimestampFormatter.string(from: date)
+    }
+
+    /// Fix common wine name typos for display.
+    static func displayWineName(_ name: String) -> String {
+        var s = name
+        if s.contains("Cabarnet") { s = s.replacingOccurrences(of: "Cabarnet", with: "Cabernet") }
+        return s
     }
 }

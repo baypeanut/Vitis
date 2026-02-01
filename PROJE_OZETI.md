@@ -168,7 +168,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 ### 6.5 `CellarService`
 
-- **`fetchMyRanking(userId)`:** `rankings` + `wines` join ile kullanıcının sıralı listesini `[RankingItem]` olarak döner.
+- **Cellar (Had | Wishlist):** `fetchCellar`, `addToWishlist`, `removeFromWishlist` vb. `cellar_items` tablosu üzerinden.
 
 ### 6.6 `WineSearchService`
 
@@ -196,7 +196,6 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 - **Yorumlar:**
   - **`addComment(activityID, body)`:** `comments` tablosuna insert.
   - **`fetchComments(activityID)`:** Yorumlar + `profiles` join ile `username` / `avatar_url` (veya `full_name`).
-  - **`fetchCommentCounts(activityIDs)`:** Aktivite bazlı yorum sayıları.
 - **Takip:**
   - **`followUser` / `unfollowUser`:** `follows` upsert / delete.
   - **`isFollowing(targetID)`:** Takip durumu.
@@ -238,11 +237,11 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
   - **Client-side:** Önbellek, “starts with” öncelikli sıralama, `image_url` + `brands` olanlar filtrelenir.
   - `WineSearchService.search` → `filterAndRank` → `results`. Seçilince `upsert(product)`.
 
-### 7.3 Cellar (“My Ranking”)
+### 7.3 Cellar (“My Cellar”)
 
-- **Amaç:** Duel sonucu oluşan kişisel sıralı listeyi göstermek.
-- **CellarView:** Başlık “My Ranking”, pull-to-refresh, `CellarViewModel.load()`.
-- **CellarViewModel:** `CellarService.fetchMyRanking` → `[RankingItem]`. Boşsa “Rank wines in Duel to build your list.” Auth gerekliyse “Sign in to see your ranking.”
+- **Amaç:** Kişisel tadım geçmişini göstermek (tastings tablosu).
+- **CellarView:** Başlık “My Cellar”, pull-to-refresh, `CellarViewModel.load()`.
+- **CellarViewModel:** `TastingService.fetchTastings` → tastings listesi. Auth gerekliyse "Sign in to see your cellar."
 
 ### 7.4 Social / Feed (“Curated by”)
 
@@ -265,7 +264,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 ### 7.6 FeedViewModel
 
 - **Tab:** Global / Following. `switchTab` → cache’den yükle + `refresh()`.
-- **`refresh()`:** `fetchGlobal` veya `fetchFollowing`; `fetchLikeCounts`, `fetchCommentCounts`, `fetchLikedActivityIDs` ile zenginleştirme; `patchCurrentUserOverrides`; cache’e yazma.
+- **`refresh()`:** `fetchGlobal` veya `fetchFollowing`; `fetchLikeCounts`, `fetchLikedActivityIDs` ile zenginleştirme; `patchCurrentUserOverrides`; cache’e yazma.
 - **`cheer(item)`:** `SocialService.toggleLike`; başarıda yerel `hasCheered` / `cheersCount` güncellenir.
 - **`statement` / `statementParts`:** Aktivite tipine göre cümle (rank_update, new_entry, duel_win) ve isim parçası (vurgulu gösterim için).
 

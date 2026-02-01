@@ -283,6 +283,12 @@ CREATE POLICY "dev_mock_tastings" ON public.tastings FOR ALL
   WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
 
 -- -----------------------------------------------------------------------------
+-- activity_feed.tasting_id for deterministic feed-tasting join (after tastings exists)
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.activity_feed ADD COLUMN IF NOT EXISTS tasting_id uuid REFERENCES public.tastings(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_activity_feed_tasting_id ON public.activity_feed (tasting_id) WHERE tasting_id IS NOT NULL;
+
+-- -----------------------------------------------------------------------------
 -- feed_with_details view (created AFTER tastings table exists)
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW public.feed_with_details AS
@@ -314,13 +320,17 @@ FROM public.activity_feed a
 INNER JOIN public.profiles p ON p.id = a.user_id
 LEFT JOIN public.wines w ON w.id = a.wine_id
 LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
-LEFT JOIN public.tastings t ON t.user_id = a.user_id 
-  AND t.wine_id = a.wine_id 
-  AND a.activity_type = 'had_wine'
-  AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds'
-ORDER BY a.id, 
+LEFT JOIN public.tastings t ON (
+  a.activity_type = 'had_wine' AND (
+    (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
+    OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
+        AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+  )
+)
+ORDER BY a.id,
   CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
-  ABS(EXTRACT(EPOCH FROM (t.created_at - a.created_at)));
+  CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
+  ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)));
 
 CREATE OR REPLACE FUNCTION public.feed_following(
   p_follower_id uuid,
@@ -349,6 +359,7 @@ CREATE TABLE IF NOT EXISTS public.cellar_items (
   created_at timestamptz NOT NULL DEFAULT now(),
   consumed_at timestamptz NULL
 );
+ALTER TABLE public.cellar_items ADD COLUMN IF NOT EXISTS source_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cellar_items_user_wine_status
   ON public.cellar_items (user_id, wine_id, status);
 CREATE INDEX IF NOT EXISTS idx_cellar_items_user_status_created

@@ -14,9 +14,9 @@ enum AppConstants {
     static let authRequired = false
 
     enum Cache {
-        /// Bumped to avoid loading stale "Guest" items after cascade + Guest cleanup.
-        static let feedGlobalKey = "vitis_feed_global_v2"
-        static let feedFollowingKey = "vitis_feed_following_v2"
+        /// v4 = commentCount removed from FeedItem.
+        static let feedGlobalKey = "vitis_feed_global_v4"
+        static let feedFollowingKey = "vitis_feed_following_v4"
     }
 
     #if DEBUG
@@ -37,4 +37,6 @@ extension Notification.Name {
     static let vitisShowLogIn = Notification.Name("vitisShowLogIn")
     /// Request to switch to the Cellar tab (e.g. when user taps "Rated" on their own profile).
     static let vitisSwitchToCellarTab = Notification.Name("vitisSwitchToCellarTab")
+    /// Wishlist updated; Feed should refresh wishlist IDs.
+    static let vitisWishlistUpdated = Notification.Name("vitisWishlistUpdated")
 }
