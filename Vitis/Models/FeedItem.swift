@@ -13,6 +13,7 @@ struct FeedItem: Identifiable, Sendable {
     var username: String
     var avatarURL: String?
     let activityType: ActivityType
+    let wineId: UUID
     let wineName: String
     let wineProducer: String
     let wineVintage: Int?
@@ -28,7 +29,6 @@ struct FeedItem: Identifiable, Sendable {
     let tastingRating: Double?
     let createdAt: Date
     var cheersCount: Int
-    var commentCount: Int
     var hasCheered: Bool
 
     init(
@@ -37,6 +37,7 @@ struct FeedItem: Identifiable, Sendable {
         username: String,
         avatarURL: String?,
         activityType: ActivityType,
+        wineId: UUID,
         wineName: String,
         wineProducer: String,
         wineVintage: Int?,
@@ -52,7 +53,6 @@ struct FeedItem: Identifiable, Sendable {
         tastingRating: Double? = nil,
         createdAt: Date,
         cheersCount: Int = 0,
-        commentCount: Int = 0,
         hasCheered: Bool = false
     ) {
         self.id = id
@@ -60,6 +60,7 @@ struct FeedItem: Identifiable, Sendable {
         self.username = username
         self.avatarURL = avatarURL
         self.activityType = activityType
+        self.wineId = wineId
         self.wineName = wineName
         self.wineProducer = wineProducer
         self.wineVintage = wineVintage
@@ -75,7 +76,6 @@ struct FeedItem: Identifiable, Sendable {
         self.tastingRating = tastingRating
         self.createdAt = createdAt
         self.cheersCount = cheersCount
-        self.commentCount = commentCount
         self.hasCheered = hasCheered
     }
 }
@@ -88,6 +88,7 @@ extension FeedItem {
         username: "Ahmet",
         avatarURL: nil,
         activityType: .rankUpdate,
+        wineId: UUID(),
         wineName: "Sassicaia",
         wineProducer: "Tenuta San Guido",
         wineVintage: 2019,
@@ -102,7 +103,6 @@ extension FeedItem {
         tastingRating: nil,
         createdAt: Date(),
         cheersCount: 3,
-        commentCount: 1,
         hasCheered: false
     )
 
@@ -112,6 +112,7 @@ extension FeedItem {
         username: "Emma",
         avatarURL: nil,
         activityType: .duelWin,
+        wineId: UUID(),
         wineName: "Côte Rôtie",
         wineProducer: "Domaine Jean-Michel Gerin",
         wineVintage: 2019,
@@ -126,7 +127,6 @@ extension FeedItem {
         tastingRating: nil,
         createdAt: Date().addingTimeInterval(-3600),
         cheersCount: 0,
-        commentCount: 0,
         hasCheered: true
     )
     
@@ -136,6 +136,7 @@ extension FeedItem {
         username: "Mert",
         avatarURL: nil,
         activityType: .hadWine,
+        wineId: UUID(),
         wineName: "Chardonnay",
         wineProducer: "Casillero del Diablo",
         wineVintage: nil,
@@ -150,7 +151,6 @@ extension FeedItem {
         tastingRating: 8.0,
         createdAt: Date(),
         cheersCount: 2,
-        commentCount: 1,
         hasCheered: false
     )
 }
@@ -179,7 +179,7 @@ extension FeedItem {
     }
 
     /// Build from API response. Counts default to 0; service can overlay.
-    static func from(entry: ActivityFeedEntry, cheersCount: Int = 0, commentCount: Int = 0, hasCheered: Bool = false) -> FeedItem? {
+    static func from(entry: ActivityFeedEntry, cheersCount: Int = 0, hasCheered: Bool = false) -> FeedItem? {
         guard let w = entry.wine else { return nil }
         let tw = entry.targetWine
         let u = entry.user
@@ -189,6 +189,7 @@ extension FeedItem {
             username: u?.username ?? "Unknown",
             avatarURL: u?.avatarUrl,
             activityType: entry.activityType,
+            wineId: entry.wineId,
             wineName: w.name,
             wineProducer: w.producer,
             wineVintage: w.vintage,
@@ -203,7 +204,6 @@ extension FeedItem {
             tastingRating: nil,
             createdAt: entry.createdAt,
             cheersCount: cheersCount,
-            commentCount: commentCount,
             hasCheered: hasCheered
         )
     }

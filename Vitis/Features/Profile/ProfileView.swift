@@ -53,7 +53,7 @@ struct ProfileView: View {
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
-                        onStyleTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .style($0)) },
+                        onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) }
                     )
                 } else {

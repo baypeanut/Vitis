@@ -32,6 +32,12 @@ struct CellarView: View {
         .onChange(of: viewModel.groupedTastings.count) { _, _ in
             updateSelectedCategory()
         }
+        .onChange(of: viewModel.sortOption) { _, _ in
+            viewModel.groupTastingsByCategory()
+        }
+        .onChange(of: viewModel.ratingFilter) { _, _ in
+            viewModel.groupTastingsByCategory()
+        }
         .sheet(isPresented: $showAddWine) {
             AddWineSheet(isPresented: $showAddWine) {
                 Task { await viewModel.load() }
@@ -120,12 +126,51 @@ struct CellarView: View {
 
     private var listContent: some View {
         VStack(spacing: 0) {
+            quickFilters
             if viewModel.groupedTastings.count > 1 {
                 categoryTabs
                 Rectangle().fill(VitisTheme.border).frame(height: 1)
             }
             categoryContent
         }
+    }
+
+    private var quickFilters: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                ForEach(CellarViewModel.SortOption.allCases, id: \.self) { opt in
+                    Button {
+                        viewModel.sortOption = opt
+                    } label: {
+                        Text(opt.rawValue)
+                            .font(VitisTheme.uiFont(size: 13, weight: viewModel.sortOption == opt ? .semibold : .regular))
+                    }
+                    .foregroundStyle(viewModel.sortOption == opt ? VitisTheme.accent : VitisTheme.secondaryText)
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(CellarViewModel.RatingFilter.allCases, id: \.self) { f in
+                        Button {
+                            viewModel.ratingFilter = f
+                        } label: {
+                            Text(f.rawValue)
+                                .font(VitisTheme.uiFont(size: 13))
+                        }
+                        .foregroundStyle(viewModel.ratingFilter == f ? .white : VitisTheme.secondaryText)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(viewModel.ratingFilter == f ? VitisTheme.accent : Color(white: 0.96))
+                        .clipShape(Capsule())
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
     }
     
     private var categoryTabs: some View {
