@@ -147,21 +147,6 @@ enum SocialService {
             .execute()
     }
 
-    /// Fetch comment counts per activity. Returns [activityID: count].
-    static func fetchCommentCounts(activityIDs: [UUID]) async throws -> [UUID: Int] {
-        guard !activityIDs.isEmpty else { return [:] }
-        struct Row: Decodable { let activity_id: UUID }
-        let rows: [Row] = try await supabase.from("comments")
-            .select("activity_id")
-            .in("activity_id", values: activityIDs)
-            .execute()
-            .value
-        var counts: [UUID: Int] = [:]
-        for id in activityIDs { counts[id] = 0 }
-        for r in rows { counts[r.activity_id, default: 0] += 1 }
-        return counts
-    }
-
     // MARK: - Follow
 
     static func followUser(targetID: UUID) async throws {

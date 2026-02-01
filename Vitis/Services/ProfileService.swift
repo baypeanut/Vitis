@@ -137,17 +137,6 @@ enum ProfileService {
         return rows.first?.created_at
     }
 
-    /// Rankings count for profile stats.
-    static func fetchRankingsCount(userId: UUID) async -> Int {
-        struct Row: Decodable { let wine_id: UUID }
-        let rows: [Row] = (try? await supabase
-            .from("rankings")
-            .select("wine_id")
-            .eq("user_id", value: userId)
-            .execute().value) ?? []
-        return rows.count
-    }
-
     private static func normalizeRegion(_ raw: String) -> String {
         let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let canonical = regionMatchKey(lower)

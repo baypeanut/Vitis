@@ -73,7 +73,7 @@ struct UserProfileView: View {
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
-                        onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
+                        onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { showUserCellar = true },
                         onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
                     )
@@ -102,12 +102,22 @@ struct UserProfileView: View {
                         .foregroundStyle(VitisTheme.accent)
                 }
             }
-            .navigationDestination(item: $drillDownTarget) { target in
-                TasteProfileDrillDownView(
-                    title: target.title,
-                    filterType: target.filterType,
-                    tastings: viewModel.allTastings
-                )
+            .sheet(item: $drillDownTarget) { target in
+                NavigationStack {
+                    TasteProfileDrillDownView(
+                        title: target.title,
+                        filterType: target.filterType,
+                        tastings: viewModel.allTastings
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { drillDownTarget = nil }
+                                .font(VitisTheme.uiFont(size: 15))
+                                .foregroundStyle(VitisTheme.accent)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
                 FollowersFollowingViewContent(
@@ -228,7 +238,7 @@ struct UserProfileViewContent: View {
                     onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                     onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
-                    onStyleTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .style($0)) },
+                    onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                     onRatedTap: { showUserCellar = true },
                     onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
                 )
@@ -247,12 +257,22 @@ struct UserProfileViewContent: View {
         }
         .navigationTitle(viewModel.profile?.displayName ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $drillDownTarget) { target in
-            TasteProfileDrillDownView(
-                title: target.title,
-                filterType: target.filterType,
-                tastings: viewModel.allTastings
-            )
+        .sheet(item: $drillDownTarget) { target in
+            NavigationStack {
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel.allTastings
+                )
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { drillDownTarget = nil }
+                            .font(VitisTheme.uiFont(size: 15))
+                            .foregroundStyle(VitisTheme.accent)
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
         }
         .navigationDestination(isPresented: $showFollowersFollowing) {
             FollowersFollowingViewContent(

@@ -22,13 +22,13 @@ struct ProfileContentView: View {
     var onFollowersTap: (() -> Void)?
     var onFollowingTap: (() -> Void)?
     var onRegionTap: ((String) -> Void)?
-    var onStyleTap: ((String) -> Void)?
+    var onGrapeTap: ((String) -> Void)?
     var onRatedTap: (() -> Void)?
     var onWantToTryTap: (() -> Void)?
     var onWantToTryToggle: ((CellarItem) async -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recent Activity"; case tasteProfile = "Taste Profile" }
-    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case styles = "Styles" }
+    enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
 
     @State private var mainTab: MainTab = .recentActivity
     @State private var tasteSubTab: TasteSubTab = .regions
@@ -120,7 +120,7 @@ struct ProfileContentView: View {
             Button {
                 onRatedTap?()
             } label: {
-                statItem(value: "\(viewModel.rankingsCount)", label: "Rated")
+                statItem(value: "\(viewModel.ratedCount)", label: "Rated")
             }
             .buttonStyle(.plain)
             Button {
@@ -517,7 +517,7 @@ struct ProfileContentView: View {
         let items: [TasteProfileItem] = {
             switch tasteSubTab {
             case .regions: return viewModel.tasteRegions
-            case .styles: return viewModel.tasteStyles
+            case .grapes: return viewModel.tasteGrapes
             }
         }()
         if items.isEmpty {
@@ -533,7 +533,7 @@ struct ProfileContentView: View {
                         if tasteSubTab == .regions {
                             onRegionTap?(it.name)
                         } else {
-                            onStyleTap?(it.name)
+                            onGrapeTap?(it.name)
                         }
                     } label: {
                         tasteProfileRow(it)
@@ -547,8 +547,8 @@ struct ProfileContentView: View {
 
     private func tasteProfileRow(_ it: TasteProfileItem) -> some View {
         let nameColor: Color = .primary
-        let ratingColor: Color = tasteSubTab == .styles
-            ? WineColorResolver.resolveWineDisplayColor(category: it.name, wineName: nil)
+        let ratingColor: Color = tasteSubTab == .grapes
+            ? WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name)
             : VitisTheme.accent
         return HStack {
             Text(it.name)
