@@ -368,37 +368,34 @@ struct ProfileContentView: View {
 
     private func tastingActivityRow(_ tasting: Tasting) -> some View {
         let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
-        return HStack(alignment: .top, spacing: 12) {
-            cellarAvatarCircle()
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(tasting.wine.producer)
-                            .font(VitisTheme.producerSerifFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
-                        Text(wine)
-                            .font(.system(size: 15, weight: .medium, design: .serif))
+        return NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.userId)) {
+            HStack(alignment: .top, spacing: 12) {
+                cellarAvatarCircle()
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(tasting.wine.producer)
+                                .font(VitisTheme.producerSerifFont())
+                                .foregroundStyle(VitisTheme.secondaryText)
+                            Text(wine)
+                                .font(.system(size: 15, weight: .medium, design: .serif))
+                                .foregroundStyle(VitisTheme.accent)
+                        }
+                        Spacer(minLength: 8)
+                        Text(String(format: "%.1f", tasting.rating))
+                            .font(VitisTheme.uiFont(size: 18, weight: .semibold))
                             .foregroundStyle(VitisTheme.accent)
                     }
-                    Spacer(minLength: 8)
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                        .foregroundStyle(VitisTheme.accent)
-                }
-                
-                if let notes = tasting.notesDisplay {
-                    Text(notes)
+                    
+                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
                         .font(VitisTheme.uiFont(size: 13))
                         .foregroundStyle(VitisTheme.secondaryText)
                 }
-                
-                Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
             }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
     }
 
     private func recentActivityRow(_ item: FeedItem) -> some View {

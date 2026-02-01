@@ -103,53 +103,48 @@ struct UserCellarView: View {
     }
     
     private func tastingRow(_ tasting: Tasting) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(tasting.wine.producer)
-                    .font(VitisTheme.producerSerifFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
-                Text(tasting.wine.name)
-                    .font(VitisTheme.wineNameFont())
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
-                if let v = tasting.wine.vintage {
-                    Text(String(v))
-                        .font(VitisTheme.detailFont())
+        NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: userId)) {
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tasting.wine.producer)
+                        .font(VitisTheme.producerSerifFont())
                         .foregroundStyle(VitisTheme.secondaryText)
-                }
-                HStack(spacing: 8) {
-                    if let r = tasting.wine.region, !r.isEmpty {
-                        Text(r)
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
-                        Text("·")
-                            .font(VitisTheme.uiFont(size: 13))
+                    Text(tasting.wine.name)
+                        .font(VitisTheme.wineNameFont())
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
+                    if let v = tasting.wine.vintage {
+                        Text(String(v))
+                            .font(VitisTheme.detailFont())
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
-                    if let notes = tasting.notesDisplay {
-                        Text("·")
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
-                        Text(notes)
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                    HStack(spacing: 8) {
+                        if let r = tasting.wine.region, !r.isEmpty {
+                            Text(r)
+                                .font(VitisTheme.uiFont(size: 13))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                            Text("·")
+                                .font(VitisTheme.uiFont(size: 13))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                        }
+                        Text(String(format: "%.1f", tasting.rating))
+                            .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                            .foregroundStyle(VitisTheme.accent)
                     }
-                }
-                if let comment = tasting.comment, !comment.isEmpty {
-                    Text(comment)
-                        .font(VitisTheme.uiFont(size: 13).italic())
+                    if let comment = tasting.comment, !comment.isEmpty {
+                        Text(comment)
+                            .font(VitisTheme.uiFont(size: 13).italic())
+                            .foregroundStyle(VitisTheme.secondaryText)
+                            .lineLimit(3)
+                    }
+                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
+                        .font(VitisTheme.uiFont(size: 13))
                         .foregroundStyle(VitisTheme.secondaryText)
-                        .lineLimit(3)
                 }
-                Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer(minLength: 0)
         }
+        .buttonStyle(.plain)
     }
     
     private func updateSelectedCategory() {

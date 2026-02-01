@@ -107,7 +107,8 @@ struct UserProfileView: View {
                     TasteProfileDrillDownView(
                         title: target.title,
                         filterType: target.filterType,
-                        tastings: viewModel.allTastings
+                        tastings: viewModel.allTastings,
+                        currentUserId: currentUserId
                     )
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
@@ -262,7 +263,8 @@ struct UserProfileViewContent: View {
                 TasteProfileDrillDownView(
                     title: target.title,
                     filterType: target.filterType,
-                    tastings: viewModel.allTastings
+                    tastings: viewModel.allTastings,
+                    currentUserId: currentUserId
                 )
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
