@@ -223,37 +223,46 @@ struct CellarView: View {
     }
 
     private func tastingRow(_ tasting: Tasting) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(tasting.wine.producer)
-                    .font(VitisTheme.producerSerifFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
-                HStack(alignment: .center) {
-                    Text(tasting.wine.name)
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 24, weight: .semibold))
-                        .foregroundStyle(VitisTheme.accent)
-                }
-                if let v = tasting.wine.vintage {
-                    Text(String(v))
-                        .font(VitisTheme.detailFont())
+        NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.currentUserId)) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tasting.wine.producer)
+                        .font(VitisTheme.producerSerifFont())
                         .foregroundStyle(VitisTheme.secondaryText)
-                }
-                HStack(spacing: 8) {
-                    if let notes = tasting.notesDisplay {
-                        Text(notes)
-                            .font(VitisTheme.uiFont(size: 13))
+                    HStack(alignment: .center) {
+                        Text(tasting.wine.name)
+                            .font(VitisTheme.wineNameFont())
+                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(String(format: "%.1f", tasting.rating))
+                            .font(VitisTheme.uiFont(size: 24, weight: .semibold))
+                            .foregroundStyle(VitisTheme.accent)
+                    }
+                    if let v = tasting.wine.vintage {
+                        Text(String(v))
+                            .font(VitisTheme.detailFont())
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
+                    HStack(spacing: 8) {
+                        if let notes = tasting.notesDisplay {
+                            Text(notes)
+                                .font(VitisTheme.uiFont(size: 13))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                        }
+                    }
+                    if let comment = tasting.comment, !comment.isEmpty {
+                        Text(comment)
+                            .font(VitisTheme.uiFont(size: 13).italic())
+                            .foregroundStyle(VitisTheme.secondaryText)
+                            .lineLimit(3)
+                    }
+                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText)
                 }
-                Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
             }
         }
+        .buttonStyle(.plain)
     }
 }
 

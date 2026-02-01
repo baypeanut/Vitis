@@ -114,4 +114,55 @@ enum WineService {
             category: r.category
         )
     }
+    
+    /// Fetch all tastings for a specific wine with user profile info.
+    /// Excludes the specified userId (typically the current user).
+    static func fetchTastingsForWine(wineId: UUID, excludeUserId: UUID? = nil, limit: Int = 20) async throws -> [TastingWithProfile] {
+        struct TastingRow: Decodable {
+            let id: UUID
+            let user_id: UUID
+            let rating: Double
+            let note_tags: [String]?
+            let comment: String?
+            let created_at: Date
+            let profiles: ProfileRef?
+            
+            struct ProfileRef: Decodable {
+                let username: String?
+                let full_name: String?
+                let avatar_url: String?
+            }
+        }
+        
+        var query = supabase
+            .from("tastings")
+            .select("id, user_id, rating, note_tags, comment, created_at, profiles(username, full_name, avatar_url)")
+            .eq("wine_id", value: wineId)
+        
+        if let userId = excludeUserId {
+            query = query.neq("user_id", value: userId)
+        }
+        
+        let rows: [TastingRow] = try await query
+            .order("rating", ascending: false)
+            .order("created_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+        
+        return rows.compactMap { row -> TastingWithProfile? in
+            guard let profile = row.profiles else { return nil }
+            return TastingWithProfile(
+                id: row.id,
+                userId: row.user_id,
+                username: profile.username ?? "Unknown",
+                fullName: profile.full_name,
+                avatarURL: profile.avatar_url,
+                rating: row.rating,
+                noteTags: row.note_tags,
+                comment: row.comment,
+                createdAt: row.created_at
+            )
+        }
+    }
 }

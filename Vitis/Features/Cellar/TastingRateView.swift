@@ -12,6 +12,7 @@ struct TastingRateView: View {
     let wine: Wine
     @Binding var rating: Double
     @Binding var selectedNotes: Set<String>
+    @Binding var comment: String
     var onCheers: () -> Void
 
     private var wineTypeColor: Color {
@@ -29,10 +30,14 @@ struct TastingRateView: View {
                 ratingSlider
                 ratingValue
                 notesSection
+                commentSection
                 cheersButton
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 32)
+        }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
     }
 
@@ -120,6 +125,50 @@ struct TastingRateView: View {
                 ForEach(availableNotes, id: \.self) { note in
                     noteChip(note)
                 }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var commentSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Your thoughts")
+                .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                .foregroundStyle(.primary)
+            Text("Optional")
+                .font(VitisTheme.uiFont(size: 14))
+                .foregroundStyle(VitisTheme.secondaryText)
+            ZStack(alignment: .topLeading) {
+                if comment.isEmpty {
+                    Text("What did you think? (optional)")
+                        .font(VitisTheme.uiFont(size: 15))
+                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.5))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 12)
+                }
+                TextEditor(text: $comment)
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(.primary)
+                    .frame(minHeight: 100, maxHeight: 150)
+                    .scrollContentBackground(.hidden)
+                    .padding(4)
+                    .onChange(of: comment) { _, newValue in
+                        if newValue.count > 500 {
+                            comment = String(newValue.prefix(500))
+                        }
+                    }
+            }
+            .background(Color(white: 0.96))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(VitisTheme.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            HStack {
+                Spacer()
+                Text("\(comment.count)/500")
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.secondaryText)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

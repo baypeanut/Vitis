@@ -27,6 +27,7 @@ struct FeedItem: Identifiable, Sendable {
     let targetWineLabelURL: String?
     let contentText: String?
     let tastingRating: Double?
+    let tastingComment: String?
     let createdAt: Date
     var cheersCount: Int
     var hasCheered: Bool
@@ -51,6 +52,7 @@ struct FeedItem: Identifiable, Sendable {
         targetWineLabelURL: String? = nil,
         contentText: String? = nil,
         tastingRating: Double? = nil,
+        tastingComment: String? = nil,
         createdAt: Date,
         cheersCount: Int = 0,
         hasCheered: Bool = false
@@ -74,6 +76,7 @@ struct FeedItem: Identifiable, Sendable {
         self.targetWineLabelURL = targetWineLabelURL
         self.contentText = contentText
         self.tastingRating = tastingRating
+        self.tastingComment = tastingComment
         self.createdAt = createdAt
         self.cheersCount = cheersCount
         self.hasCheered = hasCheered
@@ -149,6 +152,7 @@ extension FeedItem {
         targetWineLabelURL: nil,
         contentText: "Vanilla, Floral",
         tastingRating: 8.0,
+        tastingComment: nil,
         createdAt: Date(),
         cheersCount: 2,
         hasCheered: false

@@ -32,6 +32,7 @@ struct AddWineSheet: View {
     @State private var selectedWine: Wine?
     @State private var rating: Double = 5.0
     @State private var selectedNotes: Set<String> = []
+    @State private var comment: String = ""
     @State private var isSaving = false
     @State private var saveError: String?
 
@@ -87,10 +88,10 @@ struct AddWineSheet: View {
         case .search:
             searchContent
         case .rating(let wine):
-            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes) {
+            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes, comment: $comment) {
                 Task {
                     let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
-                    await saveTasting(wine: wine, rating: rating, notes: notesArray)
+                    await saveTasting(wine: wine, rating: rating, notes: notesArray, comment: comment)
                 }
             }
         }
@@ -212,6 +213,7 @@ struct AddWineSheet: View {
             selectedWine = wine
             rating = 5.0
             selectedNotes = []
+            comment = ""
             flowStep = .rating(wine)
         } label: {
             HStack(alignment: .center, spacing: 16) {
@@ -241,6 +243,7 @@ struct AddWineSheet: View {
                     selectedWine = wine
                     rating = 5.0
                     selectedNotes = []
+                    comment = ""
                     flowStep = .rating(wine)
                 } catch {
                     viewModel.errorMessage = ErrorMessage.userFacing(for: error)
@@ -289,7 +292,7 @@ struct AddWineSheet: View {
     }
 
     @MainActor
-    private func saveTasting(wine: Wine, rating: Double, notes: [String]?) async {
+    private func saveTasting(wine: Wine, rating: Double, notes: [String]?, comment: String) async {
         guard let userId = await AuthService.currentUserId() else {
             saveError = ErrorMessage.unauthorized
             return
@@ -302,6 +305,7 @@ struct AddWineSheet: View {
                 wineId: wine.id,
                 rating: rating,
                 noteTags: notes,
+                comment: comment.isEmpty ? nil : comment,
                 source: "search"
             )
             if let wid = wineIdToRemoveFromWishlist, wid == wine.id {
@@ -323,6 +327,7 @@ struct AddWineSheet: View {
         selectedWine = nil
         rating = 5.0
         selectedNotes = []
+        comment = ""
         viewModel.query = ""
         viewModel.results = []
         saveError = nil
