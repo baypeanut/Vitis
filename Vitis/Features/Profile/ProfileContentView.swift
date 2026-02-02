@@ -25,8 +25,11 @@ struct ProfileContentView: View {
     var onGrapeTap: ((String) -> Void)?
     var onRatedTap: (() -> Void)?
     var onWantToTryTap: (() -> Void)?
+    var onWantToTryToggle: ((CellarItem) async -> Void)?
+    var onRemoveWishlistItem: ((CellarItem) async -> Void)?
+    var onMarkAsTasted: ((CellarItem) -> Void)?
 
-    enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste" }
+    enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste"; case wantToTry = "Want to Try" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
 
     @State private var mainTab: MainTab = .recentActivity
@@ -75,10 +78,6 @@ struct ProfileContentView: View {
                     .lineLimit(3)
             }
             statsRow
-            if let onTap = onWantToTryTap {
-                WantToTryChip(count: viewModel.wishlistPreview.count) { onTap() }
-                    .padding(.top, 4)
-            }
             if !isOwn {
                 primaryButton(p)
             }
@@ -265,6 +264,92 @@ struct ProfileContentView: View {
             recentActivityList
         case .tasteProfile:
             tasteProfileContent
+        case .wantToTry:
+            wantToTryTabContent
+        }
+    }
+
+    @ViewBuilder
+    private var wantToTryTabContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if viewModel.wishlistPreview.isEmpty {
+                Text(isOwn
+                    ? "No wines saved yet. Tap the bookmark on any feed post to add."
+                    : "No wines in their list.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity)
+            } else {
+                ForEach(Array(viewModel.wishlistPreview.prefix(5))) { item in
+                    wantToTryRow(item, onRemove: isOwn ? { item in Task { await onRemoveWishlistItem?(item) } } : nil)
+                    Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
+                }
+                if let onTap = onWantToTryTap {
+                    Button {
+                        onTap()
+                    } label: {
+                        Text("Open full list")
+                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(VitisTheme.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 8)
+                }
+            }
+        }
+    }
+
+    private func wantToTryRow(_ item: CellarItem, onRemove: ((CellarItem) -> Void)?) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.wine.producer)
+                    .font(VitisTheme.producerSerifFont())
+                    .foregroundStyle(VitisTheme.secondaryText)
+                Text(VitisTheme.displayWineName(item.wine.name))
+                    .font(VitisTheme.detailFont())
+                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: item.wine))
+                if let r = item.wine.region, !r.isEmpty {
+                    Text(r)
+                        .font(VitisTheme.uiFont(size: 12))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if isOwn {
+                Button("Mark as Tasted") {
+                    onMarkAsTasted?(item)
+                }
+                .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                .foregroundStyle(VitisTheme.accent)
+            } else if let onToggle = onWantToTryToggle {
+                Button {
+                    Task { await onToggle(item) }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 12))
+                        Text(viewModel.myWishlistWineIds.contains(item.wineId) ? "Saved" : "Want to Try")
+                            .font(VitisTheme.uiFont(size: 13))
+                    }
+                    .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if let onRemove = onRemove {
+                Button(role: .destructive) {
+                    onRemove(item)
+                } label: {
+                    Label("Remove", systemImage: "trash")
+                }
+            }
         }
     }
 

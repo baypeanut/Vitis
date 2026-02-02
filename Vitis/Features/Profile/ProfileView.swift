@@ -32,6 +32,7 @@ struct ProfileView: View {
     @State private var drillDownTarget: DrillDownTarget?
     @State private var showSettings = false
     @State private var showWantToTry = false
+    @State private var markAsTastedItem: CellarItem?
 
     var body: some View {
         NavigationStack {
@@ -53,7 +54,10 @@ struct ProfileView: View {
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
                         onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) },
-                        onWantToTryTap: { showWantToTry = true }
+                        onWantToTryTap: { showWantToTry = true },
+                        onWantToTryToggle: nil,
+                        onRemoveWishlistItem: { item in await vm.removeFromWishlist(item) },
+                        onMarkAsTasted: { markAsTastedItem = $0 }
                     )
                 } else {
                     VStack(spacing: 16) {
@@ -118,6 +122,17 @@ struct ProfileView: View {
                 if let uid = viewModel?.userId {
                     WantToTryView(userId: uid, onDismiss: { showWantToTry = false })
                 }
+            }
+            .sheet(item: $markAsTastedItem) { item in
+                AddWineSheet(
+                    isPresented: Binding(get: { markAsTastedItem != nil }, set: { if !$0 { markAsTastedItem = nil } }),
+                    initialWine: item.wine,
+                    wineIdToRemoveFromWishlist: item.wineId,
+                    onWineAdded: {
+                        markAsTastedItem = nil
+                        Task { await viewModel?.load() }
+                    }
+                )
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
                 if let vm = viewModel, let uid = currentUserId {

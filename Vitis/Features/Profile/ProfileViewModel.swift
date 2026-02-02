@@ -31,7 +31,6 @@ final class ProfileViewModel {
     var wishlistPreview: [CellarItem] = []
     var myWishlistWineIds: Set<UUID> = []
     var wishlistToggleError: String?
-    var lastActivityDate: Date?
     var isLoadingInitial = true
     var isRefreshing = false
     var errorMessage: String?
@@ -71,7 +70,6 @@ final class ProfileViewModel {
         var newFollowingCount: Int?
         var newTastings: [Tasting]?
         var newTasteProfile: (grapes: [TasteProfileItem], regions: [TasteProfileItem], styles: [TasteProfileItem])?
-        var newLastActivityDate: Date?
         var newWishlistPreview: [CellarItem]?
         var newMyWishlistWineIds: Set<UUID>?
 
@@ -117,11 +115,6 @@ final class ProfileViewModel {
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
             newTasteProfile = (t.grapes, t.regions, t.styles)
         }
-
-        if let last = await ProfileService.fetchLastActivityDate(userId: uid) {
-            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-            newLastActivityDate = last
-        }
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
 
         do {
@@ -156,10 +149,20 @@ final class ProfileViewModel {
             tasteRegions = tp.regions
             tasteStyles = tp.styles
         }
-        if let d = newLastActivityDate { lastActivityDate = d }
 
         isLoadingInitial = false
         isRefreshing = false
+    }
+
+    /// Remove wine from own wishlist. Used when viewing own profile tab.
+    func removeFromWishlist(_ item: CellarItem) async {
+        do {
+            try await CellarService.removeFromWishlist(wineId: item.wineId)
+            wishlistPreview.removeAll { $0.id == item.id }
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+        } catch {
+            wishlistToggleError = "Could not remove."
+        }
     }
 
     /// Toggle wishlist from profile (when viewing another user's Want to Try). Optimistic update; reverts on failure.
@@ -172,9 +175,9 @@ final class ProfileViewModel {
         UIImpactFeedbackGenerator(style: UIImpactFeedbackGenerator.FeedbackStyle.light).impactOccurred()
         do {
             if wasIn {
-                try await CellarService.removeFromWishlist(userId: cur, wineId: wineId)
+                try await CellarService.removeFromWishlist(wineId: wineId)
             } else {
-                try await CellarService.addToWishlist(userId: cur, wineId: wineId, sourceUserId: userId)
+                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: userId, sourceContext: "wishlist")
             }
             NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } catch {
