@@ -85,26 +85,39 @@ enum CellarService {
         return Set(rows.map(\.wine_id))
     }
 
-    /// Add wine to wishlist. sourceUserId = feed poster when adding from Feed (for trust hints).
-    static func addToWishlist(userId: UUID, wineId: UUID, sourceUserId: UUID? = nil) async throws {
+    /// Add wine to wishlist. sourceUserId/sourceContext for trust hints.
+    static func addToWishlist(userId: UUID, wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws {
         struct Insert: Encodable {
             let user_id: UUID
             let wine_id: UUID
             let status: String
             let source_user_id: UUID?
+            let source_context: String?
         }
-        let payload = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: sourceUserId)
+        let payload = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: sourceUserId, source_context: sourceContext)
         do {
             try await supabase.from("cellar_items").insert(payload).execute()
         } catch {
             let msg = (error as NSError).userInfo[NSLocalizedDescriptionKey] as? String ?? ""
             if msg.contains("23505") || msg.lowercased().contains("unique") || msg.lowercased().contains("duplicate") { return }
-            if sourceUserId != nil && (msg.contains("column") || msg.contains("does not exist")) {
-                let fallback = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: nil)
+            if (sourceUserId != nil || sourceContext != nil) && (msg.contains("column") || msg.contains("does not exist")) {
+                let fallback = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: nil, source_context: nil)
                 try await supabase.from("cellar_items").insert(fallback).execute()
                 return
             }
             throw error
+        }
+    }
+
+    /// Toggle wishlist; returns true if wine is now in wishlist.
+    static func toggleWantToTry(userId: UUID, wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws -> Bool {
+        let existing = try await fetchWishlistWineIds(userId: userId)
+        if existing.contains(wineId) {
+            try await removeFromWishlist(userId: userId, wineId: wineId)
+            return false
+        } else {
+            try await addToWishlist(userId: userId, wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext)
+            return true
         }
     }
 
