@@ -163,7 +163,8 @@ struct WineCardView: View {
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
                 }
-                if currentUserId != nil {
+                // Only show wishlist toggle if user hasn't tasted this wine
+                if currentUserId != nil && userTasting == nil {
                     wishlistToggle
                 }
             }

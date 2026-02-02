@@ -21,6 +21,7 @@ final class FeedViewModel {
     var tab: Tab = .global
     var items: [FeedItem] = []
     var wishlistWineIds: Set<UUID> = []
+    var tastedWineIds: Set<UUID> = []
     var wishlistSourceUserIds: [UUID] = []
     var wishlistErrorToast: String?
     var isRefreshing = false
@@ -87,6 +88,7 @@ final class FeedViewModel {
                 } catch {
                     if !isCancellation(error) { wishlistErrorToast = ErrorMessage.unknown }
                 }
+                tastedWineIds = (try? await TastingService.fetchTastedWineIds(userId: uid)) ?? []
                 wishlistSourceUserIds = (try? await CellarService.fetchWishlistSourceUserIdsInLastK(userId: uid, k: WishlistSourceStore.windowSize)) ?? []
             }
         } catch {
@@ -102,6 +104,8 @@ final class FeedViewModel {
     }
 
     func isInWishlist(wineId: UUID) -> Bool { wishlistWineIds.contains(wineId) }
+    
+    func hasTasted(wineId: UUID) -> Bool { tastedWineIds.contains(wineId) }
 
     /// Toggle wishlist for feed item's wine. Optimistic update; reverts and shows toast on failure.
     func toggleWishlist(_ item: FeedItem) async {
