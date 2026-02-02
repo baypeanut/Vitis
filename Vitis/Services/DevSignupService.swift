@@ -8,6 +8,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 enum DevSignupService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }

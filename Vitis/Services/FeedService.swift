@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 final class FeedService {
     static let shared = FeedService()

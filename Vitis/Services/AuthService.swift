@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 enum AuthService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
@@ -72,8 +73,53 @@ enum AuthService {
         }
     }
 
+    // MARK: - Phone Authentication
+    
+    /// Send OTP to phone number for signup
+    static func signUpWithPhone(_ phoneE164: String) async -> AuthResult {
+        do {
+            try await supabase.auth.signInWithOTP(phone: phoneE164)
+            return .success
+        } catch {
+            return .failure(friendlyMessage(for: error))
+        }
+    }
+    
+    /// Verify OTP and create session
+    static func verifyPhoneOTP(phone: String, token: String) async -> AuthResult {
+        do {
+            _ = try await supabase.auth.verifyOTP(phone: phone, token: token, type: .sms)
+            return .success
+        } catch {
+            return .failure(friendlyMessage(for: error))
+        }
+    }
+    
+    /// Send OTP to phone number for sign in
+    static func signInWithPhone(_ phoneE164: String) async -> AuthResult {
+        do {
+            try await supabase.auth.signInWithOTP(phone: phoneE164)
+            return .success
+        } catch {
+            return .failure(friendlyMessage(for: error))
+        }
+    }
+    
+    /// Link email to existing phone account (for recovery)
+    static func linkEmailToAccount(userId: UUID, email: String, password: String) async -> AuthResult {
+        do {
+            _ = try await supabase.auth.update(user: UserAttributes(email: email, password: password))
+            return .success
+        } catch {
+            return .failure(friendlyMessage(for: error))
+        }
+    }
+    
+    // MARK: - Legacy Email/Password Auth (Deprecated - kept for migration)
+    
     /// Sign up, create profile, then enter app. Requires "Confirm email" off in Supabase Auth.
     /// Retries once with backoff on rate-limit errors.
+    /// DEPRECATED: Use phone auth instead
     static func signUp(email: String, password: String, username: String) async -> AuthResult {
         func attempt() async throws -> AuthResult {
             let resp = try await supabase.auth.signUp(email: email, password: password)
@@ -110,6 +156,7 @@ enum AuthService {
         return s.contains("rate") || s.contains("limit") || s.contains("too many")
     }
 
+    /// DEPRECATED: Use phone auth instead
     static func signIn(email: String, password: String) async -> AuthResult {
         do {
             _ = try await supabase.auth.signIn(email: email, password: password)
@@ -180,7 +227,7 @@ enum AuthService {
         }
     }
 
-    private static func createProfile(userId: UUID, username: String) async throws {
+    static func createProfile(userId: UUID, username: String) async throws {
         struct ProfileRow: Encodable {
             let id: UUID
             let username: String
@@ -273,6 +320,25 @@ enum AuthService {
     /// User-facing message for auth/connection errors. Never "Account not found" for Auth API failures.
     static func friendlyMessage(for error: Error) -> String {
         let s = error.localizedDescription.lowercased()
+        
+        // Phone/OTP specific errors
+        if s.contains("invalid") && (s.contains("otp") || s.contains("token") || s.contains("code")) {
+            return "Invalid verification code. Please try again."
+        }
+        if s.contains("expired") && (s.contains("otp") || s.contains("token") || s.contains("code")) {
+            return "Code expired. Please request a new one."
+        }
+        if s.contains("phone") && (s.contains("invalid") || s.contains("format")) {
+            return "Invalid phone number format."
+        }
+        if s.contains("sms") && s.contains("failed") {
+            return "Failed to send SMS. Please try again."
+        }
+        if s.contains("phone") && (s.contains("already") || s.contains("exists") || s.contains("registered")) {
+            return "This phone number is already registered."
+        }
+        
+        // Email/Password errors
         if s.contains("invalid login") || s.contains("invalid_credentials") || s.contains("invalid grant") {
             return "Invalid email or password."
         }
@@ -288,18 +354,25 @@ enum AuthService {
         if s.contains("email") && (s.contains("invalid") || s.contains("valid") || s.contains("format")) {
             return "Enter a valid email address."
         }
+        
+        // Network errors
         if s.contains("network") || s.contains("connection") || s.contains("internet") || s.contains("offline") || s.contains("timed out") {
             return ErrorMessage.noConnection
         }
         if s.contains("could not connect") || s.contains("host") || s.contains("url") {
             return "Could not reach server. Check your connection."
         }
+        
+        // Rate limiting
         if s.contains("rate") || s.contains("limit") || s.contains("too many") {
             return "Too many attempts. Please try again later."
         }
+        
+        // Session errors
         if s.contains("session") || s.contains("verification") {
             return "Session expired. Please sign in again."
         }
+        
         #if DEBUG
         print("[AuthService] friendlyMessage fallback – raw: \(error.localizedDescription)")
         let ne = error as NSError

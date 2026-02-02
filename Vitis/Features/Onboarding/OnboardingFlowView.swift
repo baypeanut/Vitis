@@ -45,7 +45,7 @@ struct OnboardingFlowView: View {
 
     private var toolbar: some View {
         HStack {
-            if viewModel.currentStep != .phone {
+            if viewModel.currentStep != .phone && viewModel.currentStep != .otpVerification {
                 Button {
                     viewModel.back()
                 } label: {
@@ -74,10 +74,10 @@ struct OnboardingFlowView: View {
                 switch viewModel.currentStep {
                 case .phone:
                     PhoneStepView(vm: viewModel)
+                case .otpVerification:
+                    OTPVerificationStepView(vm: viewModel)
                 case .email:
                     EmailStepView(vm: viewModel)
-                case .password:
-                    PasswordStepView(vm: viewModel)
                 case .name:
                     NameStepView(vm: viewModel)
                 case .username:
@@ -101,6 +101,13 @@ struct OnboardingFlowView: View {
             }
 
             switch viewModel.currentStep {
+            case .phone:
+                PrimaryButton("Send Code", enabled: viewModel.canContinueForCurrentStep && !viewModel.isLoading) {
+                    viewModel.continueToNext()
+                }
+            case .otpVerification:
+                // OTP auto-submits when 6 digits entered
+                EmptyView()
             case .photo:
                 PrimaryButton("Continue", enabled: !viewModel.isLoading) {
                     viewModel.submitPhotoAndContinue()

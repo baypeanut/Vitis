@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 enum CellarService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }

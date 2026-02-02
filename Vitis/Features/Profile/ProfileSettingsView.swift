@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Supabase
+import PostgREST
 
 struct ProfileSettingsView: View {
     var profile: Profile?
@@ -18,12 +20,22 @@ struct ProfileSettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var deleteError: String?
+    @State private var phoneNumber: String?
+    @State private var email: String?
     
     var body: some View {
         ZStack {
             VitisTheme.background.ignoresSafeArea()
             
             VStack(spacing: 0) {
+                accountInfoSection
+                
+                Rectangle()
+                    .fill(VitisTheme.border)
+                    .frame(height: 1)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                
                 settingsButton(
                     title: "Edit Profile",
                     icon: "pencil",
@@ -76,6 +88,9 @@ struct ProfileSettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await loadAccountInfo()
+        }
         .navigationDestination(isPresented: $showEditProfile) {
             if let p = profile, let uid = userId {
                 EditProfileView(
@@ -108,6 +123,80 @@ struct ProfileSettingsView: View {
                         .scaleEffect(1.2)
                 }
             }
+        }
+    }
+    
+    private var accountInfoSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Account Information")
+                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(VitisTheme.secondaryText)
+                .padding(.horizontal, 24)
+            
+            if let phone = phoneNumber {
+                infoRow(label: "Phone", value: PhoneFormatter.displayString(e164: phone), icon: "phone.fill")
+            }
+            
+            if let email = email {
+                infoRow(label: "Email (Recovery)", value: email, icon: "envelope.fill")
+            }
+        }
+        .padding(.top, 16)
+    }
+    
+    private func infoRow(label: String, value: String, icon: String) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(VitisTheme.accent)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label)
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                Text(value)
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(.primary)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+    }
+    
+    private func loadAccountInfo() async {
+        guard let uid = userId else { return }
+        
+        // Load phone number from user_private
+        do {
+            struct UserPrivateRow: Decodable {
+                let phone_e164: String?
+            }
+            let rows: [UserPrivateRow] = try await SupabaseManager.shared.supabase
+                .from("user_private")
+                .select("phone_e164")
+                .eq("user_id", value: uid)
+                .limit(1)
+                .execute()
+                .value
+            phoneNumber = rows.first?.phone_e164
+        } catch {
+            #if DEBUG
+            print("[ProfileSettings] Failed to load phone: \(error)")
+            #endif
+        }
+        
+        // Load email from auth.users
+        do {
+            if let session = try? await SupabaseManager.shared.supabase.auth.session {
+                email = session.user.email
+            }
+        } catch {
+            #if DEBUG
+            print("[ProfileSettings] Failed to load email: \(error)")
+            #endif
         }
     }
     

@@ -11,7 +11,7 @@ struct PhoneStepView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             SerifTitleText(title: "First, what's your phone number?")
-            Text("Used for account recovery and trust.")
+            Text("We'll send you a verification code via SMS.")
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
 

@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 enum TastingService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }

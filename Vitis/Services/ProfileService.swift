@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 struct TasteProfileItem: Identifiable, Sendable {
     let name: String

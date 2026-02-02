@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 enum WineService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }

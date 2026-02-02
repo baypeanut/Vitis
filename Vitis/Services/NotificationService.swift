@@ -7,6 +7,7 @@
 
 import Foundation
 import Supabase
+import PostgREST
 
 struct NotificationItem: Identifiable, Sendable {
     let id: UUID

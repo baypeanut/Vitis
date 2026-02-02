@@ -17,14 +17,17 @@ final class OnboardingViewModel {
     var phoneRaw = ""
     var phoneError: String?
 
-    // Step 2: Email
+    // Step 2: OTP Verification
+    var otpCode: String = ""
+    var otpError: String?
+    var isVerifyingOTP = false
+    var phoneVerified = false
+    var resendCooldown: Int = 0
+    private var resendTimer: Task<Void, Never>?
+
+    // Step 3: Email (for recovery)
     var email = ""
     var emailError: String?
-
-    // Step 3: Password
-    var password = ""
-    var showPassword = false
-    var passwordError: String?
 
     // Step 4: Name
     var firstName = ""
@@ -62,14 +65,6 @@ final class OnboardingViewModel {
         return !e.isEmpty && emailPredicate.evaluate(with: e)
     }
 
-    private var isPasswordValid: Bool {
-        guard password.count >= 8 && password.count <= 20 else { return false }
-        let hasLetter = password.contains { $0.isLetter }
-        let hasNumber = password.contains { $0.isNumber }
-        let hasSpecial = password.contains { !$0.isLetter && !$0.isNumber && !$0.isWhitespace }
-        return hasLetter && hasNumber && hasSpecial
-    }
-
     private var isNameValid: Bool {
         !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -103,21 +98,91 @@ final class OnboardingViewModel {
         return true
     }
 
-    func canContinuePassword() -> Bool {
-        passwordError = nil
-        guard isPasswordValid else {
-            if !password.isEmpty { passwordError = "Password must meet requirements." }
-            return false
-        }
-        return true
-    }
-
     func canContinueName() -> Bool {
         isNameValid
     }
 
     func canContinueUsername() -> Bool {
         isUsernameValid
+    }
+
+    // MARK: - OTP Verification
+    
+    func sendOTP() async {
+        guard let e164 = phoneE164 else {
+            phoneError = "Invalid phone number"
+            return
+        }
+        
+        isLoading = true
+        phoneError = nil
+        
+        let result = await AuthService.signUpWithPhone(e164)
+        
+        isLoading = false
+        
+        switch result {
+        case .success:
+            currentStep = .otpVerification
+            startResendCooldown()
+        case .failure(let msg):
+            phoneError = msg
+        }
+    }
+    
+    func verifyOTP() async {
+        guard let e164 = phoneE164 else { return }
+        guard otpCode.count == 6 else {
+            otpError = "Please enter the 6-digit code"
+            return
+        }
+        
+        isVerifyingOTP = true
+        otpError = nil
+        
+        let result = await AuthService.verifyPhoneOTP(phone: e164, token: otpCode)
+        
+        isVerifyingOTP = false
+        
+        switch result {
+        case .success:
+            phoneVerified = true
+            currentStep = .email
+        case .failure(let msg):
+            otpError = msg
+            otpCode = ""
+        }
+    }
+    
+    func resendOTP() async {
+        guard let e164 = phoneE164 else { return }
+        guard resendCooldown == 0 else { return }
+        
+        isLoading = true
+        otpError = nil
+        
+        let result = await AuthService.signUpWithPhone(e164)
+        
+        isLoading = false
+        
+        switch result {
+        case .success:
+            startResendCooldown()
+        case .failure(let msg):
+            otpError = msg
+        }
+    }
+    
+    private func startResendCooldown() {
+        resendCooldown = 60
+        resendTimer?.cancel()
+        resendTimer = Task {
+            while resendCooldown > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                resendCooldown -= 1
+            }
+        }
     }
 
     // MARK: - Username availability (debounced)
@@ -158,12 +223,12 @@ final class OnboardingViewModel {
         switch currentStep {
         case .phone:
             if !canContinuePhone() { return }
-            currentStep = .email
+            Task { await sendOTP() }
+        case .otpVerification:
+            // Auto-verified when 6 digits entered
+            break
         case .email:
             if !canContinueEmail() { return }
-            currentStep = .password
-        case .password:
-            if !canContinuePassword() { return }
             currentStep = .name
         case .name:
             if !canContinueName() { return }
@@ -189,8 +254,8 @@ final class OnboardingViewModel {
     var canContinueForCurrentStep: Bool {
         switch currentStep {
         case .phone: return isPhoneValid
+        case .otpVerification: return otpCode.count == 6
         case .email: return isEmailValid
-        case .password: return isPasswordValid
         case .name: return isNameValid
         case .username: return isUsernameValid
         case .photo: return true
@@ -201,14 +266,18 @@ final class OnboardingViewModel {
 
     func completeOnboarding() async {
         guard let e164 = phoneE164 else { return }
+        guard phoneVerified else {
+            completionError = "Please verify your phone number first."
+            return
+        }
+        
         let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pw = password
         let fn = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let ln = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         let un = username.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !em.isEmpty, pw.count >= 8, !fn.isEmpty, un.count >= 2, usernameAvailable == true else {
-            completionError = "Lütfen tüm zorunlu alanları doldurun."
+        guard !em.isEmpty, !fn.isEmpty, un.count >= 2, usernameAvailable == true else {
+            completionError = "Please fill in all required fields."
             return
         }
 
@@ -219,7 +288,6 @@ final class OnboardingViewModel {
             try await OnboardingService.complete(
                 phoneE164: e164,
                 email: em,
-                password: pw,
                 firstName: fn,
                 lastName: ln.isEmpty ? nil : ln,
                 username: un,

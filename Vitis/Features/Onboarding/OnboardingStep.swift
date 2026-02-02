@@ -7,8 +7,8 @@ import Foundation
 
 enum OnboardingStep: Int, CaseIterable {
     case phone = 0
+    case otpVerification
     case email
-    case password
     case name
     case username
     case photo

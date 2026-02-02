@@ -8,20 +8,36 @@
 import SwiftUI
 
 struct AuthView: View {
-    @State private var mode: Mode = .signIn
-    @State private var email = ""
-    @State private var password = ""
-    @State private var username = ""
+    @State private var countryCode = PhoneFormatter.defaultCountryCode
+    @State private var phoneRaw = ""
+    @State private var otpCode = ""
+    @State private var authState: AuthState = .enterPhone
     @State private var errorMessage: String?
     @State private var isLoading = false
     @State private var connectionStatus: ConnectionStatus = .checking
+    @State private var resendCooldown: Int = 0
+    @State private var resendTimer: Task<Void, Never>?
 
     var onAuthenticated: () -> Void
 
-    enum Mode { case signIn, signUp }
-    enum ConnectionStatus { case checking, ok, failed(String) }
-
-    private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
+    enum AuthState: Equatable {
+        case enterPhone
+        case enterOTP(phone: String)
+        case verifying
+    }
+    enum ConnectionStatus: Equatable {
+        case checking
+        case ok
+        case failed(String)
+    }
+    
+    private var phoneE164: String? {
+        PhoneFormatter.normalizeToE164(countryCode: countryCode, raw: phoneRaw)
+    }
+    
+    private var isPhoneValid: Bool {
+        PhoneValidator.isValid(countryCode: countryCode, raw: phoneRaw)
+    }
 
     var body: some View {
         ZStack {
@@ -32,7 +48,6 @@ struct AuthView: View {
                     header
                     connectionBanner
                     form
-                    toggleMode
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 40)
@@ -50,10 +65,8 @@ struct AuthView: View {
             }
         }
         .task { await checkConnection() }
-        .onChange(of: mode) { _, _ in errorMessage = nil }
-        .onChange(of: email) { _, _ in errorMessage = nil }
-        .onChange(of: password) { _, _ in errorMessage = nil }
-        .onChange(of: username) { _, _ in errorMessage = nil }
+        .onChange(of: phoneRaw) { _, _ in errorMessage = nil }
+        .onChange(of: otpCode) { _, _ in errorMessage = nil }
     }
 
     private var header: some View {
@@ -61,7 +74,7 @@ struct AuthView: View {
             Text("Vitis")
                 .font(VitisTheme.titleFont())
                 .foregroundStyle(.primary)
-            Text(mode == .signIn ? "Sign in to continue" : "Create an account")
+            Text(authState == .enterPhone ? "Sign in with your phone" : "Enter verification code")
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
         }
@@ -108,20 +121,14 @@ struct AuthView: View {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if mode == .signUp {
-                labeledField("Username", text: $username, placeholder: "e.g. wine_lover")
-                    .textContentType(.username)
-                    .autocapitalization(.none)
-                    .autocorrectionDisabled()
+            switch authState {
+            case .enterPhone:
+                phoneInputSection
+            case .enterOTP(let phone):
+                otpInputSection(phone: phone)
+            case .verifying:
+                EmptyView()
             }
-
-            labeledField("Email", text: $email, placeholder: "you@example.com")
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .autocorrectionDisabled()
-
-            passwordField
 
             if let err = errorMessage {
                 HStack(alignment: .top, spacing: 6) {
@@ -134,77 +141,140 @@ struct AuthView: View {
                 }
             }
 
-            Button {
-                Task { await submit() }
-            } label: {
-                Text(mode == .signIn ? "Sign in" : "Sign up")
-                    .font(.system(.body, design: .serif, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(canSubmit ? VitisTheme.accent : Color(white: 0.9))
+            submitButton
+        }
+    }
+    
+    private var phoneInputSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Phone Number")
+                .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(VitisTheme.secondaryText)
+            
+            HStack(alignment: .center, spacing: 12) {
+                Menu {
+                    Button("+1") { countryCode = "+1" }
+                    Button("+44") { countryCode = "+44" }
+                    Button("+90") { countryCode = "+90" }
+                    Button("+49") { countryCode = "+49" }
+                    Button("+33") { countryCode = "+33" }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(countryCode)
+                            .font(VitisTheme.uiFont(size: 16))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Color(white: 0.97))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                
+                TextField("Phone number", text: $phoneRaw)
+                    .font(VitisTheme.uiFont(size: 16))
+                    .keyboardType(.numberPad)
+                    .textContentType(.telephoneNumber)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Color(white: 0.97))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onChange(of: phoneRaw) { _, newValue in
+                        let digits = newValue.filter { $0.isNumber }
+                        if digits.count > 10 {
+                            phoneRaw = String(digits.prefix(10))
+                        } else {
+                            phoneRaw = digits
+                        }
+                    }
             }
-            .disabled(isLoading || !canSubmit)
-            .buttonStyle(.plain)
+            
+            Text("We'll send you a verification code")
+                .font(VitisTheme.uiFont(size: 12))
+                .foregroundStyle(VitisTheme.secondaryText)
         }
     }
-
-    private var passwordField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Password")
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
+    
+    private func otpInputSection(phone: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("We sent a code to \(PhoneFormatter.displayString(e164: phone))")
+                .font(VitisTheme.uiFont(size: 13))
                 .foregroundStyle(VitisTheme.secondaryText)
-            SecureField("", text: $password)
-                .font(VitisTheme.uiFont(size: 16))
-                .textContentType(mode == .signIn ? .password : .newPassword)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(Color(white: 0.97))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            if mode == .signUp {
-                Text("At least 6 characters")
-                    .font(VitisTheme.uiFont(size: 11))
+            
+            HStack(spacing: 12) {
+                ForEach(0..<6, id: \.self) { index in
+                    OTPDigitBox(
+                        digit: digitAt(index),
+                        isFocused: index == otpCode.count
+                    )
+                }
+            }
+            .background(
+                TextField("", text: $otpCode)
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .opacity(0)
+                    .onChange(of: otpCode) { _, newValue in
+                        let digits = newValue.filter { $0.isNumber }
+                        if digits.count > 6 {
+                            otpCode = String(digits.prefix(6))
+                        } else {
+                            otpCode = digits
+                        }
+                        
+                        if otpCode.count == 6 {
+                            Task { await verifyOTP() }
+                        }
+                    }
+            )
+            
+            if resendCooldown > 0 {
+                Text("Resend code in \(resendCooldown)s")
+                    .font(VitisTheme.uiFont(size: 13))
                     .foregroundStyle(VitisTheme.secondaryText)
+            } else {
+                Button("Resend code") {
+                    Task { await resendOTP() }
+                }
+                .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(VitisTheme.accent)
+                .disabled(isLoading)
             }
         }
     }
-
-    private func labeledField(_ label: String, text: Binding<String>, placeholder: String = "") -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
-            TextField(placeholder, text: text)
-                .font(VitisTheme.uiFont(size: 16))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(Color(white: 0.97))
+    
+    private func digitAt(_ index: Int) -> String? {
+        guard index < otpCode.count else { return nil }
+        let idx = otpCode.index(otpCode.startIndex, offsetBy: index)
+        return String(otpCode[idx])
+    }
+    
+    private var submitButton: some View {
+        Button {
+            Task { await submit() }
+        } label: {
+            Text(authState == .enterPhone ? "Send Code" : "Verify")
+                .font(.system(.body, design: .serif, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(canSubmit ? VitisTheme.accent : Color(white: 0.9))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
         }
+        .disabled(isLoading || !canSubmit)
+        .buttonStyle(.plain)
     }
 
     private var canSubmit: Bool {
-        let emailOk = email.trimmingCharacters(in: .whitespacesAndNewlines).contains("@")
-        let passwordOk = password.count >= 6
-        if mode == .signUp {
-            let userOk = username.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
-            return emailOk && passwordOk && userOk
+        switch authState {
+        case .enterPhone:
+            return isPhoneValid
+        case .enterOTP:
+            return otpCode.count == 6
+        case .verifying:
+            return false
         }
-        return emailOk && passwordOk
-    }
-
-    private var toggleMode: some View {
-        Button {
-            mode = mode == .signIn ? .signUp : .signIn
-            errorMessage = nil
-        } label: {
-            Text(mode == .signIn ? "Need an account? Sign up" : "Have an account? Sign in")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.accent)
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
     }
 
     private func checkConnection() async {
@@ -223,51 +293,91 @@ struct AuthView: View {
     }
 
     private func submit() async {
-        let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pw = password
-        let un = username.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if mode == .signUp {
-            if un.count < 2 {
-                errorMessage = "Username must be at least 2 characters."
-                return
-            }
-            if !emailPredicate.evaluate(with: em) {
-                errorMessage = "Please enter a valid email address."
-                return
-            }
-            if pw.count < 6 {
-                errorMessage = "Password must be at least 6 characters."
-                return
-            }
-        } else {
-            if !em.contains("@") {
-                errorMessage = "Please enter a valid email address."
-                return
-            }
-            if pw.isEmpty {
-                errorMessage = "Please enter your password."
-                return
-            }
+        switch authState {
+        case .enterPhone:
+            await sendOTP()
+        case .enterOTP:
+            await verifyOTP()
+        case .verifying:
+            break
         }
-
+    }
+    
+    private func sendOTP() async {
+        guard let e164 = phoneE164 else {
+            errorMessage = "Invalid phone number"
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
-
-        let result: AuthResult
-        if mode == .signUp {
-            result = await AuthService.signUp(email: em, password: pw, username: un)
-        } else {
-            result = await AuthService.signIn(email: em, password: pw)
-        }
-
+        
+        let result = await AuthService.signInWithPhone(e164)
+        
         isLoading = false
-
+        
+        switch result {
+        case .success:
+            authState = .enterOTP(phone: e164)
+            startResendCooldown()
+        case .failure(let msg):
+            errorMessage = msg
+        }
+    }
+    
+    private func verifyOTP() async {
+        guard case .enterOTP(let phone) = authState else { return }
+        guard otpCode.count == 6 else {
+            errorMessage = "Please enter the 6-digit code"
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        authState = .verifying
+        
+        let result = await AuthService.verifyPhoneOTP(phone: phone, token: otpCode)
+        
+        isLoading = false
+        
         switch result {
         case .success:
             onAuthenticated()
         case .failure(let msg):
             errorMessage = msg
+            otpCode = ""
+            authState = .enterOTP(phone: phone)
+        }
+    }
+    
+    private func resendOTP() async {
+        guard case .enterOTP(let phone) = authState else { return }
+        guard resendCooldown == 0 else { return }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        let result = await AuthService.signInWithPhone(phone)
+        
+        isLoading = false
+        
+        switch result {
+        case .success:
+            startResendCooldown()
+        case .failure(let msg):
+            errorMessage = msg
+        }
+    }
+    
+    private func startResendCooldown() {
+        resendCooldown = 60
+        resendTimer?.cancel()
+        resendTimer = Task {
+            while resendCooldown > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                resendCooldown -= 1
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 //  ForgotPasswordView.swift
 //  Vitis
 //
-//  Reset password sheet: email → send reset link. Minimal, Quiet Luxury.
+//  Account recovery via email: send reset link. Used when user can't access phone.
 //
 
 import SwiftUI
@@ -21,8 +21,8 @@ struct ForgotPasswordView: View {
             ZStack {
                 VitisTheme.background.ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
-                    SerifTitleText(title: "Reset password")
-                    Text("Enter your email and we'll send you a reset link.")
+                    SerifTitleText(title: "Recover Account")
+                    Text("Enter the email associated with your account. We'll send you a recovery link to regain access.")
                         .font(VitisTheme.uiFont(size: 15))
                         .foregroundStyle(VitisTheme.secondaryText)
 
@@ -73,7 +73,7 @@ struct ForgotPasswordView: View {
                     ProgressView().progressViewStyle(.circular).tint(.white).scaleEffect(1.2)
                 }
             }
-            .navigationTitle("Reset password")
+            .navigationTitle("Recover Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
