@@ -92,7 +92,7 @@ struct ZoomableImageCropView: UIViewRepresentable {
         }
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
-            guard let c = containerView else { return }
+            guard containerView != nil else { return }
             let f = lastFillSize
             let z = scrollView.zoomScale
             scrollView.contentSize = CGSize(width: f.width * z, height: f.height * z)
