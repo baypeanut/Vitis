@@ -156,7 +156,8 @@ struct FeedView: View {
                             profileSheetItem = ProfileSheetItem(userId: item.userId, username: item.username)
                         },
                         onDelete: { Task { await viewModel.deleteFeedItem(item) } },
-                        canDelete: viewModel.currentUserId == item.userId
+                        canDelete: viewModel.currentUserId == item.userId,
+                        currentUserId: viewModel.currentUserId
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, index > 0 && index % 5 == 0 ? 0 : 6)

@@ -247,7 +247,7 @@ CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE USIN
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.tastings (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   wine_id uuid NOT NULL REFERENCES public.wines(id) ON DELETE CASCADE,
   rating double precision NOT NULL CHECK (rating >= 1.0 AND rating <= 10.0),
   note_tags text[] NULL,
