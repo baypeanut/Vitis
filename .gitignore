@@ -30,3 +30,4 @@ Vitis/Core/SupabaseConfig.swift
 # Env / secrets
 .env
 .env.*
+Vitis/Config/Secrets.xcconfig

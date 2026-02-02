@@ -21,6 +21,7 @@ final class ProfileStore {
             currentProfile = nil
             return
         }
+        AnalyticsService.identify(userId: uid)
         #if DEBUG
         if !AppConstants.authRequired {
             // Try dev account first (from dev_accounts table)
@@ -51,6 +52,7 @@ final class ProfileStore {
     /// Clear cached profile (e.g. on sign out in dev mode).
     func clearForSignOut() {
         currentProfile = nil
+        AnalyticsService.reset()
     }
 
     /// Update local state after profile edit. Feed/Comments use this for current user override.

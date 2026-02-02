@@ -5,6 +5,7 @@
 
 import SwiftUI
 import PhotosUI
+import os
 
 struct PhotoStepView: View {
     @Bindable var vm: OnboardingViewModel
@@ -92,7 +93,9 @@ struct PhotoStepView: View {
                     showCropSheet = true
                 }
             }
-        } catch {}
+        } catch {
+            Logger(subsystem: "com.ahmet.vitis", category: "PhotoStep").error("loadPickedImage failed: \(error.localizedDescription)")
+        }
         await MainActor.run { selectedItem = nil }
     }
 }

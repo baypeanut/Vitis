@@ -60,9 +60,6 @@ final class ProfileViewModel {
         }
         errorMessage = nil
         wishlistToggleError = nil
-        #if DEBUG
-        print("[ProfileViewModel] load start userId=\(uid)")
-        #endif
 
         var newProfile: Profile?
         var newRatedCount: Int?
@@ -91,45 +88,44 @@ final class ProfileViewModel {
             }
         } catch {
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-            errorMessage = error.localizedDescription
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
         }
 
-        let countResult = await TastingService.fetchTastingsCount(userId: uid)
+        let countTask = Task { await TastingService.fetchTastingsCount(userId: uid) }
+        let followersTask = Task { await SocialService.fetchFollowerCount(userId: uid) }
+        let followingTask = Task { await SocialService.fetchFollowingCount(userId: uid) }
+        let tastingsTask = Task { try await TastingService.fetchTastings(userId: uid, limit: 200) }
+        let wishlistTask = Task { try await CellarService.fetchWishlist(userId: uid, limit: 15) }
+        let myWishlistTask: Task<Set<UUID>, Error>? = (current != nil && current != uid) ? Task { try await CellarService.fetchWishlistWineIds(userId: current!) } : nil
+
+        newRatedCount = await countTask.value
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-        newRatedCount = countResult
-
-        let followersResult = await SocialService.fetchFollowerCount(userId: uid)
+        newFollowersCount = await followersTask.value
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-        newFollowersCount = followersResult
-
-        let followingResult = await SocialService.fetchFollowingCount(userId: uid)
-        guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-        newFollowingCount = followingResult
-
-        if let tastings = try? await TastingService.fetchTastings(userId: uid, limit: 200) {
-            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-            newTastings = tastings
-        }
-
-        if let t = try? await ProfileService.fetchTasteProfile(userId: uid) {
-            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-            newTasteProfile = (t.grapes, t.regions, t.styles)
-        }
+        newFollowingCount = await followingTask.value
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
 
         do {
-            let items = try await CellarService.fetchWishlist(userId: uid, limit: 15)
+            let tastings = try await tastingsTask.value
+            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+            newTastings = tastings
+            newTasteProfile = ProfileService.computeTasteProfile(from: tastings)
+        } catch {
+            guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+        }
+
+        do {
+            let items = try await wishlistTask.value
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
             newWishlistPreview = items
         } catch {
-            if !isCancellation(error) { errorMessage = error.localizedDescription }
-        }
-        guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-
-        if let cur = current, cur != uid {
-            let ids = (try? await CellarService.fetchWishlistWineIds(userId: cur)) ?? []
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
-            newMyWishlistWineIds = ids
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+        }
+
+        if let task = myWishlistTask {
+            newMyWishlistWineIds = (try? await task.value) ?? []
         }
 
         if loadId != currentLoadId {
@@ -178,6 +174,7 @@ final class ProfileViewModel {
                 try await CellarService.removeFromWishlist(wineId: wineId)
             } else {
                 try await CellarService.addToWishlist(wineId: wineId, sourceUserId: userId, sourceContext: "wishlist")
+                AnalyticsService.wishlistSaveFromUser(wineId: wineId, sourceUserId: userId)
             }
             NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } catch {

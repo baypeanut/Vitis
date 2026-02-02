@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 struct FollowersFollowingView: View {
     let userId: UUID
@@ -19,6 +20,7 @@ struct FollowersFollowingView: View {
     @State private var tab: Tab = .followers
     @State private var followers: [SocialService.FollowListUser] = []
     @State private var following: [SocialService.FollowListUser] = []
+    @State private var errorMessage: String?
     @State private var isLoadingFollowers = true
     @State private var isLoadingFollowing = true
     @State private var followersOffset = 0
@@ -31,6 +33,15 @@ struct FollowersFollowingView: View {
             ZStack {
                 VitisTheme.background.ignoresSafeArea()
                 VStack(spacing: 0) {
+                    if let err = errorMessage {
+                        Text(err)
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity)
+                            .onTapGesture { errorMessage = nil }
+                    }
                     tabBar
                     TabView(selection: $tab) {
                         listContent(users: followers, isLoading: isLoadingFollowers, emptyMessage: "No followers yet.", currentUserId: currentUserId, onUserTap: { selectedUserId = $0 }, onLoad: { loadFollowers(reset: true) }, onNearBottom: { loadFollowers(reset: false) })
@@ -146,7 +157,10 @@ struct FollowersFollowingView: View {
                 let new = try await SocialService.fetchFollowers(userId: userId, limit: pageSize, offset: followersOffset)
                 if reset { followers = new } else { followers.append(contentsOf: new) }
                 followersOffset += new.count
-            } catch {}
+            } catch {
+                Logger(subsystem: "com.ahmet.vitis", category: "FollowersFollowing").error("fetchFollowers failed: \(error.localizedDescription)")
+                errorMessage = ErrorMessage.userFacing(for: error)
+            }
             isLoadingFollowers = false
         }
     }
@@ -159,7 +173,10 @@ struct FollowersFollowingView: View {
                 let new = try await SocialService.fetchFollowing(userId: userId, limit: pageSize, offset: followingOffset)
                 if reset { following = new } else { following.append(contentsOf: new) }
                 followingOffset += new.count
-            } catch {}
+            } catch {
+                Logger(subsystem: "com.ahmet.vitis", category: "FollowersFollowing").error("fetchFollowing failed: \(error.localizedDescription)")
+                errorMessage = ErrorMessage.userFacing(for: error)
+            }
             isLoadingFollowing = false
         }
     }
@@ -267,6 +284,7 @@ private struct FollowListRowView: View {
                 try await SocialService.unfollowUser(targetID: user.id)
             } else {
                 try await SocialService.followUser(targetID: user.id)
+                AnalyticsService.follow(userId: user.id, added: true)
             }
         } catch {
             isFollowing = prev
@@ -287,6 +305,7 @@ struct FollowersFollowingViewContent: View {
     @State private var tab: FollowersFollowingView.Tab = .followers
     @State private var followers: [SocialService.FollowListUser] = []
     @State private var following: [SocialService.FollowListUser] = []
+    @State private var errorMessage: String?
     @State private var isLoadingFollowers = true
     @State private var isLoadingFollowing = true
     @State private var followersOffset = 0
@@ -298,6 +317,15 @@ struct FollowersFollowingViewContent: View {
         ZStack {
             VitisTheme.background.ignoresSafeArea()
             VStack(spacing: 0) {
+                if let err = errorMessage {
+                    Text(err)
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .onTapGesture { errorMessage = nil }
+                }
                 tabBar
                 TabView(selection: $tab) {
                     listContent(users: followers, isLoading: isLoadingFollowers, emptyMessage: "No followers yet.", currentUserId: currentUserId, onUserTap: { selectedUserId = $0 }, onLoad: { loadFollowers(reset: true) }, onNearBottom: { loadFollowers(reset: false) })
@@ -405,7 +433,10 @@ struct FollowersFollowingViewContent: View {
                 let new = try await SocialService.fetchFollowers(userId: userId, limit: pageSize, offset: followersOffset)
                 if reset { followers = new } else { followers.append(contentsOf: new) }
                 followersOffset += new.count
-            } catch {}
+            } catch {
+                Logger(subsystem: "com.ahmet.vitis", category: "FollowersFollowing").error("fetchFollowers failed: \(error.localizedDescription)")
+                errorMessage = ErrorMessage.userFacing(for: error)
+            }
             isLoadingFollowers = false
         }
     }
@@ -418,7 +449,10 @@ struct FollowersFollowingViewContent: View {
                 let new = try await SocialService.fetchFollowing(userId: userId, limit: pageSize, offset: followingOffset)
                 if reset { following = new } else { following.append(contentsOf: new) }
                 followingOffset += new.count
-            } catch {}
+            } catch {
+                Logger(subsystem: "com.ahmet.vitis", category: "FollowersFollowing").error("fetchFollowing failed: \(error.localizedDescription)")
+                errorMessage = ErrorMessage.userFacing(for: error)
+            }
             isLoadingFollowing = false
         }
     }

@@ -172,6 +172,13 @@ cd Vitis
 
    **Important**: `SupabaseConfig.swift` is gitignored. Never commit it.
 
+3. **PostHog (analytics)**:
+   ```bash
+   cp Vitis/Config/Secrets.xcconfig.example Vitis/Config/Secrets.xcconfig
+   ```
+   Paste your PostHog API key in `Vitis/Config/Secrets.xcconfig` (replace `phc_replace_me`).
+   This file is gitignored. Analytics events will be sent when the key is configured.
+
 ### Step 4: Set Up Database
 
 1. Open Supabase Dashboard → **SQL Editor**

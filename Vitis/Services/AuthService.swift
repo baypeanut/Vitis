@@ -78,7 +78,7 @@ enum AuthService {
         func attempt() async throws -> AuthResult {
             let resp = try await supabase.auth.signUp(email: email, password: password)
             guard resp.session != nil else {
-                return .failure("E-posta doğrulaması açık olabilir. Supabase → Auth → Providers → Email içinde \"Confirm email\"i kapatın; veya gelen kutunuzu kontrol edin.")
+                return .failure("Email confirmation may be enabled. In Supabase Auth → Providers → Email, turn off \"Confirm email\"; or check your inbox.")
             }
             do {
                 try await createProfile(userId: resp.user.id, username: username)
@@ -87,7 +87,7 @@ enum AuthService {
                 #if DEBUG
                 print("[AuthService] createProfile failed: \(error)")
                 #endif
-                return .failure("Profil oluşturulamadı. Kullanıcı adı veya e-posta kullanımda olabilir; farklı değerler deneyin.")
+                return .failure("Could not create profile. Username or email may already be in use; try different values.")
             }
         }
         do {

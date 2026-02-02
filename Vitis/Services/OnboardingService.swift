@@ -43,7 +43,7 @@ enum OnboardingService {
 
         guard let uid = await AuthService.currentUserId() else {
             #if DEBUG
-            print("[OnboardingService] currentUserId nil after signUp – Confirm email kapalı mı?")
+            print("[OnboardingService] currentUserId nil after signUp - is Confirm email disabled?")
             #endif
             throw NSError(domain: "OnboardingService", code: -2, userInfo: [NSLocalizedDescriptionKey: userFacing("session")])
         }
@@ -56,7 +56,7 @@ enum OnboardingService {
                 #if DEBUG
                 print("[OnboardingService] avatar upload failed: \(error)")
                 #endif
-                // Profil fotoğrafı olmadan devam et; kullanıcıyı bloklama.
+                // Continue without profile photo; do not block user.
             }
         }
 

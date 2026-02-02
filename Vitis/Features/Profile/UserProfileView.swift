@@ -81,6 +81,7 @@ struct UserProfileView: View {
                         onRemoveWishlistItem: nil,
                         onMarkAsTasted: nil
                     )
+                    .onAppear { AnalyticsService.profileView(userId: userId) }
                 } else {
                     VStack(spacing: 12) {
                         Text("User not found")
@@ -192,6 +193,7 @@ struct UserProfileView: View {
                 try await SocialService.unfollowUser(targetID: userId)
             } else {
                 try await SocialService.followUser(targetID: userId)
+                AnalyticsService.follow(userId: userId, added: true)
             }
         } catch {
             isFollowing = prev

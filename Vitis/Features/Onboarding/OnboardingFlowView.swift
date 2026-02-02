@@ -39,6 +39,7 @@ struct OnboardingFlowView: View {
             .onReceive(NotificationCenter.default.publisher(for: .vitisShowLogIn)) { _ in
                 showDevLogin = true
             }
+            .onAppear { AnalyticsService.signupStarted() }
         }
     }
 

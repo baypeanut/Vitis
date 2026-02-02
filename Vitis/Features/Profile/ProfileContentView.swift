@@ -38,7 +38,7 @@ struct ProfileContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if let err = viewModel.errorMessage {
+                if let err = viewModel.errorMessage, !viewModel.isLoading {
                     Text(err)
                         .font(VitisTheme.uiFont(size: 13))
                         .foregroundStyle(.red)

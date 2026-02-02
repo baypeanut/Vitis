@@ -232,6 +232,7 @@ final class OnboardingViewModel {
         }
 
         isLoading = false
+        AnalyticsService.signupCompleted()
         NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
         NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
     }

@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import os
 
 struct NotificationsView: View {
     @State private var items: [NotificationItem] = []
     @State private var isLoading = true
+    @State private var errorMessage: String?
     @State private var unreadCount = 0
     @State private var selectedPostId: UUID?
     @State private var showCommentSheet = false
@@ -24,6 +26,12 @@ struct NotificationsView: View {
                         .progressViewStyle(.circular)
                         .tint(VitisTheme.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let err = errorMessage, items.isEmpty {
+                    Text(err)
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .onTapGesture { errorMessage = nil }
                 } else if items.isEmpty {
                     Text("No notifications yet.")
                         .font(VitisTheme.uiFont(size: 15))
@@ -150,10 +158,14 @@ struct NotificationsView: View {
 
     private func load() async {
         isLoading = true
+        errorMessage = nil
         do {
             items = try await NotificationService.fetchNotifications()
             unreadCount = await NotificationService.fetchUnreadCount()
-        } catch {}
+        } catch {
+            Logger(subsystem: "com.ahmet.vitis", category: "Notifications").error("fetchNotifications failed: \(error.localizedDescription)")
+            errorMessage = ErrorMessage.userFacing(for: error)
+        }
         isLoading = false
     }
 

@@ -94,7 +94,7 @@ struct ForgotPasswordView: View {
     private func sendResetLink() async {
         let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
         guard emailPredicate.evaluate(with: em) else {
-            errorMessage = "Geçerli bir e-posta adresi girin."
+            errorMessage = "Please enter a valid email address."
             return
         }
 

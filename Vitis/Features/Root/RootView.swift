@@ -18,15 +18,57 @@ struct RootView: View {
     /// Dev mode: sign out → true → show onboarding to test sign-up.
     @State private var devSignedOut = false
     @State private var selectedTab: Tab = .cellar
+    @State private var showAddWineFromCarousel = false
+    @State private var isNewUser = true
+    @State private var hasCheckedUser = false
+    @AppStorage("vitis_has_seen_carousel") private var hasSeenCarousel = false
     @ObservedObject private var recovery = AuthRecoveryState.shared
 
     var body: some View {
         Group {
-            if !AppConstants.authRequired {
+            if !hasCheckedUser {
+                VitisTheme.background.overlay {
+                    ProgressView().tint(VitisTheme.accent)
+                }
+                .ignoresSafeArea()
+            } else if isNewUser && !hasSeenCarousel {
+                OnboardingCarouselView(
+                    hasSeenCarousel: $hasSeenCarousel,
+                    onComplete: {
+                        if AppConstants.authRequired {
+                            showOnboarding = true
+                        } else {
+                            Task { await AuthService.ensureGuestSessionIfNeeded() }
+                            showOnboarding = false
+                            devSignedOut = false
+                        }
+                    },
+                    onAddFirstTasting: {
+                        if AppConstants.authRequired {
+                            showOnboarding = true
+                        } else {
+                            Task {
+                                await AuthService.ensureGuestSessionIfNeeded()
+                                await ProfileStore.shared.load()
+                            }
+                            showOnboarding = false
+                            devSignedOut = false
+                            selectedTab = .cellar
+                            showAddWineFromCarousel = true
+                        }
+                    }
+                )
+            } else if !AppConstants.authRequired {
                 if devSignedOut {
                     OnboardingFlowView()
                 } else {
                     mainTabs
+                        .fullScreenCover(isPresented: $showAddWineFromCarousel) {
+                            AddWineSheet(
+                                isPresented: $showAddWineFromCarousel,
+                                onWineAdded: { showAddWineFromCarousel = false }
+                            )
+                        }
                 }
             } else if !checked {
                 VitisTheme.background.overlay {
@@ -37,6 +79,12 @@ struct RootView: View {
                 OnboardingFlowView()
             } else {
                 mainTabs
+                    .fullScreenCover(isPresented: $showAddWineFromCarousel) {
+                        AddWineSheet(
+                            isPresented: $showAddWineFromCarousel,
+                            onWineAdded: { showAddWineFromCarousel = false }
+                        )
+                    }
             }
         }
         .task {
@@ -46,6 +94,12 @@ struct RootView: View {
                 await AuthService.ensureGuestSessionIfNeeded()
             }
             await ProfileStore.shared.load()
+            let uid = await AuthService.currentUserId()
+            if uid != nil {
+                isNewUser = false
+                hasSeenCarousel = true
+            }
+            hasCheckedUser = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
             Task {
@@ -97,6 +151,7 @@ struct RootView: View {
     }
 
     private func didSignOut() {
+        AnalyticsService.reset()
         if !AppConstants.authRequired {
             DevSignupService.clearDevUserId()
             ProfileStore.shared.clearForSignOut()
