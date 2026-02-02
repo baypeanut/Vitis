@@ -329,13 +329,9 @@ struct ProfileContentView: View {
                 Button {
                     Task { await onToggle(item) }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
-                            .font(.system(size: 12))
-                        Text(viewModel.myWishlistWineIds.contains(item.wineId) ? "Saved" : "Want to Try")
-                            .font(VitisTheme.uiFont(size: 13))
-                    }
-                    .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                    Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 18))
+                        .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
                 }
                 .buttonStyle(.plain)
             }

@@ -320,13 +320,9 @@ struct WantToTryView: View {
                 Button {
                     Task { await toggleWishlist(item, sourceUserId: userId) }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
-                            .font(.system(size: 12))
-                        Text(myWishlistWineIds.contains(item.wineId) ? "Saved" : "Want to Try")
-                            .font(VitisTheme.uiFont(size: 13))
-                    }
-                    .foregroundStyle(myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                    Image(systemName: myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 18))
+                        .foregroundStyle(myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
                 }
                 .buttonStyle(.plain)
             }
