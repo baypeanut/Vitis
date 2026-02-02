@@ -11,13 +11,16 @@ struct WineCardView: View {
     let wine: Wine
     let activityId: UUID?
     let currentUserId: UUID?
-    
+    var sourceUserId: UUID? = nil
+    var sourceContext: String? = nil
+
     @State private var userTasting: Tasting?
     @State private var otherTastings: [TastingWithProfile] = []
     @State private var friendsTastings: [TastingWithProfile] = []
     @State private var activityComments: [CommentWithProfile] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var myWishlistWineIds: Set<UUID> = []
     @Environment(\.dismiss) private var dismiss
     
     private var friendsAverageRating: Double? {
@@ -101,6 +104,13 @@ struct WineCardView: View {
         .task {
             await loadData()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .vitisWishlistUpdated)) { _ in
+            Task {
+                if let uid = currentUserId {
+                    myWishlistWineIds = (try? await CellarService.fetchWishlistWineIds(userId: uid)) ?? myWishlistWineIds
+                }
+            }
+        }
     }
     
     // MARK: - Wine Header
@@ -153,10 +163,46 @@ struct WineCardView: View {
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
                 }
+                if currentUserId != nil {
+                    wishlistToggle
+                }
             }
             .padding(.horizontal, 24)
         }
         .padding(.vertical, 24)
+    }
+
+    private var wishlistToggle: some View {
+        Button {
+            Task { await toggleWishlist() }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: myWishlistWineIds.contains(wine.id) ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 14))
+                Text(myWishlistWineIds.contains(wine.id) ? "Saved" : "Want to try")
+                    .font(VitisTheme.uiFont(size: 14))
+            }
+            .foregroundStyle(myWishlistWineIds.contains(wine.id) ? VitisTheme.accent : VitisTheme.secondaryText)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 12)
+    }
+
+    private func toggleWishlist() async {
+        guard let uid = currentUserId else { return }
+        let wineId = wine.id
+        let wasIn = myWishlistWineIds.contains(wineId)
+        myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
+        do {
+            if wasIn {
+                try await CellarService.removeFromWishlist(userId: uid, wineId: wineId)
+            } else {
+                try await CellarService.addToWishlist(userId: uid, wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext ?? "profile")
+            }
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+        } catch {
+            myWishlistWineIds = wasIn ? myWishlistWineIds.union([wineId]) : myWishlistWineIds.filter { $0 != wineId }
+        }
     }
     
     private var wineIconPlaceholder: some View {
@@ -496,7 +542,11 @@ struct WineCardView: View {
         friendsTastings = friendsTastingsResult
         otherTastings = otherTastingsResult
         activityComments = activityCommentsResult
-        
+
+        if let uid = currentUserId {
+            myWishlistWineIds = (try? await CellarService.fetchWishlistWineIds(userId: uid)) ?? []
+        }
+
         isLoading = false
     }
 }
