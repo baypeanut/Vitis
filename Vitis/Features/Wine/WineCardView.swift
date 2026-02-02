@@ -195,9 +195,9 @@ struct WineCardView: View {
         myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
         do {
             if wasIn {
-                try await CellarService.removeFromWishlist(userId: uid, wineId: wineId)
+                try await CellarService.removeFromWishlist(wineId: wineId)
             } else {
-                try await CellarService.addToWishlist(userId: uid, wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext ?? "profile")
+                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext ?? "profile")
             }
             NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } catch {

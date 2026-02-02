@@ -85,8 +85,10 @@ enum CellarService {
         return Set(rows.map(\.wine_id))
     }
 
-    /// Add wine to wishlist. sourceUserId/sourceContext for trust hints.
-    static func addToWishlist(userId: UUID, wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws {
+    /// Add wine to current user's wishlist. Uses auth.uid(); never accepts userId for writes.
+    /// sourceUserId/sourceContext for trust hints (e.g. who suggested this wine).
+    static func addToWishlist(wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws {
+        guard let uid = await AuthService.currentUserId() else { throw CellarError.notAuthenticated }
         struct Insert: Encodable {
             let user_id: UUID
             let wine_id: UUID
@@ -94,14 +96,14 @@ enum CellarService {
             let source_user_id: UUID?
             let source_context: String?
         }
-        let payload = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: sourceUserId, source_context: sourceContext)
+        let payload = Insert(user_id: uid, wine_id: wineId, status: "wishlist", source_user_id: sourceUserId, source_context: sourceContext)
         do {
             try await supabase.from("cellar_items").insert(payload).execute()
         } catch {
             let msg = (error as NSError).userInfo[NSLocalizedDescriptionKey] as? String ?? ""
             if msg.contains("23505") || msg.lowercased().contains("unique") || msg.lowercased().contains("duplicate") { return }
             if (sourceUserId != nil || sourceContext != nil) && (msg.contains("column") || msg.contains("does not exist")) {
-                let fallback = Insert(user_id: userId, wine_id: wineId, status: "wishlist", source_user_id: nil, source_context: nil)
+                let fallback = Insert(user_id: uid, wine_id: wineId, status: "wishlist", source_user_id: nil, source_context: nil)
                 try await supabase.from("cellar_items").insert(fallback).execute()
                 return
             }
@@ -109,16 +111,32 @@ enum CellarService {
         }
     }
 
-    /// Toggle wishlist; returns true if wine is now in wishlist.
-    static func toggleWantToTry(userId: UUID, wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws -> Bool {
-        let existing = try await fetchWishlistWineIds(userId: userId)
+    /// Remove wine from current user's wishlist. Uses auth.uid(); never accepts userId for writes.
+    static func removeFromWishlist(wineId: UUID) async throws {
+        guard let uid = await AuthService.currentUserId() else { throw CellarError.notAuthenticated }
+        try await supabase.from("cellar_items")
+            .delete()
+            .eq("user_id", value: uid)
+            .eq("wine_id", value: wineId)
+            .eq("status", value: "wishlist")
+            .execute()
+    }
+
+    /// Toggle wishlist for current user; returns true if wine is now in wishlist.
+    static func toggleWantToTry(wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws -> Bool {
+        guard let uid = await AuthService.currentUserId() else { throw CellarError.notAuthenticated }
+        let existing = try await fetchWishlistWineIds(userId: uid)
         if existing.contains(wineId) {
-            try await removeFromWishlist(userId: userId, wineId: wineId)
+            try await removeFromWishlist(wineId: wineId)
             return false
         } else {
-            try await addToWishlist(userId: userId, wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext)
+            try await addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext)
             return true
         }
+    }
+
+    enum CellarError: Error {
+        case notAuthenticated
     }
 
     /// Source user IDs of last K wishlist additions with source (for trust hint). Nulls omitted.
@@ -134,16 +152,6 @@ enum CellarService {
             .execute()
             .value
         return Array(rows.compactMap(\.source_user_id).prefix(k))
-    }
-
-    /// Remove wine from wishlist. Throws on failure.
-    static func removeFromWishlist(userId: UUID, wineId: UUID) async throws {
-        try await supabase.from("cellar_items")
-            .delete()
-            .eq("user_id", value: userId)
-            .eq("wine_id", value: wineId)
-            .eq("status", value: "wishlist")
-            .execute()
     }
 
     static func addToCellar(userId: UUID, wineId: UUID, status: CellarItem.CellarStatus) async throws {

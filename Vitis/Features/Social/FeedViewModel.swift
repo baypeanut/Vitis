@@ -112,9 +112,9 @@ final class FeedViewModel {
         wishlistErrorToast = nil
         do {
             if wasIn {
-                try await CellarService.removeFromWishlist(userId: uid, wineId: wineId)
+                try await CellarService.removeFromWishlist(wineId: wineId)
             } else {
-                try await CellarService.addToWishlist(userId: uid, wineId: wineId, sourceUserId: item.userId)
+                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: item.userId, sourceContext: "feed")
             }
         } catch {
             wishlistWineIds = wasIn ? wishlistWineIds.union([wineId]) : wishlistWineIds.filter { $0 != wineId }

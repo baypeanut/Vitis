@@ -309,7 +309,7 @@ struct AddWineSheet: View {
                 source: "search"
             )
             if let wid = wineIdToRemoveFromWishlist, wid == wine.id {
-                _ = try? await CellarService.removeFromWishlist(userId: userId, wineId: wid)
+                _ = try? await CellarService.removeFromWishlist(wineId: wid)
                 NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
             }
             AnalyticsService.tastingCreate(wineId: wine.id, rating: rating)
