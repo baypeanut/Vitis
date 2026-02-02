@@ -365,6 +365,8 @@ CREATE TABLE IF NOT EXISTS public.cellar_items (
   consumed_at timestamptz NULL
 );
 ALTER TABLE public.cellar_items ADD COLUMN IF NOT EXISTS source_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.cellar_items ADD COLUMN IF NOT EXISTS source_context text NULL
+  CHECK (source_context IS NULL OR source_context IN ('feed', 'profile', 'wishlist', 'search'));
 CREATE INDEX IF NOT EXISTS idx_cellar_items_source_user
   ON public.cellar_items (user_id, source_user_id, created_at DESC)
   WHERE source_user_id IS NOT NULL;
@@ -374,7 +376,8 @@ CREATE INDEX IF NOT EXISTS idx_cellar_items_user_status_created
   ON public.cellar_items (user_id, status, created_at DESC);
 ALTER TABLE public.cellar_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "cellar_items_select_own" ON public.cellar_items;
-CREATE POLICY "cellar_items_select_own" ON public.cellar_items FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "cellar_items_select_all" ON public.cellar_items;
+CREATE POLICY "cellar_items_select_all" ON public.cellar_items FOR SELECT USING (auth.uid() IS NOT NULL);
 DROP POLICY IF EXISTS "cellar_items_insert_own" ON public.cellar_items;
 CREATE POLICY "cellar_items_insert_own" ON public.cellar_items FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "cellar_items_update_own" ON public.cellar_items;
