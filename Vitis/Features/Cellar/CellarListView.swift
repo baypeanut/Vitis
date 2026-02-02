@@ -98,11 +98,6 @@ struct CellarListView: View {
                             .font(VitisTheme.uiFont(size: 24, weight: .semibold))
                             .foregroundStyle(VitisTheme.accent)
                     }
-                    if let v = tasting.wine.vintage {
-                        Text(String(v))
-                            .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
-                    }
                     if let comment = tasting.comment, !comment.isEmpty {
                         Text(comment)
                             .font(VitisTheme.uiFont(size: 13).italic())
