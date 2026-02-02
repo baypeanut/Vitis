@@ -29,6 +29,31 @@ struct FeedView: View {
 
     var body: some View {
         mainContent
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await openNotificationSheet() }
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell")
+                                .font(.system(size: 20))
+                                .foregroundStyle(VitisTheme.accent)
+                            if unreadCount > 0 {
+                                Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(.red))
+                                    .offset(x: 10, y: -8)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
             .task {
                 viewModel.loadFromCache()
                 viewModel.subscribeRealtime()

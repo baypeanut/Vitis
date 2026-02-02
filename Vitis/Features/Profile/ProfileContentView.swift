@@ -312,9 +312,27 @@ struct ProfileContentView: View {
     private var wantToTrySection: some View {
         if !viewModel.wishlistPreview.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Want to Try")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                Group {
+                    if isOwn, let onTap = onWantToTryTap {
+                        Button {
+                            onTap()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Want to Try")
+                                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                    .foregroundStyle(VitisTheme.secondaryText)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(VitisTheme.tertiaryText)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Text("Want to Try")
+                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                    }
+                }
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.wishlistPreview) { item in
                         wantToTryRow(item)
@@ -559,20 +577,23 @@ struct ProfileContentView: View {
     }
 
     private func tasteProfileRow(_ it: TasteProfileItem) -> some View {
-        let nameColor: Color = .primary
-        let ratingColor: Color = tasteSubTab == .grapes
-            ? WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name)
-            : VitisTheme.accent
+        let wineColor = WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name)
         return HStack {
-            Text(it.name)
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(nameColor)
+            if tasteSubTab == .grapes {
+                Text(it.name)
+                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(wineColor)
+            } else {
+                Text(it.name)
+                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(.primary)
+            }
             Spacer()
             HStack(spacing: 8) {
                 if let avgRating = it.averageRating {
                     Text(String(format: "%.1f", avgRating))
                         .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(ratingColor)
+                        .foregroundStyle(wineColor)
                     Text("·")
                         .font(VitisTheme.uiFont(size: 14))
                         .foregroundStyle(VitisTheme.secondaryText)

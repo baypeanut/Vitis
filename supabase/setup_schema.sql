@@ -1,6 +1,6 @@
--- Vitis – Supabase schema setup
+-- Vitis – Supabase schema setup (single file, includes all migrations)
 -- Run this entire script in Supabase Dashboard → SQL Editor → New query.
--- Fixes: "table public.profiles" and "function duel_next_pair" not found.
+-- Fresh setup: no need to run individual migrations. This file is the full schema.
 
 -- -----------------------------------------------------------------------------
 -- 1. Base tables: wines, profiles
@@ -365,6 +365,9 @@ CREATE TABLE IF NOT EXISTS public.cellar_items (
   consumed_at timestamptz NULL
 );
 ALTER TABLE public.cellar_items ADD COLUMN IF NOT EXISTS source_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_cellar_items_source_user
+  ON public.cellar_items (user_id, source_user_id, created_at DESC)
+  WHERE source_user_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cellar_items_user_wine_status
   ON public.cellar_items (user_id, wine_id, status);
 CREATE INDEX IF NOT EXISTS idx_cellar_items_user_status_created

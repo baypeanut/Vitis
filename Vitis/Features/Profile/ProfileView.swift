@@ -31,6 +31,7 @@ struct ProfileView: View {
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: DrillDownTarget?
     @State private var showSettings = false
+    @State private var showWantToTry = false
 
     var body: some View {
         NavigationStack {
@@ -51,7 +52,8 @@ struct ProfileView: View {
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
                         onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
                         onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
-                        onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) }
+                        onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) },
+                        onWantToTryTap: { showWantToTry = true }
                     )
                 } else {
                     VStack(spacing: 16) {
@@ -94,13 +96,28 @@ struct ProfileView: View {
                     }
                 )
             }
-            .navigationDestination(item: $drillDownTarget) { target in
-                TasteProfileDrillDownView(
-                    title: target.title,
-                    filterType: target.filterType,
-                    tastings: viewModel?.allTastings ?? [],
-                    currentUserId: currentUserId
-                )
+            .sheet(item: $drillDownTarget) { target in
+                NavigationStack {
+                    TasteProfileDrillDownView(
+                        title: target.title,
+                        filterType: target.filterType,
+                        tastings: viewModel?.allTastings ?? [],
+                        currentUserId: currentUserId
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { drillDownTarget = nil }
+                                .font(VitisTheme.uiFont(size: 15))
+                                .foregroundStyle(VitisTheme.accent)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showWantToTry) {
+                if let uid = viewModel?.userId {
+                    WantToTryView(userId: uid, onDismiss: { showWantToTry = false })
+                }
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
                 if let vm = viewModel, let uid = currentUserId {
