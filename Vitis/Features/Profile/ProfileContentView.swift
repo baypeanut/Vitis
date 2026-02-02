@@ -229,18 +229,15 @@ struct ProfileContentView: View {
     }
 
     private func streakGoalCard(_ p: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-
-            HStack(spacing: 8) {
-                streakGoalBox(
-                    icon: "target",
-                    value: TasteSnapshotOptions.labelForWeeklyGoal(id: p.weeklyGoal)
-                )
-                streakGoalBox(
-                    icon: "flame.fill",
-                    value: streakLabel
-                )
-            }
+        HStack(spacing: 8) {
+            streakGoalBox(
+                icon: "target",
+                value: TasteSnapshotOptions.labelForWeeklyGoal(id: p.weeklyGoal)
+            )
+            streakGoalBox(
+                icon: "flame.fill",
+                value: streakLabel
+            )
         }
     }
     
@@ -248,18 +245,18 @@ struct ProfileContentView: View {
     private func streakGoalBox(icon: String, value: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.system(size: 13))
                 .foregroundStyle(VitisTheme.accent)
             Text(value)
-                .font(VitisTheme.uiFont(size: 13))
+                .font(VitisTheme.uiFont(size: 12, weight: .medium))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 10)
-        .background(Color(white: 0.98))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(VitisTheme.border, lineWidth: 1))
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(Color(white: 0.97))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var streakLabel: String {
@@ -271,12 +268,31 @@ struct ProfileContentView: View {
     }
 
     private var tabs: some View {
-        Picker("", selection: $mainTab) {
-            ForEach(MainTab.allCases, id: \.self) { t in
-                Text(t.rawValue).tag(t)
+        HStack(spacing: 0) {
+            ForEach(MainTab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        mainTab = tab
+                    }
+                } label: {
+                    Text(tab.rawValue)
+                        .font(VitisTheme.uiFont(size: 15, weight: mainTab == tab ? .semibold : .regular))
+                        .foregroundStyle(mainTab == tab ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            mainTab == tab
+                                ? Color(white: 0.97)
+                                : Color.clear
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
             }
         }
-        .pickerStyle(.segmented)
+        .padding(4)
+        .background(Color(white: 0.985))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     @ViewBuilder
@@ -481,12 +497,30 @@ struct ProfileContentView: View {
 
     private var tasteProfileContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker("", selection: $tasteSubTab) {
-                ForEach(TasteSubTab.allCases, id: \.self) { t in
-                    Text(t.rawValue).tag(t)
+            HStack(spacing: 12) {
+                Spacer()
+                ForEach(TasteSubTab.allCases, id: \.self) { tab in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            tasteSubTab = tab
+                        }
+                    } label: {
+                        Text(tab.rawValue)
+                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                            .foregroundStyle(tasteSubTab == tab ? .white : VitisTheme.secondaryText)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                tasteSubTab == tab
+                                    ? VitisTheme.accent
+                                    : Color(white: 0.95)
+                            )
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
+                Spacer()
             }
-            .pickerStyle(.segmented)
             tasteProfileList
         }
     }
