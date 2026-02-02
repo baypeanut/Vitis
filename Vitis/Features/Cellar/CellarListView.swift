@@ -83,7 +83,12 @@ struct CellarListView: View {
     }
     
     private func tastingRow(_ tasting: Tasting) -> some View {
-        NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: currentUserId)) {
+        ZStack {
+            NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: currentUserId)) {
+                EmptyView()
+            }
+            .opacity(0)
+            
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(tasting.wine.producer)
@@ -110,7 +115,6 @@ struct CellarListView: View {
                 }
             }
         }
-        .buttonStyle(.plain)
     }
     
     private func updateSelectedCategory() {

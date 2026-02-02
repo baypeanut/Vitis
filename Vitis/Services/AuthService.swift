@@ -123,6 +123,30 @@ enum AuthService {
         try await supabase.auth.signOut()
     }
 
+    /// Deletes the current user's account. This will cascade delete all user data (profile, tastings, follows, etc.)
+    /// due to ON DELETE CASCADE constraints in the database.
+    /// This calls a Postgres function that deletes the user from auth.users, which triggers cascade deletes.
+    static func deleteAccount() async -> AuthResult {
+        do {
+            guard let userId = await currentUserId() else {
+                return .failure("Not signed in.")
+            }
+            
+            // Call the delete_user RPC function which will delete the user from auth.users
+            // The CASCADE constraints will automatically clean up all related data
+            try await supabase.rpc("delete_current_user").execute()
+            
+            // Sign out after deletion
+            try? await supabase.auth.signOut()
+            return .success
+        } catch {
+            #if DEBUG
+            print("[AuthService] deleteAccount failed: \(error)")
+            #endif
+            return .failure(friendlyMessage(for: error))
+        }
+    }
+
     // MARK: - Forgot / reset password
 
     /// Deep link for password reset. Must match Supabase Dashboard → Auth → URL Configuration → Redirect URLs.
@@ -219,6 +243,7 @@ enum AuthService {
     /// Update only provided fields. Omit nils to leave unchanged. Never store password.
     static func updateProfile(
         userId: UUID,
+        username: String? = nil,
         fullName: String? = nil,
         avatarURL: String? = nil,
         bio: String? = nil,
@@ -230,6 +255,7 @@ enum AuthService {
         weeklyGoal: String? = nil
     ) async throws {
         let u = ProfileUpdatePayload(
+            username: username,
             full_name: fullName,
             avatar_url: avatarURL,
             bio: bio,
@@ -286,6 +312,7 @@ enum AuthService {
 // MARK: - Profile update payload (encode only non-nil keys)
 
 private struct ProfileUpdatePayload: Encodable {
+    let username: String?
     let full_name: String?
     let avatar_url: String?
     let bio: String?
@@ -297,18 +324,19 @@ private struct ProfileUpdatePayload: Encodable {
     let weekly_goal: String?
 
     var hasAny: Bool {
-        full_name != nil || avatar_url != nil || bio != nil || password_updated_at != nil
+        username != nil || full_name != nil || avatar_url != nil || bio != nil || password_updated_at != nil
             || instagram_url != nil || taste_snapshot_loves != nil
             || taste_snapshot_avoids != nil || taste_snapshot_mood != nil || weekly_goal != nil
     }
 
     enum CodingKeys: String, CodingKey {
-        case full_name, avatar_url, bio, password_updated_at
+        case username, full_name, avatar_url, bio, password_updated_at
         case instagram_url, taste_snapshot_loves, taste_snapshot_avoids, taste_snapshot_mood, weekly_goal
     }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        if let v = username { try c.encode(v, forKey: .username) }
         if let v = full_name { try c.encode(v, forKey: .full_name) }
         if let v = avatar_url { try c.encode(v, forKey: .avatar_url) }
         if let v = bio { try c.encode(v, forKey: .bio) }
