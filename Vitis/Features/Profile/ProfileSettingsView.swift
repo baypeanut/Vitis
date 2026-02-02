@@ -15,6 +15,9 @@ struct ProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showEditProfile = false
     @State private var editVM = EditProfileViewModel()
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
+    @State private var deleteError: String?
     
     var body: some View {
         ZStack {
@@ -44,6 +47,29 @@ struct ProfileSettingsView: View {
                     }
                 )
                 
+                Rectangle()
+                    .fill(VitisTheme.border)
+                    .frame(height: 1)
+                    .padding(.horizontal, 24)
+                
+                settingsButton(
+                    title: "Delete Account",
+                    icon: "trash",
+                    isDestructive: true,
+                    action: {
+                        showDeleteConfirmation = true
+                    }
+                )
+                
+                if let error = deleteError {
+                    Text(error)
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 16)
+                }
+                
                 Spacer()
             }
             .padding(.top, 24)
@@ -63,6 +89,43 @@ struct ProfileSettingsView: View {
                     onCancel: { showEditProfile = false }
                 )
             }
+        }
+        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+        } message: {
+            Text("Are you sure you want to delete your account? This action cannot be undone. All your tastings, ratings, and profile data will be permanently deleted.")
+        }
+        .overlay {
+            if isDeleting {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.white)
+                        .scaleEffect(1.2)
+                }
+            }
+        }
+    }
+    
+    private func deleteAccount() async {
+        isDeleting = true
+        deleteError = nil
+        
+        let result = await AuthService.deleteAccount()
+        
+        isDeleting = false
+        
+        switch result {
+        case .success:
+            // Account deleted successfully, dismiss and trigger sign out flow
+            dismiss()
+            onSignOut()
+        case .failure(let message):
+            deleteError = message
         }
     }
     

@@ -33,9 +33,10 @@ struct EditProfileView: View {
                                 .foregroundStyle(.red)
                         }
                         avatarSection
+                        usernameSection
+                        fullNameSection
                         bioSection
                         tasteSection
-                        goalSection
                         socialSection
                         PrimaryButton("Save", enabled: canSave && !viewModel.isSaving) {
                             Task { await save() }
@@ -148,7 +149,37 @@ struct EditProfileView: View {
     }
 
     private var canSave: Bool {
-        !viewModel.bioOverLimit
+        !viewModel.bioOverLimit && !viewModel.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var usernameSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Username")
+                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(VitisTheme.secondaryText)
+            UnderlineTextField(
+                placeholder: "username",
+                text: $viewModel.username,
+                keyboardType: .default,
+                textContentType: .username,
+                autocapitalization: .never
+            )
+        }
+    }
+
+    private var fullNameSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Display Name")
+                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(VitisTheme.secondaryText)
+            UnderlineTextField(
+                placeholder: "Full name (optional)",
+                text: $viewModel.fullName,
+                keyboardType: .default,
+                textContentType: .name,
+                autocapitalization: .words
+            )
+        }
     }
 
     private var bioSection: some View {
@@ -203,21 +234,6 @@ struct EditProfileView: View {
             .tint(VitisTheme.accent)
         }
         .padding(.vertical, 8)
-    }
-
-    private var goalSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Weekly goal")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
-            Picker("", selection: $viewModel.weeklyGoalId) {
-                ForEach(TasteSnapshotOptions.weeklyGoal, id: \.id) { o in
-                    Text(o.label).tag(o.id)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(VitisTheme.accent)
-        }
     }
 
     private var socialSection: some View {

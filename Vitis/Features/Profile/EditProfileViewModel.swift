@@ -10,11 +10,12 @@ import Foundation
 @MainActor
 @Observable
 final class EditProfileViewModel {
+    var username: String = ""
+    var fullName: String = ""
     var bio: String = ""
     var lovesId: String = "none"
     var avoidsId: String = "none"
     var moodId: String = "none"
-    var weeklyGoalId: String = "none"
     var instagramHandleInput: String = ""
     /// New photo picked + cropped; uploaded on save.
     var avatarJpegData: Data?
@@ -28,11 +29,12 @@ final class EditProfileViewModel {
     var bioOverLimit: Bool { bio.count > bioLimit }
 
     func apply(profile: Profile) {
+        username = profile.username
+        fullName = profile.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         bio = profile.bio?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         lovesId = profile.tasteSnapshotLoves ?? "none"
         avoidsId = profile.tasteSnapshotAvoids ?? "none"
         moodId = profile.tasteSnapshotMood ?? "none"
-        weeklyGoalId = profile.weeklyGoal ?? "none"
         let h = profile.instagramHandle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         instagramHandleInput = h.isEmpty ? "" : "@\(h)"
         avatarJpegData = nil
@@ -70,6 +72,21 @@ final class EditProfileViewModel {
         guard !isSaving else { return }
         isSaving = true
         saveError = nil
+        
+        // Validate username
+        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedUsername.isEmpty {
+            saveError = "Username cannot be empty"
+            isSaving = false
+            return
+        }
+        if !Self.isValidUsername(trimmedUsername) {
+            saveError = "Username can only contain letters, numbers, underscores, and periods"
+            isSaving = false
+            return
+        }
+        
+        let trimmedFullName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedBio = String(bio.prefix(bioLimit)).trimmingCharacters(in: .whitespacesAndNewlines)
         let handle = Self.normalizeInstagramHandle(instagramHandleInput)
         if !Self.isValidInstagramHandle(handle) {
@@ -90,17 +107,26 @@ final class EditProfileViewModel {
         do {
             try await AuthService.updateProfile(
                 userId: userId,
+                username: trimmedUsername,
+                fullName: trimmedFullName.isEmpty ? nil : trimmedFullName,
                 avatarURL: avatarURL,
                 bio: trimmedBio.isEmpty ? nil : trimmedBio,
                 instagramHandle: handle.isEmpty ? nil : handle,
                 tasteSnapshotLoves: lovesId == "none" ? nil : lovesId,
                 tasteSnapshotAvoids: avoidsId == "none" ? nil : avoidsId,
-                tasteSnapshotMood: moodId == "none" ? nil : moodId,
-                weeklyGoal: weeklyGoalId == "none" ? nil : weeklyGoalId
+                tasteSnapshotMood: moodId == "none" ? nil : moodId
             )
         } catch {
             saveError = "Profile update failed: \(error.localizedDescription)"
         }
         isSaving = false
+    }
+    
+    /// Valid username: 1-30 chars, letters, numbers, underscores, periods.
+    static func isValidUsername(_ username: String) -> Bool {
+        guard !username.isEmpty else { return false }
+        guard let regex = try? NSRegularExpression(pattern: "^[A-Za-z0-9._]{1,30}$") else { return false }
+        let range = NSRange(username.startIndex..<username.endIndex, in: username)
+        return regex.firstMatch(in: username, range: range) != nil
     }
 }
