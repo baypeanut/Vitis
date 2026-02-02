@@ -63,13 +63,13 @@ cp SupabaseConfig.example.swift SupabaseConfig.swift
 ### Paylaşılan proje
 
 - Projeyi kuran kişi **ilk kez** `supabase/setup_schema.sql`’i çalıştırmış olmalı.
-- Yeni migration’lar varsa, sırayla Supabase **SQL Editor**’de çalıştır veya `supabase db push` kullan.
+- `setup_schema.sql` tüm migration’ları içerir; ayrı migration çalıştırmaya gerek yok.
 
 ### Kendi projen
 
 - Supabase **SQL Editor** → **New query**.
 - `supabase/setup_schema.sql` içeriğini yapıştırıp **Run**.
-- Gerekirse migration’ları da sırayla uygula.
+- Tek dosya yeterli; migration’lar setup_schema’ya dahil.
 
 ### Storage (avatarlar)
 

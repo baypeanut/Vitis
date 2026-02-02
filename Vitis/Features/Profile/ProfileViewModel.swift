@@ -39,9 +39,10 @@ final class ProfileViewModel {
 
     private var loadId = UUID()
 
-    /// Top 5 tastings for Recent Activity; sorted by createdAt desc (tastedAt equivalent).
+    /// Top 5 tastings for Recent Activity; sorted by createdAt desc (tastedAt when in schema).
     var recentTastingsTop5: [Tasting] {
-        Array(allTastings.prefix(5))
+        let sorted = allTastings.sorted { $0.createdAt > $1.createdAt }
+        return Array(sorted.prefix(5))
     }
 
     init(userId: UUID) {
