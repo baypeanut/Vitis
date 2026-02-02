@@ -25,7 +25,6 @@ struct ProfileContentView: View {
     var onGrapeTap: ((String) -> Void)?
     var onRatedTap: (() -> Void)?
     var onWantToTryTap: (() -> Void)?
-    var onWantToTryToggle: ((CellarItem) async -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
@@ -47,7 +46,6 @@ struct ProfileContentView: View {
                 if let p = viewModel.profile {
                     header(p)
                     tasteSnapshotCard(p)
-                    streakGoalCard(p)
                     tabs
                     tabContent
                 }
@@ -77,6 +75,10 @@ struct ProfileContentView: View {
                     .lineLimit(3)
             }
             statsRow
+            if let onTap = onWantToTryTap {
+                WantToTryChip(count: viewModel.wishlistPreview.count) { onTap() }
+                    .padding(.top, 4)
+            }
             if !isOwn {
                 primaryButton(p)
             }
@@ -228,45 +230,6 @@ struct ProfileContentView: View {
         }
     }
 
-    private func streakGoalCard(_ p: Profile) -> some View {
-        HStack(spacing: 8) {
-            streakGoalBox(
-                icon: "target",
-                value: TasteSnapshotOptions.labelForWeeklyGoal(id: p.weeklyGoal)
-            )
-            streakGoalBox(
-                icon: "flame.fill",
-                value: streakLabel
-            )
-        }
-    }
-    
-    @ViewBuilder
-    private func streakGoalBox(icon: String, value: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 13))
-                .foregroundStyle(VitisTheme.accent)
-            Text(value)
-                .font(VitisTheme.uiFont(size: 12, weight: .medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(Color(white: 0.97))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var streakLabel: String {
-        guard let d = viewModel.lastActivityDate else { return "-" }
-        let days = Calendar.current.dateComponents([.day], from: d, to: Date()).day ?? 0
-        if days == 0 { return "Today" }
-        if days == 1 { return "1 day ago" }
-        return "\(days) days ago"
-    }
-
     private var tabs: some View {
         HStack(spacing: 0) {
             ForEach(MainTab.allCases, id: \.self) { tab in
@@ -299,88 +262,10 @@ struct ProfileContentView: View {
     private var tabContent: some View {
         switch mainTab {
         case .recentActivity:
-            VStack(alignment: .leading, spacing: 24) {
-                recentActivityList
-                wantToTrySection
-            }
+            recentActivityList
         case .tasteProfile:
             tasteProfileContent
         }
-    }
-
-    @ViewBuilder
-    private var wantToTrySection: some View {
-        if !viewModel.wishlistPreview.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Group {
-                    if isOwn, let onTap = onWantToTryTap {
-                        Button {
-                            onTap()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("Want to Try")
-                                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                                    .foregroundStyle(VitisTheme.secondaryText)
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(VitisTheme.tertiaryText)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Text("Want to Try")
-                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(viewModel.wishlistPreview) { item in
-                        wantToTryRow(item)
-                        Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
-                    }
-                }
-                if let err = viewModel.wishlistToggleError {
-                    Text(err)
-                        .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(.red)
-                }
-            }
-            .padding(.top, 8)
-        }
-    }
-
-    private func wantToTryRow(_ item: CellarItem) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.wine.producer)
-                    .font(VitisTheme.producerSerifFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
-                Text(VitisTheme.displayWineName(item.wine.name))
-                    .font(VitisTheme.detailFont())
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: item.wine))
-                if let r = item.wine.region, !r.isEmpty {
-                    Text(r)
-                        .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if !isOwn, let onWantToTryToggle = onWantToTryToggle {
-                Button {
-                    Task { await onWantToTryToggle(item) }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
-                            .font(.system(size: 12))
-                        Text("Want to try")
-                            .font(VitisTheme.uiFont(size: 13))
-                    }
-                    .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.vertical, 10)
     }
 
     private var recentActivityList: some View {
@@ -402,7 +287,7 @@ struct ProfileContentView: View {
 
     private func tastingActivityRow(_ tasting: Tasting) -> some View {
         let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
-        return NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.userId)) {
+        return NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.userId, sourceUserId: viewModel.userId, sourceContext: "profile")) {
             HStack(alignment: .top, spacing: 12) {
                 cellarAvatarCircle()
                 VStack(alignment: .leading, spacing: 4) {
