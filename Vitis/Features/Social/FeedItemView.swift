@@ -74,10 +74,7 @@ struct FeedItemView: View {
                 avatar
                 (Text(item.username)
                     .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
-                + Text(" tasted")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText))
+                    .foregroundStyle(VitisTheme.accent))
                 Spacer()
             }
             if let hint = trustHint, !hint.isEmpty {
