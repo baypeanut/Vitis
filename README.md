@@ -635,57 +635,6 @@ PostgreSQL feature enforced by Supabase:
 
 ---
 
-## Recent Changes & Implementation Details
-
-### Feed Display Enhancements (January 2026)
-
-**What changed:**
-- Feed items now show detailed information matching Cellar view
-- Rating, country (region), tasting notes, and date/time are displayed for `had_wine` activities
-- Wine glass icons are tinted by category (red/white/rose/sparkling) without text labels
-- Typography updated: wine names use serif fonts, producers use serif with gray color
-
-**Technical details:**
-
-1. **FeedItem model updates**:
-   - Added `tastingRating: Double?` - Rating from `tastings` table
-   - Added `wineRegion: String?` - Region from `wines` table
-   - Added `wineCategory: String?` - Category for icon tinting
-
-2. **FeedRowPayload updates**:
-   - Maps `tasting_rating` and `wine_region` from `feed_with_details` view
-   - Maps `wine_category` for icon tinting
-
-3. **FeedItemView updates**:
-   - New `hadWineDetails` view component:
-     - First line: Rating (burgundy) · Country (gray) - left-aligned
-     - Second line: Notes (gray) - left-aligned
-     - Date/time (gray) - right-aligned
-   - `categoryColor(for:)` function:
-     - Red: `Color(red: 0.7, green: 0.1, blue: 0.1)`
-     - White: `Color(red: 0.95, green: 0.9, blue: 0.7)`
-     - Rose: `Color(red: 0.95, green: 0.7, blue: 0.7)`
-     - Sparkling: `Color(white: 0.95)`
-   - Wine thumbnail typography:
-     - Producer: `VitisTheme.producerSerifFont()` (serif, gray)
-     - Wine name: `VitisTheme.wineNameFont()` (serif, black)
-     - Vintage: `VitisTheme.detailFont()` (serif, gray)
-
-4. **Database updates**:
-   - `feed_with_details` view includes `tasting_rating`, `wine_region`, `wine_category`
-   - `activity_feed` constraint updated to include `'had_wine'` activity type
-
-**Visual format example:**
-```
-Ahmet Dericioglu had Chardonnay.
-8.0 · Chile                    Jan 29 · 9:53 AM
-Vanilla, Floral
-[Wine thumbnail with tinted icon]
-[Cheers] [Comment]
-```
-
----
-
 ## Next Steps for New Engineers
 
 1. **Read this README** (you're doing it!)
