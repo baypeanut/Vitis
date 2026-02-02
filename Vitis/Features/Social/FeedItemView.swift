@@ -17,6 +17,7 @@ struct FeedItemView: View {
     var onUsernameTap: (() -> Void)? = nil
     var onDelete: (() -> Void)? = nil
     var canDelete: Bool = false
+    var currentUserId: UUID? = nil
 
     @State private var showTrustHintPopover = false
     
@@ -147,7 +148,7 @@ struct FeedItemView: View {
     private var twoColumnLayout: some View {
         HStack(alignment: .top, spacing: 12) {
             // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes) - wrapped in NavigationLink
-            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: item.userId)) {
+            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId)) {
                 HStack(alignment: .top, spacing: 8) {
                     wineThumbnailSquare(
                         labelURL: item.wineLabelURL,
@@ -169,14 +170,6 @@ struct FeedItemView: View {
                             Text(String(vintage))
                                 .font(VitisTheme.detailFont())
                                 .foregroundStyle(VitisTheme.secondaryText)
-                        }
-                        if let notes = formattedNotes, !notes.isEmpty {
-                            Text(notes)
-                                .font(VitisTheme.uiFont(size: 12))
-                                .foregroundStyle(VitisTheme.secondaryText)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                                .padding(.top, 2)
                         }
                         if let comment = item.tastingComment, !comment.isEmpty {
                             Text(comment)

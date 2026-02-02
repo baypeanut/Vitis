@@ -173,7 +173,7 @@ struct WineCardView: View {
     // MARK: - Ratings Section
     
     private var ratingsSection: some View {
-        VStack(alignment: .center, spacing: 16) {
+        VStack(alignment: .center, spacing: 8) {
             sectionDivider
             
             VStack(spacing: 16) {
@@ -206,7 +206,7 @@ struct WineCardView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.vertical, 20)
+            .padding(.vertical, 16)
         }
     }
     
@@ -469,7 +469,12 @@ struct WineCardView: View {
         }
         
         // Fetch all tastings for this wine (excluding current user for the "others" section)
-        let allTastings = (try? await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: nil, limit: 100)) ?? []
+        let allTastings: [TastingWithProfile]
+        do {
+            allTastings = try await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: nil, limit: 100)
+        } catch {
+            allTastings = []
+        }
         
         // Separate into friends and others (excluding current user)
         let friendsTastingsResult = allTastings.filter { 

@@ -57,22 +57,37 @@ final class CellarViewModel {
         case .eightPlus: filtered = filtered.filter { $0.rating >= 8.0 }
         case .ninePlus: filtered = filtered.filter { $0.rating >= 9.0 }
         }
+        
+        let sorter: (Tasting, Tasting) -> Bool = sortOption == .newest
+            ? { $0.createdAt > $1.createdAt }
+            : { $0.rating > $1.rating }
+        
+        // Create "All" category with all filtered tastings
+        var result: [(category: String, tastings: [Tasting])] = []
+        if !filtered.isEmpty {
+            result.append((category: "All", tastings: filtered.sorted(by: sorter)))
+        }
+        
+        // Group by category
         var categoryDict: [String: [Tasting]] = [:]
         for tasting in filtered {
             let category = WineCategoryResolver.resolve(wine: tasting.wine)
             categoryDict[category, default: []].append(tasting)
         }
+        
+        // Sort categories (Red, White, Sparkling, Rose, Other)
         let sortedCategories = categoryDict.keys.sorted { a, b in
             if a == "Other" { return false }
             if b == "Other" { return true }
             return a < b
         }
-        let sorter: (Tasting, Tasting) -> Bool = sortOption == .newest
-            ? { $0.createdAt > $1.createdAt }
-            : { $0.rating > $1.rating }
-        groupedTastings = sortedCategories.map { category in
-            (category: category, tastings: categoryDict[category]!.sorted(by: sorter))
+        
+        // Add category groups
+        for category in sortedCategories {
+            result.append((category: category, tastings: categoryDict[category]!.sorted(by: sorter)))
         }
+        
+        groupedTastings = result
     }
 
     func removeTasting(_ tasting: Tasting) async {
