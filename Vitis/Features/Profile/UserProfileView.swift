@@ -38,6 +38,7 @@ struct UserProfileView: View {
     @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var currentUserId: UUID?
     @State private var showUserCellar = false
+    @State private var showWantToTry = false
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -75,7 +76,7 @@ struct UserProfileView: View {
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                         onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { showUserCellar = true },
-                        onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
+                        onWantToTryTap: { showWantToTry = true }
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -133,6 +134,13 @@ struct UserProfileView: View {
                 UserCellarView(
                     userId: userId,
                     userName: viewModel.profile?.displayName ?? "User"
+                )
+            }
+            .sheet(isPresented: $showWantToTry) {
+                WantToTryView(
+                    userId: userId,
+                    username: viewModel.profile?.username ?? "",
+                    onDismiss: { showWantToTry = false }
                 )
             }
         }
@@ -209,6 +217,7 @@ struct UserProfileViewContent: View {
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var showUserCellar = false
+    @State private var showWantToTry = false
 
     init(userId: UUID, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -241,7 +250,7 @@ struct UserProfileViewContent: View {
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                     onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                     onRatedTap: { showUserCellar = true },
-                    onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) }
+                    onWantToTryTap: { showWantToTry = true }
                 )
             } else {
                 VStack(spacing: 12) {
@@ -289,6 +298,13 @@ struct UserProfileViewContent: View {
             UserCellarView(
                 userId: userId,
                 userName: viewModel.profile?.displayName ?? "User"
+            )
+        }
+        .sheet(isPresented: $showWantToTry) {
+            WantToTryView(
+                userId: userId,
+                username: viewModel.profile?.username ?? "",
+                onDismiss: { showWantToTry = false }
             )
         }
         .task(id: userId) {
