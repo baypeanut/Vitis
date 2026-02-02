@@ -22,38 +22,11 @@ private struct ProfileSheetItem: Identifiable, Hashable {
 struct FeedView: View {
     @State private var viewModel = FeedViewModel()
     @State private var profileSheetItem: ProfileSheetItem?
-    @State private var showNotificationSheet = false
-    @State private var unreadCount = 0
-    @State private var notificationItems: [NotificationItem] = []
     @State private var currentUserId: UUID?
 
     var body: some View {
         mainContent
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await openNotificationSheet() }
-                    } label: {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell")
-                                .font(.system(size: 20))
-                                .foregroundStyle(VitisTheme.accent)
-                            if unreadCount > 0 {
-                                Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(.white)
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(Capsule().fill(.red))
-                                    .offset(x: 10, y: -8)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
             .task {
                 viewModel.loadFromCache()
                 viewModel.subscribeRealtime()
@@ -64,14 +37,10 @@ struct FeedView: View {
             .onReceive(NotificationCenter.default.publisher(for: .vitisProfileUpdated)) { _ in
                 viewModel.patchCurrentUserOverrides()
             }
-            .sheet(isPresented: $showNotificationSheet) {
-                notificationSheetContent
-            }
             .navigationDestination(item: $profileSheetItem) { item in
                 profileNavigationContent(for: item)
             }
             .task { currentUserId = await AuthService.currentUserId() }
-            .task { unreadCount = await NotificationService.fetchUnreadCount() }
             .onReceive(NotificationCenter.default.publisher(for: .vitisWishlistUpdated)) { _ in
                 Task { await viewModel.refreshWishlistIds() }
             }
@@ -208,121 +177,6 @@ struct FeedView: View {
                 .frame(height: 10)
         }
         .padding(.top, 6)
-    }
-
-    private func openNotificationSheet() async {
-        do {
-            notificationItems = try await NotificationService.fetchNotifications()
-            _ = try? await NotificationService.markAllAsRead()
-            unreadCount = 0
-        } catch {}
-        showNotificationSheet = true
-    }
-
-    @ViewBuilder
-    private var notificationSheetContent: some View {
-        NavigationStack {
-            ZStack {
-                VitisTheme.background.ignoresSafeArea()
-                if notificationItems.isEmpty {
-                    Text("No notifications yet.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(notificationItems) { n in
-                                notificationRow(n)
-                                Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
-                            }
-                            .padding(.bottom, 24)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { showNotificationSheet = false }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent)
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .onChange(of: showNotificationSheet) { _, v in
-            if !v {
-                Task { unreadCount = await NotificationService.fetchUnreadCount() }
-            }
-        }
-    }
-
-    private func notificationRow(_ n: NotificationItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            avatar(url: n.actorAvatarUrl, name: n.actorUsername ?? "?")
-            VStack(alignment: .leading, spacing: 4) {
-                notificationText(n)
-                Text(VitisTheme.compactTimestamp(n.createdAt))
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            showNotificationSheet = false
-        }
-    }
-
-    @ViewBuilder
-    private func notificationText(_ n: NotificationItem) -> some View {
-        let name = n.actorUsername ?? "Someone"
-        if n.type == "like" {
-            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(" liked your tasting.").foregroundStyle(.primary))
-                .font(VitisTheme.uiFont(size: 15))
-        } else {
-            VStack(alignment: .leading, spacing: 2) {
-                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(" commented: ").foregroundStyle(.primary))
-                    .font(VitisTheme.uiFont(size: 15))
-                if let prev = n.commentPreview {
-                    Text(prev)
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                        .lineLimit(2)
-                }
-            }
-        }
-    }
-
-    private func avatar(url: String?, name: String) -> some View {
-        Group {
-            if let s = url, let u = URL(string: s) {
-                AsyncImage(url: u) { p in
-                    switch p {
-                    case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
-                    default: avatarPlaceholder(name)
-                    }
-                }
-            } else {
-                avatarPlaceholder(name)
-            }
-        }
-        .frame(width: 40, height: 40)
-        .clipShape(Circle())
-    }
-
-    private func avatarPlaceholder(_ name: String) -> some View {
-        Circle()
-            .fill(Color(white: 0.94))
-            .overlay(
-                Text(String(name.prefix(1)).uppercased())
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
-            )
     }
 }
 

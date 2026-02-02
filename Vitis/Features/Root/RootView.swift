@@ -9,7 +9,7 @@
 import SwiftUI
 
 enum Tab {
-    case cellar, social, profile
+    case cellar, social, notifications, profile
 }
 
 struct RootView: View {
@@ -77,6 +77,9 @@ struct RootView: View {
             SocialView()
                 .tabItem { Image(systemName: "person.2") }
                 .tag(Tab.social)
+            NotificationsView()
+                .tabItem { Image(systemName: "bell") }
+                .tag(Tab.notifications)
             ProfileView(onSignOut: didSignOut)
                 .tabItem { Image(systemName: "person.crop.circle") }
                 .tag(Tab.profile)
