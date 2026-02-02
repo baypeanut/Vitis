@@ -141,7 +141,7 @@ struct FeedView: View {
                         parts: viewModel.statementParts(for: item),
                         onCheers: { Task { await viewModel.cheer(item) } },
                         hasWishlisted: viewModel.isInWishlist(wineId: item.wineId),
-                        onWishlistToggle: (viewModel.currentUserId != nil && viewModel.currentUserId != item.userId) ? { Task { await viewModel.toggleWishlist(item) } } : nil,
+                        onWishlistToggle: (viewModel.currentUserId != nil && viewModel.currentUserId != item.userId && !viewModel.hasTasted(wineId: item.wineId)) ? { Task { await viewModel.toggleWishlist(item) } } : nil,
                         trustHint: viewModel.trustHint(for: item),
                         onUsernameTap: {
                             #if DEBUG

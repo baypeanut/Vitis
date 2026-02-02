@@ -87,8 +87,15 @@ enum CellarService {
 
     /// Add wine to current user's wishlist. Uses auth.uid(); never accepts userId for writes.
     /// sourceUserId/sourceContext for trust hints (e.g. who suggested this wine).
+    /// Returns silently if user has already tasted this wine (can't add tasted wines to wishlist).
     static func addToWishlist(wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws {
         guard let uid = await AuthService.currentUserId() else { throw CellarError.notAuthenticated }
+        
+        // Don't add to wishlist if user has already tasted this wine
+        if await TastingService.hasTasted(userId: uid, wineId: wineId) {
+            return
+        }
+        
         struct Insert: Encodable {
             let user_id: UUID
             let wine_id: UUID
