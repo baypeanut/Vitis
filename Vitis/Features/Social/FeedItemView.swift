@@ -20,6 +20,7 @@ struct FeedItemView: View {
     var currentUserId: UUID? = nil
 
     @State private var showTrustHintPopover = false
+    @State private var navigateToWine = false
     
     /// Construct Wine object from FeedItem for navigation.
     private var wine: Wine {
@@ -144,56 +145,62 @@ struct FeedItemView: View {
     
     private var twoColumnLayout: some View {
         HStack(alignment: .top, spacing: 12) {
-            // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes) - wrapped in NavigationLink
-            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed")) {
-                HStack(alignment: .top, spacing: 8) {
-                    wineThumbnailSquare(
-                        labelURL: item.wineLabelURL,
-                        category: item.wineCategory,
-                        wineName: item.wineName
-                    )
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.wineProducer)
-                            .font(VitisTheme.uiFont(size: 11, weight: .regular))
+            // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes, timestamp)
+            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed"), isActive: $navigateToWine) {
+                EmptyView()
+            }
+            .frame(width: 0, height: 0)
+            .hidden()
+            
+            HStack(alignment: .top, spacing: 8) {
+                wineThumbnailSquare(
+                    labelURL: item.wineLabelURL,
+                    category: item.wineCategory,
+                    wineName: item.wineName
+                )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.wineProducer)
+                        .font(VitisTheme.uiFont(size: 11, weight: .regular))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(VitisTheme.displayWineName(item.wineName))
+                        .font(VitisTheme.wineNameFont())
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.9)
+                    if let vintage = item.wineVintage {
+                        Text(String(vintage))
+                            .font(VitisTheme.detailFont())
                             .foregroundStyle(VitisTheme.secondaryText)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        Text(VitisTheme.displayWineName(item.wineName))
-                            .font(VitisTheme.wineNameFont())
-                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.9)
-                        if let vintage = item.wineVintage {
-                            Text(String(vintage))
-                                .font(VitisTheme.detailFont())
-                                .foregroundStyle(VitisTheme.secondaryText)
-                        }
-                        if let comment = item.tastingComment, !comment.isEmpty {
-                            Text(comment)
-                                .font(VitisTheme.uiFont(size: 12).italic())
-                                .foregroundStyle(VitisTheme.secondaryText)
-                                .lineLimit(2)
-                                .truncationMode(.tail)
-                                .padding(.top, 2)
-                        }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if let comment = item.tastingComment, !comment.isEmpty {
+                        Text(comment)
+                            .font(VitisTheme.uiFont(size: 12).italic())
+                            .foregroundStyle(VitisTheme.secondaryText)
+                            .lineLimit(2)
+                            .truncationMode(.tail)
+                            .padding(.top, 2)
+                    }
+                    Text(VitisTheme.compactTimestamp(item.createdAt))
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                navigateToWine = true
+            }
             
-            // RIGHT COLUMN: rating, timestamp (trailing)
+            // RIGHT COLUMN: rating only (trailing)
             VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.tastingRating {
                     Text(String(format: "%.1f", rating))
                         .font(VitisTheme.uiFont(size: 22, weight: .semibold))
                         .foregroundStyle(VitisTheme.accent)
                 }
-                
-                Text(VitisTheme.compactTimestamp(item.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
             }
             .frame(width: 80, alignment: .trailing)
         }
