@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PhotosUI
+import os
 
 struct EditProfileView: View {
     @Bindable var viewModel: EditProfileViewModel
@@ -140,7 +141,9 @@ struct EditProfileView: View {
                     showCropSheet = true
                 }
             }
-        } catch {}
+        } catch {
+            Logger(subsystem: "com.ahmet.vitis", category: "EditProfile").error("loadPickedImage failed: \(error.localizedDescription)")
+        }
         await MainActor.run { selectedItem = nil }
     }
 

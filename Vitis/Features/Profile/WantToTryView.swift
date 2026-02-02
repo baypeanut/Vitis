@@ -67,6 +67,7 @@ struct WantToTryView: View {
         }
         .task {
             AnalyticsService.wishlistView()
+            AnalyticsService.wantToTryOpened(userId: userId)
             await load()
         }
         .onAppear {

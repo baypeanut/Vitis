@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		E35951622F26D5B80010DFC1 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E35950792F26D4010010DFC1 /* Supabase */; };
+		E3595A052F26E2000010DFC1 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E3595A042F26E2000010DFC1 /* PostHog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		E35950692F26D4010010DFC1 /* Vitis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vitis.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E3595A012F26E1000010DFC1 /* Vitis.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Vitis.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,6 +44,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E35951622F26D5B80010DFC1 /* Supabase in Frameworks */,
+				E3595A052F26E2000010DFC1 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,6 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				E359506B2F26D4010010DFC1 /* Vitis */,
+				E3595A022F26E1000010DFC1 /* Vitis/Config */,
 				E359506A2F26D4010010DFC1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -64,6 +68,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E3595A022F26E1000010DFC1 /* Vitis/Config */ = {
+			isa = PBXGroup;
+			children = (
+				E3595A012F26E1000010DFC1 /* Vitis.xcconfig */,
+			);
+			path = Vitis/Config;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -71,6 +83,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = E35950742F26D4020010DFC1 /* Build configuration list for PBXNativeTarget "Vitis" */;
 			buildPhases = (
+				E3595A062F26E3000010DFC1 /* Run Script */,
 				E35950652F26D4010010DFC1 /* Sources */,
 				E35950662F26D4010010DFC1 /* Frameworks */,
 				E35950672F26D4010010DFC1 /* Resources */,
@@ -85,6 +98,7 @@
 			name = Vitis;
 			packageProductDependencies = (
 				E35950792F26D4010010DFC1 /* Supabase */,
+				E3595A042F26E2000010DFC1 /* PostHog */,
 			);
 			productName = Vitis;
 			productReference = E35950692F26D4010010DFC1 /* Vitis.app */;
@@ -116,6 +130,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E359507A2F26D4010010DFC1 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E3595A032F26E2000010DFC1 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E359506A2F26D4010010DFC1 /* Products */;
@@ -136,6 +151,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E3595A062F26E3000010DFC1 /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ ! -f \"${SRCROOT}/Vitis/Config/Secrets.xcconfig\" ]; then cp \"${SRCROOT}/Vitis/Config/Secrets.xcconfig.example\" \"${SRCROOT}/Vitis/Config/Secrets.xcconfig\"; fi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		E35950652F26D4010010DFC1 /* Sources */ = {
@@ -269,6 +306,7 @@
 		};
 		E35950752F26D4020010DFC1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E3595A012F26E1000010DFC1 /* Vitis.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -297,6 +335,7 @@
 		};
 		E35950762F26D4020010DFC1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E3595A012F26E1000010DFC1 /* Vitis.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -355,6 +394,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		E3595A032F26E2000010DFC1 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -362,6 +409,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E359507A2F26D4010010DFC1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		E3595A042F26E2000010DFC1 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3595A032F26E2000010DFC1 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

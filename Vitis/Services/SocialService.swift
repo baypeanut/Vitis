@@ -260,6 +260,44 @@ enum SocialService {
         return result
     }
 
+    /// Suggested users to follow (recent feed authors, excluding current user and already followed). Static list for cold start.
+    static func fetchSuggestedUsersToFollow(limit: Int = 5) async -> [FollowListUser] {
+        guard let current = await AuthService.currentUserId() else { return [] }
+        struct Row: Decodable { let user_id: UUID }
+        let rows: [Row] = (try? await supabase.from("activity_feed")
+            .select("user_id")
+            .eq("activity_type", value: "had_wine")
+            .neq("user_id", value: current)
+            .order("created_at", ascending: false)
+            .limit(limit * 4)
+            .execute().value) ?? []
+        var seen = Set<UUID>()
+        var ids: [UUID] = []
+        for r in rows {
+            if !seen.contains(r.user_id) {
+                seen.insert(r.user_id)
+                ids.append(r.user_id)
+                if ids.count >= limit { break }
+            }
+        }
+        struct FRow: Decodable { let followed_id: UUID }
+        let followRows: [FRow] = (try? await supabase.from("follows")
+            .select("followed_id")
+            .eq("follower_id", value: current)
+            .execute().value) ?? []
+        let followingSet = Set(followRows.map(\.followed_id))
+        ids = ids.filter { !followingSet.contains($0) }
+        let profiles = await fetchProfilesForIds(ids)
+        var result: [FollowListUser] = []
+        for uid in ids.prefix(limit) {
+            guard let p = profiles[uid] else { continue }
+            let username = p.username ?? "Unknown"
+            let fullName = p.full_name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? p.full_name : nil
+            result.append(FollowListUser(id: uid, username: username, fullName: fullName, avatarUrl: p.avatar_url, isFollowing: false))
+        }
+        return result
+    }
+
     private static func fetchProfilesForIds(_ ids: [UUID]) async -> [UUID: (username: String?, full_name: String?, avatar_url: String?)] {
         guard !ids.isEmpty else { return [:] }
         struct PRow: Decodable { let id: UUID; let username: String?; let full_name: String?; let avatar_url: String? }

@@ -11,6 +11,7 @@ import SwiftUI
 struct VitisApp: App {
     init() {
         _ = SupabaseManager.shared
+        AnalyticsService.setup()
     }
 
     var body: some Scene {

@@ -20,6 +20,7 @@ final class FeedViewModel {
 
     var tab: Tab = .global
     var items: [FeedItem] = []
+    var suggestedUsers: [SocialService.FollowListUser] = []
     var wishlistWineIds: Set<UUID> = []
     var tastedWineIds: Set<UUID> = []
     var wishlistSourceUserIds: [UUID] = []
@@ -94,6 +95,11 @@ final class FeedViewModel {
         } catch {
             if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
         }
+        if tab == .following && items.isEmpty {
+            suggestedUsers = await SocialService.fetchSuggestedUsersToFollow(limit: 5)
+        } else {
+            suggestedUsers = []
+        }
         isRefreshing = false
     }
 
@@ -127,6 +133,9 @@ final class FeedViewModel {
         if wishlistErrorToast == nil && !wasIn {
             wishlistSourceUserIds = [item.userId] + wishlistSourceUserIds
             AnalyticsService.wishlistAdd(wineId: wineId)
+            if currentUserId != item.userId {
+                AnalyticsService.wishlistSaveFromUser(wineId: wineId, sourceUserId: item.userId)
+            }
             NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } else if wishlistErrorToast == nil && wasIn {
             AnalyticsService.wishlistRemove(wineId: wineId)

@@ -68,6 +68,7 @@ struct AddWineSheet: View {
         }
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
         .onAppear {
+            if case .rating = flowStep { AnalyticsService.firstTastingStarted() }
             if initialWine == nil {
                 viewModel.prefetchPopular()
                 Task { await viewModel.loadDatabaseWines() }
@@ -215,6 +216,7 @@ struct AddWineSheet: View {
             selectedNotes = []
             comment = ""
             flowStep = .rating(wine)
+            AnalyticsService.firstTastingStarted()
         } label: {
             HStack(alignment: .center, spacing: 16) {
                 thumbnail(wine.labelImageURL)
@@ -245,6 +247,7 @@ struct AddWineSheet: View {
                     selectedNotes = []
                     comment = ""
                     flowStep = .rating(wine)
+                    AnalyticsService.firstTastingStarted()
                 } catch {
                     viewModel.errorMessage = ErrorMessage.userFacing(for: error)
                 }
@@ -299,6 +302,7 @@ struct AddWineSheet: View {
         }
         isSaving = true
         saveError = nil
+        let countBefore = await TastingService.fetchTastingsCount(userId: userId)
         do {
             _ = try await TastingService.createTasting(
                 userId: userId,
@@ -313,6 +317,9 @@ struct AddWineSheet: View {
                 NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
             }
             AnalyticsService.tastingCreate(wineId: wine.id, rating: rating)
+            if countBefore == 0 {
+                AnalyticsService.firstTastingSaved(wineId: wine.id, rating: rating)
+            }
             onWineAdded()
             resetFlow()
             isPresented = false

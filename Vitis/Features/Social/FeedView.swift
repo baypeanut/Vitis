@@ -119,14 +119,72 @@ struct FeedView: View {
     }
     
     private var followingEmptyState: some View {
-        VStack(spacing: 16) {
-            Text("Follow people to see their tastings here.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+        ScrollView {
+            VStack(spacing: 20) {
+                Text("Follow people to see their tastings here.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                if !viewModel.suggestedUsers.isEmpty {
+                    Text("People you might like")
+                        .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                    ForEach(viewModel.suggestedUsers) { u in
+                        Button {
+                            profileSheetItem = ProfileSheetItem(userId: u.id, username: u.username)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Group {
+                                    if let s = u.avatarUrl, let url = URL(string: s) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
+                                            default: avatarPlaceholder(u)
+                                            }
+                                        }
+                                    } else {
+                                        avatarPlaceholder(u)
+                                    }
+                                }
+                                .frame(width: 44, height: 44)
+                                .clipShape(Circle())
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(u.fullName ?? u.username)
+                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                        .foregroundStyle(.primary)
+                                    Text("@\(u.username)")
+                                        .font(VitisTheme.uiFont(size: 13))
+                                        .foregroundStyle(VitisTheme.secondaryText)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(VitisTheme.secondaryText)
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color(white: 0.98))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 24)
+                }
+            }
+            .padding(.vertical, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func avatarPlaceholder(_ u: SocialService.FollowListUser) -> some View {
+        Circle()
+            .fill(Color(white: 0.94))
+            .overlay(
+                Text(String((u.fullName ?? u.username).prefix(1)).uppercased())
+                    .font(VitisTheme.uiFont(size: 18, weight: .medium))
+                    .foregroundStyle(VitisTheme.secondaryText)
+            )
     }
 
     private var feedList: some View {

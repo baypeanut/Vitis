@@ -124,6 +124,70 @@ enum ProfileService {
         return (grapes, regions, styles)
     }
 
+    /// Compute taste profile from tastings (avoids duplicate DB fetch when tastings already loaded).
+    static func computeTasteProfile(from tastings: [Tasting]) -> (grapes: [TasteProfileItem], regions: [TasteProfileItem], styles: [TasteProfileItem]) {
+        var grapeCounts: [String: Int] = [:]
+        var grapeRatings: [String: [Double]] = [:]
+        var regionCounts: [String: Int] = [:]
+        var regionRatings: [String: [Double]] = [:]
+        var regionCategories: [String: [String]] = [:]
+        var styleCounts: [String: Int] = [:]
+        var styleRatings: [String: [Double]] = [:]
+
+        let knownGrapes = ["Shiraz", "Syrah", "Malbec", "Cabernet", "Merlot", "Pinot Noir", "Nebbiolo", "Sangiovese", "Chardonnay", "Sauvignon", "Riesling", "Pinot Grigio", "Prosecco", "Grenache", "Tempranillo", "Zinfandel", "Viognier", "Barbera", "Gamay"]
+
+        for t in tastings {
+            let w = t.wine
+            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
+            if grape == nil {
+                let name = w.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty {
+                    let lower = name.lowercased()
+                    for g in knownGrapes {
+                        if lower.contains(g.lowercased()) {
+                            grape = g
+                            break
+                        }
+                    }
+                }
+            }
+            if let variety = grape {
+                grapeCounts[variety, default: 0] += 1
+                grapeRatings[variety, default: []].append(t.rating)
+            }
+            if let region = (w.region?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+                let normRegion = Self.normalizeRegion(region)
+                regionCounts[normRegion, default: 0] += 1
+                regionRatings[normRegion, default: []].append(t.rating)
+                if let cat = w.category?.trimmingCharacters(in: .whitespacesAndNewlines), !cat.isEmpty {
+                    regionCategories[normRegion, default: []].append(cat)
+                }
+            }
+            if let style = (w.category?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap({ $0.isEmpty ? nil : $0 }) {
+                styleCounts[style, default: 0] += 1
+                styleRatings[style, default: []].append(t.rating)
+            }
+        }
+
+        let grapes = grapeCounts.map { (key, count) -> TasteProfileItem in
+            let ratings = grapeRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: nil)
+        }.sorted { $0.count > $1.count }
+        let regions = regionCounts.map { (key, count) -> TasteProfileItem in
+            let ratings = regionRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            let dominant = Self.dominantCategory(from: regionCategories[key] ?? [])
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: dominant)
+        }.sorted { $0.count > $1.count }
+        let styles = styleCounts.map { (key, count) -> TasteProfileItem in
+            let ratings = styleRatings[key] ?? []
+            let avgRating = ratings.isEmpty ? nil : ratings.reduce(0.0, +) / Double(ratings.count)
+            return TasteProfileItem(name: key, count: count, averageRating: avgRating, dominantWineCategory: nil)
+        }.sorted { $0.count > $1.count }
+        return (grapes, regions, styles)
+    }
+
     /// Last activity date for user (max created_at in activity_feed). For "Streak: —" placeholder when nil.
     static func fetchLastActivityDate(userId: UUID) async -> Date? {
         struct Row: Decodable { let created_at: Date }

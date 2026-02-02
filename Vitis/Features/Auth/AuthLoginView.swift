@@ -111,11 +111,11 @@ struct AuthLoginView: View {
         let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let pw = password
         guard emailPredicate.evaluate(with: em) else {
-            errorMessage = "Geçerli bir e-posta adresi girin."
+            errorMessage = "Please enter a valid email address."
             return
         }
         guard !pw.isEmpty else {
-            errorMessage = "Şifre girin."
+            errorMessage = "Please enter your password."
             return
         }
 
@@ -251,11 +251,11 @@ struct AuthLoginViewContent: View {
         let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let pw = password
         guard emailPredicate.evaluate(with: em) else {
-            errorMessage = "Geçerli bir e-posta adresi girin."
+            errorMessage = "Please enter a valid email address."
             return
         }
         guard !pw.isEmpty else {
-            errorMessage = "Şifre girin."
+            errorMessage = "Please enter your password."
             return
         }
 

@@ -43,6 +43,8 @@ struct ProfileView: View {
                         .progressViewStyle(.circular)
                         .tint(VitisTheme.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let vm = viewModel, vm.isLoadingInitial {
+                    ProfileSkeletonView()
                 } else if let vm = viewModel, vm.profile != nil {
                     ProfileContentView(
                         viewModel: vm,
@@ -59,7 +61,8 @@ struct ProfileView: View {
                         onRemoveWishlistItem: { item in await vm.removeFromWishlist(item) },
                         onMarkAsTasted: { markAsTastedItem = $0 }
                     )
-                } else {
+                    .onAppear { AnalyticsService.profileView(userId: vm.userId) }
+                } else if viewModel != nil {
                     VStack(spacing: 16) {
                         Text(viewModel?.errorMessage ?? "Could not load profile.")
                             .font(VitisTheme.uiFont(size: 14))
@@ -171,5 +174,45 @@ struct ProfileView: View {
     private func signOut() async {
         try? await AuthService.signOut()
         onSignOut()
+    }
+}
+
+// MARK: - Profile loading skeleton
+
+private struct ProfileSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 12) {
+                    Circle()
+                        .fill(Color(white: 0.92))
+                        .frame(width: 88, height: 88)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(white: 0.92))
+                        .frame(width: 100, height: 14)
+                    HStack(spacing: 16) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color(white: 0.92))
+                                    .frame(width: 36, height: 14)
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color(white: 0.95))
+                                    .frame(width: 50, height: 12)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(white: 0.97))
+                    .frame(height: 100)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(white: 0.97))
+                    .frame(height: 200)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+        }
     }
 }

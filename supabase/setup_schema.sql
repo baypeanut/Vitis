@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS public.activity_feed (
 );
 CREATE INDEX IF NOT EXISTS idx_activity_feed_user ON public.activity_feed (user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_created ON public.activity_feed (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_feed_user_created ON public.activity_feed (user_id, created_at DESC);
 
 -- Update activity_type constraint to include 'had_wine' (if table already exists)
 ALTER TABLE public.activity_feed DROP CONSTRAINT IF EXISTS activity_feed_activity_type_check;
