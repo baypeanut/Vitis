@@ -11,6 +11,7 @@ struct PhotoStepView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var showCropSheet = false
     @State private var pickedImage: UIImage?
+    @State private var displayAvatarData: Data?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -18,7 +19,7 @@ struct PhotoStepView: View {
 
             PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                 ZStack(alignment: .bottomTrailing) {
-                    if let data = vm.avatarJpegData, let ui = UIImage(data: data) {
+                    if let data = displayAvatarData, let ui = UIImage(data: data) {
                         Image(uiImage: ui)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -48,6 +49,12 @@ struct PhotoStepView: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
+            .onChange(of: vm.avatarJpegData) { _, new in
+                displayAvatarData = new
+            }
+            .onAppear {
+                displayAvatarData = vm.avatarJpegData
+            }
             .onChange(of: selectedItem) { _, new in
                 Task { await loadPickedImage(new) }
             }
@@ -58,9 +65,12 @@ struct PhotoStepView: View {
                 AvatarCropSheet(
                     image: img,
                     onUse: { data in
-                        vm.avatarJpegData = data
-                        showCropSheet = false
-                        pickedImage = nil
+                        Task { @MainActor in
+                            vm.avatarJpegData = data
+                            displayAvatarData = data
+                            showCropSheet = false
+                            pickedImage = nil
+                        }
                     },
                     onCancel: {
                         showCropSheet = false

@@ -62,7 +62,7 @@ final class EditProfileViewModel {
     static func isValidInstagramHandle(_ handle: String) -> Bool {
         if handle.isEmpty { return true }
         guard let regex = try? NSRegularExpression(pattern: "^[A-Za-z0-9._]{1,30}$") else { return false }
-        let range = NSRange(handle.startIndex..<handle.endIndex, in: handle) ?? NSRange(location: 0, length: 0)
+        let range = NSRange(handle.startIndex..<handle.endIndex, in: handle)
         return regex.firstMatch(in: handle, range: range) != nil
     }
 
@@ -77,35 +77,29 @@ final class EditProfileViewModel {
             isSaving = false
             return
         }
-        do {
-            var avatarURL: String?
-            if let data = avatarJpegData {
-                do {
-                    avatarURL = try await AvatarStorageService.uploadAvatar(userId: userId, jpegData: data)
-                } catch {
-                    saveError = "Avatar upload failed: \(error.localizedDescription)"
-                    isSaving = false
-                    return
-                }
-            }
+        var avatarURL: String?
+        if let data = avatarJpegData {
             do {
-                try await AuthService.updateProfile(
-                    userId: userId,
-                    avatarURL: avatarURL,
-                    bio: trimmedBio.isEmpty ? nil : trimmedBio,
-                    instagramHandle: handle.isEmpty ? nil : handle,
-                    tasteSnapshotLoves: lovesId == "none" ? nil : lovesId,
-                    tasteSnapshotAvoids: avoidsId == "none" ? nil : avoidsId,
-                    tasteSnapshotMood: moodId == "none" ? nil : moodId,
-                    weeklyGoal: weeklyGoalId == "none" ? nil : weeklyGoalId
-                )
+                avatarURL = try await AvatarStorageService.uploadAvatar(userId: userId, jpegData: data)
             } catch {
-                saveError = "Profile update failed: \(error.localizedDescription)"
+                saveError = "Avatar upload failed: \(error.localizedDescription)"
                 isSaving = false
                 return
             }
+        }
+        do {
+            try await AuthService.updateProfile(
+                userId: userId,
+                avatarURL: avatarURL,
+                bio: trimmedBio.isEmpty ? nil : trimmedBio,
+                instagramHandle: handle.isEmpty ? nil : handle,
+                tasteSnapshotLoves: lovesId == "none" ? nil : lovesId,
+                tasteSnapshotAvoids: avoidsId == "none" ? nil : avoidsId,
+                tasteSnapshotMood: moodId == "none" ? nil : moodId,
+                weeklyGoal: weeklyGoalId == "none" ? nil : weeklyGoalId
+            )
         } catch {
-            saveError = error.localizedDescription
+            saveError = "Profile update failed: \(error.localizedDescription)"
         }
         isSaving = false
     }

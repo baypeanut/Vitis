@@ -110,8 +110,8 @@ final class AddWineViewModel {
 
         if isFirstPage { isLoading = true } else { isLoadingMore = true }
         do {
-            var api = try await WineSearchService.search(query: term, page: page)
-            api = filterAndRank(products: api, query: term)
+            let raw = try await WineSearchService.search(query: term, page: page)
+            let api = filterAndRank(products: raw, query: term)
             hasMorePages = api.count >= 20
             if !api.isEmpty { mergeIntoCache(api) }
             if isFirstPage {
@@ -190,7 +190,7 @@ final class AddWineViewModel {
 
     private func fetchPrefetch(term: String) async -> [OFFProduct] {
         do {
-            var api = try await WineSearchService.search(query: term)
+            let api = try await WineSearchService.search(query: term)
             return filterAndRank(products: api, query: term)
         } catch { return [] }
     }

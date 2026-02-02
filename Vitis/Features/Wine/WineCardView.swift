@@ -189,7 +189,7 @@ struct WineCardView: View {
     }
 
     private func toggleWishlist() async {
-        guard let uid = currentUserId else { return }
+        guard currentUserId != nil else { return }
         let wineId = wine.id
         let wasIn = myWishlistWineIds.contains(wineId)
         myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])

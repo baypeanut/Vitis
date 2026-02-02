@@ -105,7 +105,7 @@ final class FeedViewModel {
 
     /// Toggle wishlist for feed item's wine. Optimistic update; reverts and shows toast on failure.
     func toggleWishlist(_ item: FeedItem) async {
-        guard let uid = await AuthService.currentUserId() else { return }
+        guard await AuthService.currentUserId() != nil else { return }
         let wineId = item.wineId
         let wasIn = wishlistWineIds.contains(wineId)
         wishlistWineIds = wasIn ? wishlistWineIds.filter { $0 != wineId } : wishlistWineIds.union([wineId])

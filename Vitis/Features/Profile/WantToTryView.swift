@@ -240,7 +240,6 @@ struct WantToTryView: View {
 
     private func addWineToWishlist(from p: OFFProduct) async {
         guard currentUserId == userId else { return }
-        guard let uid = currentUserId else { return }
         isAddingToWishlist = true
         errorMessage = nil
         do {
@@ -317,7 +316,7 @@ struct WantToTryView: View {
                 }
                 .font(VitisTheme.uiFont(size: 14, weight: .medium))
                 .foregroundStyle(VitisTheme.accent)
-            } else if let cur = currentUserId {
+            } else if currentUserId != nil {
                 Button {
                     Task { await toggleWishlist(item, sourceUserId: userId) }
                 } label: {
@@ -335,7 +334,7 @@ struct WantToTryView: View {
     }
 
     private func toggleWishlist(_ item: CellarItem, sourceUserId: UUID) async {
-        guard let cur = currentUserId else { return }
+        guard currentUserId != nil else { return }
         let wineId = item.wineId
         let wasIn = myWishlistWineIds.contains(wineId)
         wishlistToggleError = nil
@@ -361,8 +360,8 @@ struct WantToTryView: View {
         errorMessage = nil
         do {
             items = try await CellarService.fetchWishlist(userId: userId)
-            if let c = cur, c != userId {
-                myWishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: c)
+            if let curUser = cur, curUser != userId {
+                myWishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: curUser)
             }
         } catch {
             if !isCancellation(error) { errorMessage = error.localizedDescription }
