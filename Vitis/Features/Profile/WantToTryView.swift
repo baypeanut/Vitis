@@ -2,13 +2,15 @@
 //  WantToTryView.swift
 //  Vitis
 //
-//  Wishlist screen: wines user wants to try. Mark as Tasted or Remove.
+//  Wishlist screen: wines user wants to try. Search to add, Mark as Tasted or Remove.
 //
 
 import SwiftUI
+import UIKit
 
 struct WantToTryView: View {
     let userId: UUID
+    var username: String? = nil
     var onDismiss: () -> Void
 
     @State private var items: [CellarItem] = []
@@ -16,16 +18,46 @@ struct WantToTryView: View {
     @State private var errorMessage: String?
     @State private var showAddTasting: CellarItem?
     @State private var currentUserId: UUID?
+    @State private var myWishlistWineIds: Set<UUID> = []
+    @State private var wishlistToggleError: String?
+    @State private var searchViewModel = AddWineViewModel()
+    @State private var isAddingToWishlist = false
+
+    private var isOwnList: Bool { currentUserId == userId }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 VitisTheme.background.ignoresSafeArea()
-                content
+                VStack(spacing: 0) {
+                    if isOwnList {
+                        searchBar
+                        Rectangle().fill(VitisTheme.border).frame(height: 1)
+                    }
+                    content
+                }
+                if isAddingToWishlist || searchViewModel.isUpserting {
+                    Color.black.opacity(0.15).ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(VitisTheme.accent)
+                        .scaleEffect(1.2)
+                }
             }
-            .navigationTitle("Want to Try")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if let sub = navigationSubtitle {
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 2) {
+                            Text("Want to Try")
+                                .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                            Text(sub)
+                                .font(VitisTheme.uiFont(size: 12))
+                                .foregroundStyle(VitisTheme.secondaryText)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
                         .font(VitisTheme.uiFont(size: 15))
@@ -34,9 +66,14 @@ struct WantToTryView: View {
             }
         }
         .task {
-                AnalyticsService.wishlistView()
-                await load()
-            }
+            AnalyticsService.wishlistView()
+            await load()
+        }
+        .onAppear {
+            Task { await searchViewModel.loadDatabaseWines() }
+            searchViewModel.prefetchPopular()
+        }
+        .onChange(of: searchViewModel.query) { _, _ in searchViewModel.search() }
         .refreshable { await load() }
         .sheet(item: $showAddTasting) { cellarItem in
             AddWineSheet(
@@ -51,9 +88,40 @@ struct WantToTryView: View {
         }
     }
 
+    private var navigationTitle: String {
+        "Want to Try"
+    }
+
+    private var navigationSubtitle: String? {
+        if let u = username, !u.isEmpty, currentUserId != userId {
+            return "by @\(u)"
+        }
+        return nil
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16))
+                .foregroundStyle(VitisTheme.secondaryText)
+            TextField("Search wines to add…", text: $searchViewModel.query)
+                .font(VitisTheme.uiFont(size: 16))
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(white: 0.97))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+    }
+
     @ViewBuilder
     private var content: some View {
-        if let err = errorMessage {
+        if isOwnList && !searchViewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
+            searchResultsContent
+        } else if let err = errorMessage {
             Text(err)
                 .font(VitisTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
@@ -70,9 +138,129 @@ struct WantToTryView: View {
         }
     }
 
+    @ViewBuilder
+    private var searchResultsContent: some View {
+        Group {
+            if searchViewModel.isLoading && searchViewModel.results.isEmpty {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(VitisTheme.accent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let err = searchViewModel.errorMessage, searchViewModel.results.isEmpty {
+                Text(err)
+                    .font(VitisTheme.uiFont(size: 14))
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if searchViewModel.results.isEmpty {
+                Text("No wines found.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(searchViewModel.results) { p in
+                            searchResultRow(p)
+                            Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
+                        }
+                        if searchViewModel.hasMorePages {
+                            Button {
+                                searchViewModel.loadMoreSearchResults()
+                            } label: {
+                                HStack {
+                                    if searchViewModel.isLoadingMore {
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                            .scaleEffect(0.8)
+                                            .tint(VitisTheme.accent)
+                                    } else {
+                                        Text("Show more")
+                                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                    }
+                                }
+                                .foregroundStyle(VitisTheme.accent)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(searchViewModel.isLoadingMore)
+                        }
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
+                }
+            }
+        }
+    }
+
+    private func searchResultRow(_ p: OFFProduct) -> some View {
+        Button {
+            Task { await addWineToWishlist(from: p) }
+        } label: {
+            HStack(alignment: .center, spacing: 16) {
+                searchThumbnail(p.imageUrl)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(p.brands ?? "Unknown")
+                        .font(VitisTheme.producerSerifFont())
+                        .foregroundStyle(VitisTheme.secondaryText)
+                    Text(p.productName ?? "Unknown")
+                        .font(VitisTheme.wineNameFont())
+                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+        }
+        .buttonStyle(.plain)
+        .disabled(searchViewModel.isUpserting || isAddingToWishlist)
+    }
+
+    private func searchThumbnail(_ urlString: String?) -> some View {
+        Group {
+            if let s = urlString, let url = URL(string: s) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
+                    default: searchThumbnailPlaceholder
+                    }
+                }
+            } else { searchThumbnailPlaceholder }
+        }
+        .frame(width: 56, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var searchThumbnailPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color(white: 0.94))
+            .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(VitisTheme.secondaryText.opacity(0.6)))
+    }
+
+    private func addWineToWishlist(from p: OFFProduct) async {
+        guard currentUserId == userId else { return }
+        guard let uid = currentUserId else { return }
+        isAddingToWishlist = true
+        errorMessage = nil
+        do {
+            let wine = try await searchViewModel.upsert(product: p)
+            try await CellarService.addToWishlist(wineId: wine.id, sourceUserId: nil, sourceContext: "search")
+            AnalyticsService.wishlistAdd(wineId: wine.id)
+            searchViewModel.query = ""
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            await load()
+        } catch {
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+        }
+        isAddingToWishlist = false
+    }
+
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Text("No wines saved yet. Tap the bookmark on any feed post to add.")
+            Text(isOwnList
+                ? "No wines saved yet. Search above or tap the bookmark on any feed post to add."
+                : "No wines in their list.")
                 .font(VitisTheme.uiFont(size: 15))
                 .foregroundStyle(VitisTheme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -90,10 +278,12 @@ struct WantToTryView: View {
                     .listRowSeparatorTint(VitisTheme.border)
                     .listRowBackground(Color.clear)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            Task { await remove(item) }
-                        } label: {
-                            Label("Remove", systemImage: "trash")
+                        if isOwnList {
+                            Button(role: .destructive) {
+                                Task { await remove(item) }
+                            } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
                         }
                     }
             }
@@ -121,22 +311,59 @@ struct WantToTryView: View {
                     .foregroundStyle(VitisTheme.secondaryText)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if currentUserId == userId {
+            if isOwnList {
                 Button("Mark as Tasted") {
                     showAddTasting = item
                 }
                 .font(VitisTheme.uiFont(size: 14, weight: .medium))
                 .foregroundStyle(VitisTheme.accent)
+            } else if let cur = currentUserId {
+                Button {
+                    Task { await toggleWishlist(item, sourceUserId: userId) }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 12))
+                        Text(myWishlistWineIds.contains(item.wineId) ? "Saved" : "Want to Try")
+                            .font(VitisTheme.uiFont(size: 13))
+                    }
+                    .foregroundStyle(myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
+    private func toggleWishlist(_ item: CellarItem, sourceUserId: UUID) async {
+        guard let cur = currentUserId else { return }
+        let wineId = item.wineId
+        let wasIn = myWishlistWineIds.contains(wineId)
+        wishlistToggleError = nil
+        myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        do {
+            if wasIn {
+                try await CellarService.removeFromWishlist(wineId: wineId)
+            } else {
+                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: "wishlist")
+            }
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+        } catch {
+            myWishlistWineIds = wasIn ? myWishlistWineIds.union([wineId]) : myWishlistWineIds.filter { $0 != wineId }
+            wishlistToggleError = "Could not update."
+        }
+    }
+
     private func load() async {
-        currentUserId = await AuthService.currentUserId()
+        let cur = await AuthService.currentUserId()
+        currentUserId = cur
         isLoading = true
         errorMessage = nil
         do {
             items = try await CellarService.fetchWishlist(userId: userId)
+            if let c = cur, c != userId {
+                myWishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: c)
+            }
         } catch {
             if !isCancellation(error) { errorMessage = error.localizedDescription }
         }
@@ -149,7 +376,7 @@ struct WantToTryView: View {
 
     private func remove(_ item: CellarItem) async {
         do {
-            try await CellarService.removeFromWishlist(userId: userId, wineId: item.wineId)
+            try await CellarService.removeFromWishlist(wineId: item.wineId)
             items.removeAll { $0.id == item.id }
         } catch {
             errorMessage = error.localizedDescription

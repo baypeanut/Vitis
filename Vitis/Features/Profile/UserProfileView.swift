@@ -76,7 +76,10 @@ struct UserProfileView: View {
                         onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                         onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { showUserCellar = true },
-                        onWantToTryTap: { showWantToTry = true }
+                        onWantToTryTap: { showWantToTry = true },
+                        onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) },
+                        onRemoveWishlistItem: nil,
+                        onMarkAsTasted: nil
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -139,6 +142,7 @@ struct UserProfileView: View {
             .sheet(isPresented: $showWantToTry) {
                 WantToTryView(
                     userId: userId,
+                    username: viewModel.profile?.username ?? "",
                     onDismiss: { showWantToTry = false }
                 )
             }
@@ -249,7 +253,10 @@ struct UserProfileViewContent: View {
                     onRegionTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .region($0)) },
                     onGrapeTap: { drillDownTarget = UserProfileDrillDownTarget(title: $0, filterType: .grape($0)) },
                     onRatedTap: { showUserCellar = true },
-                    onWantToTryTap: { showWantToTry = true }
+                    onWantToTryTap: { showWantToTry = true },
+                    onWantToTryToggle: { item in await viewModel.toggleWishlistFromProfile(item) },
+                    onRemoveWishlistItem: nil,
+                    onMarkAsTasted: nil
                 )
             } else {
                 VStack(spacing: 12) {
@@ -302,6 +309,7 @@ struct UserProfileViewContent: View {
         .sheet(isPresented: $showWantToTry) {
             WantToTryView(
                 userId: userId,
+                username: viewModel.profile?.username ?? "",
                 onDismiss: { showWantToTry = false }
             )
         }
