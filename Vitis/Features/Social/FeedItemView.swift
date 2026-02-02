@@ -145,7 +145,7 @@ struct FeedItemView: View {
     private var twoColumnLayout: some View {
         HStack(alignment: .top, spacing: 12) {
             // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes) - wrapped in NavigationLink
-            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId)) {
+            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed")) {
                 HStack(alignment: .top, spacing: 8) {
                     wineThumbnailSquare(
                         labelURL: item.wineLabelURL,
