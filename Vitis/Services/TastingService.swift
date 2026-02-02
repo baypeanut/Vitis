@@ -99,6 +99,9 @@ enum TastingService {
             .from("activity_feed")
             .insert(activityPayload)
             .execute()
+        
+        // Remove from wishlist if present (user has now tried this wine)
+        try? await CellarService.removeFromWishlist(wineId: wineId)
 
         return Tasting(
             id: row.id,
@@ -197,6 +200,32 @@ enum TastingService {
             .gte("created_at", value: ISO8601DateFormatter().string(from: oneSecondAgo))
             .lte("created_at", value: ISO8601DateFormatter().string(from: oneSecondLater))
             .execute()
+    }
+    
+    /// Fetch wine IDs the user has tasted for fast UI checks.
+    static func fetchTastedWineIds(userId: UUID) async throws -> Set<UUID> {
+        struct Row: Decodable { let wine_id: UUID }
+        let rows: [Row] = try await supabase
+            .from("tastings")
+            .select("wine_id")
+            .eq("user_id", value: userId)
+            .execute()
+            .value
+        return Set(rows.map(\.wine_id))
+    }
+    
+    /// Check if user has tasted a specific wine.
+    static func hasTasted(userId: UUID, wineId: UUID) async -> Bool {
+        struct Row: Decodable { let id: UUID }
+        let rows: [Row] = (try? await supabase
+            .from("tastings")
+            .select("id")
+            .eq("user_id", value: userId)
+            .eq("wine_id", value: wineId)
+            .limit(1)
+            .execute()
+            .value) ?? []
+        return !rows.isEmpty
     }
     
     /// Fetch a specific user's tasting for a wine (if exists).
