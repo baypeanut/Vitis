@@ -139,7 +139,6 @@ struct UserProfileView: View {
             .sheet(isPresented: $showWantToTry) {
                 WantToTryView(
                     userId: userId,
-                    username: viewModel.profile?.username ?? "",
                     onDismiss: { showWantToTry = false }
                 )
             }
@@ -303,7 +302,6 @@ struct UserProfileViewContent: View {
         .sheet(isPresented: $showWantToTry) {
             WantToTryView(
                 userId: userId,
-                username: viewModel.profile?.username ?? "",
                 onDismiss: { showWantToTry = false }
             )
         }
