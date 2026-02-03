@@ -21,6 +21,10 @@ struct WineCardView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var myWishlistWineIds: Set<UUID> = []
+    @State private var showEditSheet = false
+    @State private var editRating: Double = 5.0
+    @State private var editSelectedNotes: Set<String> = []
+    @State private var editComment: String = ""
     @Environment(\.dismiss) private var dismiss
     
     private var friendsAverageRating: Double? {
@@ -112,6 +116,31 @@ struct WineCardView: View {
             Task {
                 if let uid = currentUserId {
                     myWishlistWineIds = (try? await CellarService.fetchWishlistWineIds(userId: uid)) ?? myWishlistWineIds
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            NavigationStack {
+                TastingRateView(
+                    wine: wine,
+                    rating: $editRating,
+                    selectedNotes: $editSelectedNotes,
+                    comment: $editComment,
+                    onCheers: {
+                        Task {
+                            await saveEditedTasting()
+                        }
+                    },
+                    isEditMode: true
+                )
+                .navigationTitle("Edit Rating")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showEditSheet = false
+                        }
+                    }
                 }
             }
         }
@@ -228,10 +257,30 @@ struct WineCardView: View {
             sectionDivider
             
             VStack(spacing: 16) {
-                Text("Ratings")
-                    .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                HStack {
+                    Spacer()
+                    Text("Ratings")
+                        .font(VitisTheme.uiFont(size: 18, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if userTasting != nil {
+                        Button {
+                            prepareEditMode()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 13))
+                                Text("Edit")
+                                    .font(VitisTheme.uiFont(size: 14))
+                            }
+                            .foregroundStyle(VitisTheme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Spacer().frame(width: 60)
+                    }
+                }
+                .frame(maxWidth: .infinity)
                 
                 HStack(spacing: 0) {
                     // You
@@ -518,6 +567,39 @@ struct WineCardView: View {
         Rectangle()
             .fill(VitisTheme.border)
             .frame(height: 1)
+    }
+    
+    // MARK: - Edit Tasting
+    
+    private func prepareEditMode() {
+        guard let tasting = userTasting else { return }
+        editRating = tasting.rating
+        editSelectedNotes = Set(tasting.noteTags ?? [])
+        editComment = tasting.comment ?? ""
+        showEditSheet = true
+    }
+    
+    private func saveEditedTasting() async {
+        guard let tasting = userTasting else { return }
+        
+        do {
+            let updatedTasting = try await TastingService.updateTasting(
+                id: tasting.id,
+                rating: editRating,
+                noteTags: Array(editSelectedNotes),
+                comment: editComment
+            )
+            userTasting = updatedTasting
+            showEditSheet = false
+            
+            // Reload data to refresh all sections
+            await loadData()
+        } catch {
+            #if DEBUG
+            print("[WineCardView] Error updating tasting: \(error)")
+            #endif
+            errorMessage = "Failed to update rating. Please try again."
+        }
     }
     
     // MARK: - Data Loading
