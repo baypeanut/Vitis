@@ -17,6 +17,7 @@ struct AddWineSheet: View {
     var initialWine: Wine? = nil
     var wineIdToRemoveFromWishlist: UUID? = nil
     var wishlistOnlyMode: Bool = false
+    var addToCellarStatus: CellarItem.CellarStatus? = nil
     var wishlistWineIds: Set<UUID> = []
     var tastedWineIds: Set<UUID> = []
     var onWineAdded: () -> Void
@@ -26,6 +27,7 @@ struct AddWineSheet: View {
         initialWine: Wine? = nil,
         wineIdToRemoveFromWishlist: UUID? = nil,
         wishlistOnlyMode: Bool = false,
+        addToCellarStatus: CellarItem.CellarStatus? = nil,
         wishlistWineIds: Set<UUID> = [],
         tastedWineIds: Set<UUID> = [],
         onWineAdded: @escaping () -> Void
@@ -34,6 +36,7 @@ struct AddWineSheet: View {
         self.initialWine = initialWine
         self.wineIdToRemoveFromWishlist = wineIdToRemoveFromWishlist
         self.wishlistOnlyMode = wishlistOnlyMode
+        self.addToCellarStatus = addToCellarStatus
         self.wishlistWineIds = wishlistWineIds
         self.tastedWineIds = tastedWineIds
         self.onWineAdded = onWineAdded
@@ -92,6 +95,8 @@ struct AddWineSheet: View {
 
     private var navigationTitle: String {
         if wishlistOnlyMode { return "Add to Want to Try" }
+        if addToCellarStatus == .had { return "Add to Had" }
+        if addToCellarStatus == .wishlist { return "Add to Wishlist" }
         switch flowStep {
         case .search: return "Add Wine"
         case .rating: return "Rate"
@@ -227,7 +232,9 @@ struct AddWineSheet: View {
     private func wineRow(_ wine: Wine) -> some View {
         let state = wishlistRowState(wineId: wine.id)
         return Button {
-            if wishlistOnlyMode {
+            if let status = addToCellarStatus {
+                Task { await handleCellarSelect(wine: wine, status: status) }
+            } else if wishlistOnlyMode {
                 Task { await handleWishlistSelect(wine: wine) }
             } else {
                 selectedWine = wine
@@ -266,25 +273,22 @@ struct AddWineSheet: View {
     private func row(_ p: OFFProduct) -> some View {
         Button {
             Task {
-                if wishlistOnlyMode {
-                    do {
-                        let wine = try await viewModel.upsert(product: p)
+                do {
+                    let wine = try await viewModel.upsert(product: p)
+                    if let status = addToCellarStatus {
+                        await handleCellarSelect(wine: wine, status: status)
+                    } else if wishlistOnlyMode {
                         await handleWishlistSelect(wine: wine)
-                    } catch {
-                        viewModel.errorMessage = ErrorMessage.userFacing(for: error)
-                    }
-                } else {
-                    do {
-                        let wine = try await viewModel.upsert(product: p)
+                    } else {
                         selectedWine = wine
                         rating = 5.0
                         selectedNotes = []
                         comment = ""
                         flowStep = .rating(wine)
                         AnalyticsService.firstTastingStarted()
-                    } catch {
-                        viewModel.errorMessage = ErrorMessage.userFacing(for: error)
                     }
+                } catch {
+                    viewModel.errorMessage = ErrorMessage.userFacing(for: error)
                 }
             }
         } label: {
@@ -369,6 +373,26 @@ struct AddWineSheet: View {
         if tastedWineIds.contains(wineId) { return "Tasted" }
         if wishlistWineIds.contains(wineId) { return "Saved" }
         return nil
+    }
+
+    @MainActor
+    private func handleCellarSelect(wine: Wine, status: CellarItem.CellarStatus) async {
+        guard let uid = await AuthService.currentUserId() else {
+            saveError = ErrorMessage.unauthorized
+            return
+        }
+        isSaving = true
+        saveError = nil
+        do {
+            try await CellarService.addToCellar(userId: uid, wineId: wine.id, status: status)
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            onWineAdded()
+            resetFlow()
+            isPresented = false
+        } catch {
+            saveError = ErrorMessage.userFacing(for: error)
+        }
+        isSaving = false
     }
 
     @MainActor

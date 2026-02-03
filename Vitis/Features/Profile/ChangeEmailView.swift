@@ -1,13 +1,13 @@
 //
-//  AddEmailSheet.swift
+//  ChangeEmailView.swift
 //  Vitis
 //
-//  Attach email to an existing account.
+//  Change email flow: enter new email, confirm via link.
 //
 
 import SwiftUI
 
-struct AddEmailSheet: View {
+struct ChangeEmailView: View {
     @Binding var isPresented: Bool
     @State private var authStore = AuthStore.shared
 
@@ -15,6 +15,9 @@ struct AddEmailSheet: View {
     @State private var errorMessage: String?
     @State private var isLoading = false
     @State private var didSendLink = false
+    @State private var canResend = false
+    @State private var timerRemaining = 30
+    @State private var resendTask: Task<Void, Never>?
     private let subduedAccent = VitisTheme.accent.opacity(0.7)
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
@@ -25,16 +28,16 @@ struct AddEmailSheet: View {
                 VitisTheme.background.ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Add email")
+                        Text("Change email")
                             .font(VitisTheme.titleFont())
                             .foregroundStyle(.primary)
-                        Text("We will send you a link to confirm this email.")
+                        Text("We will send you a link to confirm your new email.")
                             .font(VitisTheme.uiFont(size: 15))
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
 
                     if didSendLink {
-                        successContent
+                        waitingContent
                     } else {
                         formContent
                     }
@@ -68,6 +71,9 @@ struct AddEmailSheet: View {
             if case .emailLinked = newValue {
                 dismissSheet()
             }
+        }
+        .onDisappear {
+            resendTask?.cancel()
         }
     }
 
@@ -104,22 +110,42 @@ struct AddEmailSheet: View {
         }
     }
 
-    private var successContent: some View {
+    private var waitingContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Check your email")
                     .font(VitisTheme.uiFont(size: 17, weight: .semibold))
                     .foregroundStyle(subduedAccent)
-                Text("Open the link to confirm and finish linking this email.")
+                Text("Open the link to confirm and finish updating your email.")
                     .font(VitisTheme.uiFont(size: 14))
                     .foregroundStyle(VitisTheme.secondaryText)
             }
 
-            Button("Done") {
-                dismissSheet()
+            if let err = errorMessage {
+                Text(err)
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(.red)
+            }
+
+            Button {
+                Task { await resendLink() }
+            } label: {
+                if canResend {
+                    Text("Resend link")
+                } else {
+                    Text("Resend in \(timerRemaining)s")
+                }
             }
             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-            .foregroundStyle(subduedAccent)
+            .foregroundStyle(canResend ? subduedAccent : VitisTheme.secondaryText)
+            .disabled(!canResend || isLoading)
+            .buttonStyle(.plain)
+
+            Button("Change email") {
+                resetToInput()
+            }
+            .font(VitisTheme.uiFont(size: 14))
+            .foregroundStyle(VitisTheme.secondaryText)
             .buttonStyle(.plain)
         }
     }
@@ -137,16 +163,61 @@ struct AddEmailSheet: View {
         isLoading = true
         errorMessage = nil
         do {
-            try await AuthService.requestAddEmail(email: value)
+            try await AuthService.requestEmailChange(newEmail: value)
             AuthStore.shared.setPendingEmailLink(value)
             didSendLink = true
+            startResendCountdown()
         } catch {
             errorMessage = AuthService.friendlyMessage(for: error)
         }
         isLoading = false
     }
 
+    private func resendLink() async {
+        guard canResend else { return }
+        let value = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        isLoading = true
+        errorMessage = nil
+        do {
+            try await AuthService.resendEmailChange(newEmail: value)
+            startResendCountdown()
+        } catch {
+            errorMessage = AuthService.friendlyMessage(for: error)
+        }
+        isLoading = false
+    }
+
+    private func resetToInput() {
+        resendTask?.cancel()
+        didSendLink = false
+        canResend = false
+        timerRemaining = 30
+        errorMessage = nil
+    }
+
+    private func startResendCountdown() {
+        resendTask?.cancel()
+        canResend = false
+        timerRemaining = 30
+        resendTask = Task {
+            var seconds = 30
+            while seconds > 0 {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                seconds -= 1
+                await MainActor.run {
+                    timerRemaining = seconds
+                }
+            }
+            await MainActor.run {
+                canResend = true
+            }
+        }
+    }
+
     private func dismissSheet() {
+        resendTask?.cancel()
         isPresented = false
     }
 }

@@ -81,15 +81,41 @@ enum AuthService {
 
     // MARK: - Phone OTP
 
-    static func sendOTP(phoneE164: String) async throws {
+    enum AuthIntent {
+        case createAccount
+        case loginExisting
+    }
+
+    static func sendOTP(phoneE164: String, intent: AuthIntent = .createAccount) async throws {
+        let shouldCreate = intent == .createAccount
         do {
             try await supabase.auth.signInWithOTP(
                 phone: phoneE164,
-                shouldCreateUser: true
+                shouldCreateUser: shouldCreate
             )
         } catch {
-            throw mapOTPError(error)
+            throw mapOTPError(error, forPhoneLogin: !shouldCreate)
         }
+    }
+
+    static func startPhoneNumberChange(newPhoneE164: String) async throws {
+        _ = try await supabase.auth.session
+        try await supabase.auth.update(user: UserAttributes(phone: newPhoneE164))
+    }
+
+    static func verifyPhoneNumberChange(newPhoneE164: String, code: String) async throws {
+        _ = try await supabase.auth.verifyOTP(
+            phone: newPhoneE164,
+            token: code,
+            type: .phoneChange
+        )
+    }
+
+    static func resendPhoneNumberChange(newPhoneE164: String) async throws {
+        try await supabase.auth.resend(
+            phone: newPhoneE164,
+            type: .phoneChange
+        )
     }
 
     static func sendMagicLink(email: String) async throws {
@@ -105,6 +131,10 @@ enum AuthService {
     }
 
     static func requestAddEmail(email: String) async throws {
+        try await requestEmailChange(newEmail: email)
+    }
+
+    static func requestEmailChange(newEmail: String) async throws {
         do {
             _ = try await supabase.auth.session
         } catch {
@@ -112,7 +142,7 @@ enum AuthService {
         }
         do {
             try await supabase.auth.update(
-                user: UserAttributes(email: email),
+                user: UserAttributes(email: newEmail),
                 redirectTo: emailRedirectURL
             )
         } catch {
@@ -120,8 +150,25 @@ enum AuthService {
         }
     }
 
+    static func resendEmailChange(newEmail: String) async throws {
+        try await supabase.auth.resend(
+            email: newEmail,
+            type: .emailChange,
+            emailRedirectTo: emailRedirectURL
+        )
+    }
+
     static func currentUserEmail() async -> String? {
         (try? await supabase.auth.session)?.user.email
+    }
+
+    /// Returns latest user snapshot (userId, phone, email) for display. Call after session or identity changes.
+    static func currentUserSnapshot() async -> (userId: UUID, phone: String?, email: String?)? {
+        guard let session = try? await supabase.auth.session else { return nil }
+        let user = session.user
+        let phone = user.phone
+        let email = user.email
+        return (user.id, phone, email)
     }
 
     static func verifyOTP(phoneE164: String, code: String) async throws -> UUID {
@@ -308,7 +355,7 @@ enum AuthService {
         return ErrorMessage.unknown
     }
 
-    private static func mapOTPError(_ error: Error) -> Error {
+    private static func mapOTPError(_ error: Error, forPhoneLogin: Bool = false) -> Error {
         let s = error.localizedDescription.lowercased()
         if s.contains("email") && (s.contains("already") || s.contains("exists") || s.contains("duplicate")) {
             return AuthError.emailAlreadyInUse
@@ -320,13 +367,13 @@ enum AuthService {
             return AuthError.invalidEmail
         }
         if s.contains("user") && s.contains("not found") {
-            return AuthError.emailNotFound
+            return forPhoneLogin ? AuthError.phoneNotFound : AuthError.emailNotFound
         }
         if s.contains("signups") && s.contains("not allowed") {
-            return AuthError.emailNotFound
+            return forPhoneLogin ? AuthError.phoneNotFound : AuthError.emailNotFound
         }
         if s.contains("signup") && s.contains("disabled") {
-            return AuthError.emailNotFound
+            return forPhoneLogin ? AuthError.phoneNotFound : AuthError.emailNotFound
         }
         if s.contains("otp") && s.contains("expired") {
             return AuthError.codeExpired
@@ -349,6 +396,7 @@ enum AuthError: LocalizedError, Equatable {
     case rateLimited
     case emailNotFound
     case emailAlreadyInUse
+    case phoneNotFound
     case notAuthenticated
     case unknown
 
@@ -368,6 +416,8 @@ enum AuthError: LocalizedError, Equatable {
             return "No account found for this email."
         case .emailAlreadyInUse:
             return "This email is already linked to another account."
+        case .phoneNotFound:
+            return "No account found. Create an account with your phone number."
         case .notAuthenticated:
             return ErrorMessage.unauthorized
         case .unknown:

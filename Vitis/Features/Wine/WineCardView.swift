@@ -371,16 +371,12 @@ struct WineCardView: View {
             commentAvatar(comment.avatarURL, displayName: comment.username)
             
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .center, spacing: 8) {
-                    Text(comment.username)
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
-                    Spacer(minLength: 0)
-                    Text(VitisTheme.compactTimestamp(comment.createdAt))
-                        .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.tertiaryText)
-                }
-                
+                Text(comment.username)
+                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    .foregroundStyle(VitisTheme.accent)
+                Text(VitisTheme.shortAbsoluteTimestamp(comment.createdAt))
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.tertiaryText)
                 Text(comment.body)
                     .font(VitisTheme.uiFont(size: 14))
                     .foregroundStyle(.primary)

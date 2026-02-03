@@ -67,6 +67,14 @@ struct RootView: View {
                 recovery.dismissRecovery()
             })
         }
+        .sheet(item: Binding(
+            get: { authStore.authResultEvent },
+            set: { authStore.authResultEvent = $0 }
+        )) { event in
+            ConfirmationSheetView(event: event) {
+                authStore.authResultEvent = nil
+            }
+        }
     }
 
     private var mainTabs: some View {

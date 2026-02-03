@@ -15,11 +15,10 @@ struct ProfileSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showEditProfile = false
     @State private var editVM = EditProfileViewModel()
-    @State private var showDeleteConfirmation = false
-    @State private var isDeleting = false
-    @State private var deleteError: String?
-    @State private var showAddEmailSheet = false
-    @State private var currentEmail: String?
+    @State private var showDeleteAccount = false
+    @State private var showChangeEmailSheet = false
+    @State private var showChangePhoneSheet = false
+    @State private var authStore = AuthStore.shared
     
     var body: some View {
         ZStack {
@@ -39,14 +38,14 @@ struct ProfileSettingsView: View {
                     .frame(height: 1)
                     .padding(.horizontal, 24)
 
-                settingsButton(
-                    title: currentEmail == nil ? "Add email" : "Email",
-                    detail: currentEmail,
-                    icon: "envelope",
-                    action: {
-                        showAddEmailSheet = true
-                    }
-                )
+                phoneNumberRow
+
+                Rectangle()
+                    .fill(VitisTheme.border)
+                    .frame(height: 1)
+                    .padding(.horizontal, 24)
+
+                emailRow
                 
                 Rectangle()
                     .fill(VitisTheme.border)
@@ -73,18 +72,9 @@ struct ProfileSettingsView: View {
                     icon: "trash",
                     isDestructive: true,
                     action: {
-                        showDeleteConfirmation = true
+                        showDeleteAccount = true
                     }
                 )
-                
-                if let error = deleteError {
-                    Text(error)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                }
                 
                 Spacer()
             }
@@ -106,54 +96,91 @@ struct ProfileSettingsView: View {
                 )
             }
         }
-        .sheet(isPresented: $showAddEmailSheet) {
-            AddEmailSheet(isPresented: $showAddEmailSheet)
+        .sheet(isPresented: $showChangeEmailSheet) {
+            ChangeEmailView(isPresented: $showChangeEmailSheet)
         }
-        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                Task { await deleteAccount() }
-            }
-        } message: {
-            Text("Are you sure you want to delete your account? This action cannot be undone. All your tastings, ratings, and profile data will be permanently deleted.")
+        .sheet(isPresented: $showChangePhoneSheet) {
+            ChangePhoneNumberView(isPresented: $showChangePhoneSheet)
         }
-        .overlay {
-            if isDeleting {
-                ZStack {
-                    Color.black.opacity(0.3).ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(.white)
-                        .scaleEffect(1.2)
-                }
+        .sheet(isPresented: $showDeleteAccount) {
+            DeleteAccountView(isPresented: $showDeleteAccount) {
+                dismiss()
+                onSignOut()
             }
         }
-        .task { await loadCurrentEmail() }
-        .onChange(of: showAddEmailSheet) { _, isShown in
+        .task { await AuthStore.shared.refreshCurrentUserSnapshot() }
+        .onChange(of: showChangeEmailSheet) { _, isShown in
             if !isShown {
-                Task { await loadCurrentEmail() }
+                Task { await AuthStore.shared.refreshCurrentUserSnapshot() }
+            }
+        }
+        .onChange(of: showChangePhoneSheet) { _, isShown in
+            if !isShown {
+                Task { await AuthStore.shared.refreshCurrentUserSnapshot() }
             }
         }
     }
-    
-    private func deleteAccount() async {
-        isDeleting = true
-        deleteError = nil
-        
-        let result = await AuthService.deleteAccount()
-        
-        isDeleting = false
-        
-        switch result {
-        case .success:
-            // Account deleted successfully, dismiss and trigger sign out flow
-            dismiss()
-            onSignOut()
-        case .failure(let message):
-            deleteError = message
+
+    private var emailRow: some View {
+        Button {
+            showChangeEmailSheet = true
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "envelope")
+                    .font(.system(size: 18))
+                    .foregroundStyle(VitisTheme.accent)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Email")
+                        .font(VitisTheme.uiFont(size: 16))
+                        .foregroundStyle(.primary)
+                    Text(authStore.userSnapshot?.email ?? "Not added")
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.85))
+                        .lineLimit(1)
+                }
+                Spacer()
+                Text("Change email")
+                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    .foregroundStyle(VitisTheme.accent)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
-    
+
+    private var phoneNumberRow: some View {
+        Button {
+            showChangePhoneSheet = true
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "phone")
+                    .font(.system(size: 18))
+                    .foregroundStyle(VitisTheme.accent)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Phone number")
+                        .font(VitisTheme.uiFont(size: 16))
+                        .foregroundStyle(.primary)
+                    Text(authStore.userSnapshot?.phone ?? "Not set")
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.85))
+                        .lineLimit(1)
+                }
+                Spacer()
+                Text("Change phone number")
+                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    .foregroundStyle(VitisTheme.accent)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func settingsButton(title: String, detail: String? = nil, icon: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
@@ -185,9 +212,5 @@ struct ProfileSettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private func loadCurrentEmail() async {
-        currentEmail = await AuthService.currentUserEmail()
     }
 }
