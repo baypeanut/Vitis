@@ -164,6 +164,66 @@ enum TastingService {
         }
     }
 
+    /// Update an existing tasting.
+    static func updateTasting(
+        id: UUID,
+        rating: Double,
+        noteTags: [String]? = nil,
+        comment: String? = nil
+    ) async throws -> Tasting {
+        struct Update: Encodable {
+            let rating: Double
+            let note_tags: [String]?
+            let comment: String?
+        }
+        let payload = Update(
+            rating: rating,
+            note_tags: noteTags?.isEmpty == false ? noteTags : nil,
+            comment: comment?.isEmpty == false ? comment : nil
+        )
+        let updated: [TastingRow] = try await supabase
+            .from("tastings")
+            .update(payload)
+            .eq("id", value: id)
+            .select("id, user_id, wine_id, rating, note_tags, comment, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
+            .execute()
+            .value
+        
+        guard let row = updated.first, let w = row.wines else {
+            throw NSError(domain: "TastingService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Tasting update returned no row"])
+        }
+        
+        let wine = Wine(
+            id: row.wine_id,
+            name: w.name,
+            producer: w.producer,
+            vintage: w.vintage,
+            variety: w.variety,
+            region: w.region,
+            labelImageURL: w.label_image_url,
+            category: w.category
+        )
+        
+        // Update the associated activity_feed row's content_text
+        try await supabase
+            .from("activity_feed")
+            .update(["content_text": noteTags?.isEmpty == false ? noteTags!.joined(separator: ", ") : nil])
+            .eq("tasting_id", value: id)
+            .execute()
+        
+        return Tasting(
+            id: row.id,
+            userId: row.user_id,
+            wineId: row.wine_id,
+            rating: row.rating,
+            noteTags: row.note_tags,
+            comment: row.comment,
+            createdAt: row.created_at,
+            source: row.source,
+            wine: wine
+        )
+    }
+    
     /// Delete a tasting and its associated activity_feed row.
     static func deleteTasting(id: UUID) async throws {
         // First, fetch the tasting to get user_id, wine_id, and created_at

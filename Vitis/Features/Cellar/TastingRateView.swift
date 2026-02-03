@@ -14,6 +14,7 @@ struct TastingRateView: View {
     @Binding var selectedNotes: Set<String>
     @Binding var comment: String
     var onCheers: () -> Void
+    var isEditMode: Bool = false
 
     private var wineTypeColor: Color {
         WineColorResolver.resolveWineDisplayColor(wine: wine)
@@ -205,9 +206,9 @@ struct TastingRateView: View {
             onCheers()
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: "wineglass.fill")
+                Image(systemName: isEditMode ? "checkmark" : "wineglass.fill")
                     .font(.system(size: 14))
-                Text("Cheers")
+                Text(isEditMode ? "Save" : "Cheers")
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
             }
             .foregroundStyle(.white)
