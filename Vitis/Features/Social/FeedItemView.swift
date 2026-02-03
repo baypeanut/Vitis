@@ -18,6 +18,7 @@ struct FeedItemView: View {
     var onDelete: (() -> Void)? = nil
     var canDelete: Bool = false
     var currentUserId: UUID? = nil
+    var hasAlsoRated: Bool = false
 
     @State private var showTrustHintPopover = false
     @State private var navigateToWine = false
@@ -197,9 +198,16 @@ struct FeedItemView: View {
             // RIGHT COLUMN: rating only (trailing)
             VStack(alignment: .trailing, spacing: 4) {
                 if let rating = item.tastingRating {
-                    Text(String(format: "%.1f", rating))
-                        .font(VitisTheme.uiFont(size: 22, weight: .semibold))
-                        .foregroundStyle(VitisTheme.accent)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(String(format: "%.1f", rating))
+                            .font(VitisTheme.uiFont(size: 22, weight: .semibold))
+                            .foregroundStyle(VitisTheme.accent)
+                        if hasAlsoRated {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(VitisTheme.accent.opacity(0.7))
+                        }
+                    }
                 }
             }
             .frame(width: 80, alignment: .trailing)
