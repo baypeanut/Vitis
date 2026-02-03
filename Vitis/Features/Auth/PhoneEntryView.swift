@@ -7,28 +7,12 @@
 
 import SwiftUI
 
-private struct CountryOption: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let dialPrefix: String
-
-    static let defaults: [CountryOption] = [
-        CountryOption(name: "United States", dialPrefix: "+1"),
-        CountryOption(name: "United Kingdom", dialPrefix: "+44"),
-        CountryOption(name: "Turkey", dialPrefix: "+90"),
-        CountryOption(name: "Germany", dialPrefix: "+49"),
-        CountryOption(name: "France", dialPrefix: "+33"),
-        CountryOption(name: "Netherlands", dialPrefix: "+31")
-    ]
-}
-
 struct PhoneEntryView: View {
-    @State private var selectedCountry = CountryOption.defaults.first ?? CountryOption(name: "United States", dialPrefix: "+1")
-    @State private var phoneDigits: String = ""
-    @State private var showCountryPicker = false
+    @State private var phoneInput = PhoneNumberInputModel()
     @State private var showEmailSheet = false
 
     @State private var localError: String?
+    @State private var noAccountFound = false
 
     var body: some View {
         VStack(spacing: 32) {
@@ -44,83 +28,44 @@ struct PhoneEntryView: View {
             .padding(.top, 24)
 
             VStack(spacing: 20) {
-                Button {
-                    showCountryPicker = true
-                } label: {
-                    HStack {
-                        Text("\(selectedCountry.name) (\(selectedCountry.dialPrefix))")
-                            .font(VitisTheme.uiFont(size: 16))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 14, weight: .medium))
+                PhoneNumberField(
+                    selectedCountry: $phoneInput.selectedCountry,
+                    nationalNumber: $phoneInput.nationalNumber,
+                    label: "Phone number",
+                    helperText: "We will send a verification code via SMS."
+                )
+
+                if noAccountFound {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No account found. Create an account with your phone number.")
+                            .font(VitisTheme.uiFont(size: 14))
                             .foregroundStyle(VitisTheme.secondaryText)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color(white: 0.97))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $showCountryPicker) {
-                    NavigationStack {
-                        List {
-                            ForEach(CountryOption.defaults) { option in
-                                Button {
-                                    selectedCountry = option
-                                    showCountryPicker = false
-                                } label: {
-                                    HStack {
-                                        Text(option.name)
-                                        Spacer()
-                                        Text(option.dialPrefix)
-                                            .foregroundStyle(VitisTheme.secondaryText)
-                                    }
-                                }
-                            }
-                        }
-                        .navigationTitle("Select Country")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") { showCountryPicker = false }
-                            }
-                        }
-                    }
-                    .presentationDetents([.medium, .large])
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Phone number")
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                    HStack {
-                        Text(selectedCountry.dialPrefix)
-                            .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                            .foregroundStyle(.primary)
-                        Divider()
-                            .frame(height: 24)
-                        TextField("555 123 4567", text: $phoneDigits)
-                            .font(VitisTheme.uiFont(size: 16))
-                            .keyboardType(.numberPad)
-                            .textContentType(.telephoneNumber)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color(white: 0.97))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
-                if let err = localError ?? AuthStore.shared.lastError {
+                } else if let err = localError ?? AuthStore.shared.lastError {
                     Text(err)
                         .font(VitisTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
+                if noAccountFound {
+                    Button {
+                        Task { await createAccount() }
+                    } label: {
+                        Text("Create account")
+                            .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(VitisTheme.accent)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .disabled(AuthStore.shared.isProcessing)
+                    .buttonStyle(.plain)
+                } else {
                 VStack(spacing: 12) {
                     Button {
-                        Task { await sendCode() }
+                        Task { await sendCode(intent: .loginExisting) }
                     } label: {
                         Text("Send code")
                             .font(VitisTheme.uiFont(size: 17, weight: .semibold))
@@ -147,6 +92,7 @@ struct PhoneEntryView: View {
                         .foregroundStyle(VitisTheme.secondaryText)
                         .multilineTextAlignment(.center)
                 }
+                }
             }
             Spacer()
         }
@@ -162,22 +108,29 @@ struct PhoneEntryView: View {
     }
 
     private var canSubmit: Bool {
-        !digitsOnly(phoneDigits).isEmpty
+        !(phoneInput.nationalNumber.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty)
     }
 
-    private func digitsOnly(_ text: String) -> String {
-        text.filter { $0.isNumber }
-    }
-
-    private func sendCode() async {
+    private func sendCode(intent: AuthService.AuthIntent) async {
         localError = nil
         AuthStore.shared.lastError = nil
-        let digits = digitsOnly(phoneDigits)
-        guard !digits.isEmpty else {
+        noAccountFound = false
+        guard let phone = phoneInput.e164 else {
             localError = "Enter a valid phone number."
             return
         }
-        let phone = selectedCountry.dialPrefix + digits
-        await AuthStore.shared.sendOTP(phoneE164: phone)
+        await AuthStore.shared.sendOTP(phoneE164: phone, intent: intent)
+        if let err = AuthStore.shared.lastError,
+           err == (AuthError.phoneNotFound.errorDescription ?? "") {
+            noAccountFound = true
+        }
+    }
+
+    private func createAccount() async {
+        localError = nil
+        AuthStore.shared.lastError = nil
+        noAccountFound = false
+        guard let phone = phoneInput.e164 else { return }
+        await AuthStore.shared.sendOTP(phoneE164: phone, intent: .createAccount)
     }
 }

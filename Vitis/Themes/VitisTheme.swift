@@ -69,6 +69,19 @@ enum VitisTheme {
         return f
     }()
 
+    /// Absolute short format for comments and quiet UI: "Jan 28 · 9:42 PM"
+    private static let shortAbsoluteTimestampFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d · h:mm a"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    /// Absolute short timestamp: "Jan 28 · 9:42 PM". Use for comments and minimal date/time.
+    static func shortAbsoluteTimestamp(_ date: Date) -> String {
+        shortAbsoluteTimestampFormatter.string(from: date)
+    }
+
     /// Relative time format: "5 minutes ago", "1 hour ago", "a week ago", or full date if too old.
     static func compactTimestamp(_ date: Date) -> String {
         let now = Date()

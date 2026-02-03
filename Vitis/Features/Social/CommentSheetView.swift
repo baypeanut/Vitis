@@ -130,15 +130,12 @@ struct CommentSheetView: View {
         HStack(alignment: .top, spacing: 12) {
             commentAvatar(avatarURL(for: c), displayName: displayName(for: c))
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .center, spacing: 8) {
-                    Text(displayName(for: c))
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(VitisTheme.accent)
-                    Spacer(minLength: 0)
-                    Text(VitisTheme.compactTimestamp(c.createdAt))
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
-                }
+                Text(displayName(for: c))
+                    .font(VitisTheme.wineNameFont())
+                    .foregroundStyle(VitisTheme.accent)
+                Text(VitisTheme.shortAbsoluteTimestamp(c.createdAt))
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.secondaryText)
                 Text(c.body)
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(.primary)
