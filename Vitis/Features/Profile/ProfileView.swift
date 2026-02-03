@@ -32,7 +32,9 @@ struct ProfileView: View {
     @State private var drillDownTarget: DrillDownTarget?
     @State private var showSettings = false
     @State private var showWantToTry = false
+    @State private var showAddWishlistSheet = false
     @State private var markAsTastedItem: CellarItem?
+    @State private var showErrorAfterDelay = false
 
     var body: some View {
         NavigationStack {
@@ -43,7 +45,7 @@ struct ProfileView: View {
                         .progressViewStyle(.circular)
                         .tint(VitisTheme.accent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let vm = viewModel, vm.isLoadingInitial {
+                } else if let vm = viewModel, (vm.isLoadingInitial || vm.isRefreshing || vm.profile == nil && !showErrorAfterDelay) {
                     ProfileSkeletonView()
                 } else if let vm = viewModel, vm.profile != nil {
                     ProfileContentView(
@@ -57,14 +59,15 @@ struct ProfileView: View {
                         onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
                         onRatedTap: { NotificationCenter.default.post(name: .vitisSwitchToCellarTab, object: nil) },
                         onWantToTryTap: { showWantToTry = true },
+                        onAddWishlistSearch: { showAddWishlistSheet = true },
                         onWantToTryToggle: nil,
                         onRemoveWishlistItem: { item in await vm.removeFromWishlist(item) },
                         onMarkAsTasted: { markAsTastedItem = $0 }
                     )
                     .onAppear { AnalyticsService.profileView(userId: vm.userId) }
-                } else if viewModel != nil {
+                } else if let vm = viewModel, !vm.isLoading && !vm.isRefreshing && showErrorAfterDelay {
                     VStack(spacing: 16) {
-                        Text(viewModel?.errorMessage ?? "Could not load profile.")
+                        Text(vm.errorMessage ?? "Could not load profile.")
                             .font(VitisTheme.uiFont(size: 14))
                             .foregroundStyle(.red)
                             .multilineTextAlignment(.center)
@@ -126,6 +129,20 @@ struct ProfileView: View {
                     WantToTryView(userId: uid, onDismiss: { showWantToTry = false })
                 }
             }
+            .sheet(isPresented: $showAddWishlistSheet) {
+                if let vm = viewModel {
+                    AddWineSheet(
+                        isPresented: $showAddWishlistSheet,
+                        wishlistOnlyMode: true,
+                        wishlistWineIds: vm.myWishlistWineIds,
+                        tastedWineIds: Set(vm.allTastings.map(\.wineId)),
+                        onWineAdded: {
+                            showAddWishlistSheet = false
+                            Task { await vm.load() }
+                        }
+                    )
+                }
+            }
             .sheet(item: $markAsTastedItem) { item in
                 AddWineSheet(
                     isPresented: Binding(get: { markAsTastedItem != nil }, set: { if !$0 { markAsTastedItem = nil } }),
@@ -150,6 +167,17 @@ struct ProfileView: View {
             }
         }
         .task { await ensureAndLoad() }
+        .onChange(of: viewModel?.isLoadingInitial) { _, newValue in
+            handleLoadingStateChange()
+        }
+        .onChange(of: viewModel?.isRefreshing) { _, newValue in
+            handleLoadingStateChange()
+        }
+        .onChange(of: viewModel?.profile?.id) { _, _ in
+            if viewModel?.profile != nil {
+                showErrorAfterDelay = false
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
             Task { await ensureAndLoad() }
         }
@@ -170,11 +198,24 @@ struct ProfileView: View {
         }
         await viewModel?.load()
     }
-
-    private func signOut() async {
-        try? await AuthService.signOut()
-        onSignOut()
+    
+    private func handleLoadingStateChange() {
+        if let vm = viewModel {
+            if vm.isLoadingInitial || vm.isRefreshing {
+                showErrorAfterDelay = false
+            } else if vm.profile == nil && vm.errorMessage != nil {
+                // Delay showing error by 800ms after loading completes
+                Task {
+                    try? await Task.sleep(for: .milliseconds(800))
+                    if let vm = viewModel, !vm.isLoadingInitial && !vm.isRefreshing && vm.profile == nil && vm.errorMessage != nil {
+                        showErrorAfterDelay = true
+                    }
+                }
+            }
+        }
     }
+
+    private func signOut() async { onSignOut() }
 }
 
 // MARK: - Profile loading skeleton

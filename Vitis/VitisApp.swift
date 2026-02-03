@@ -18,7 +18,12 @@ struct VitisApp: App {
         WindowGroup {
             RootView()
                 .onOpenURL { url in
-                    AuthRecoveryState.shared.handleIncomingURL(url)
+                    Task {
+                        let handled = await AuthStore.shared.handleIncomingURL(url)
+                        if !handled {
+                            AuthRecoveryState.shared.handleIncomingURL(url)
+                        }
+                    }
                 }
         }
     }

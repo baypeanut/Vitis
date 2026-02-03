@@ -135,18 +135,8 @@ struct NewPasswordView: View {
         isLoading = true
         errorMessage = nil
 
-        let result = await AuthService.updatePassword(password)
-
-        isLoading = false
-
-        switch result {
-        case .success:
-            NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
-            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
-            mode = .success
-        case .failure(let msg):
-            errorMessage = msg
-        }
+        defer { isLoading = false }
+        errorMessage = "Password reset by email is no longer supported."
     }
 
     private func goToLogIn() {

@@ -16,6 +16,7 @@ struct AuthLoginView: View {
     @State private var showForgotPassword = false
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
+    private let emailDisabledMessage = "Email login is no longer supported. Use your phone number instead."
 
     var body: some View {
         NavigationStack {
@@ -120,38 +121,23 @@ struct AuthLoginView: View {
         }
 
         isLoading = true
-        errorMessage = nil
-
-        let result = await AuthService.signIn(email: em, password: pw)
-
-        isLoading = false
-
-        switch result {
-        case .success:
-            NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
-            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
-            isPresented = false
-        case .failure(let msg):
-            errorMessage = msg
-        }
+        defer { isLoading = false }
+        errorMessage = emailDisabledMessage
     }
 
     #if DEBUG
     private func signInAsTestUser() async {
-        let em = AppConstants.devTestEmail
-        let pw = AppConstants.devTestPassword
         isLoading = true
-        errorMessage = nil
-        let result = await AuthService.signIn(email: em, password: pw)
-        isLoading = false
-        switch result {
-        case .success:
+        defer { isLoading = false }
+        #if DEBUG
+        if !AppConstants.authRequired {
+            DevSignupService.ensureFallbackDevUserId()
             NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
-            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
             isPresented = false
-        case .failure(let msg):
-            errorMessage = msg
+            return
         }
+        #endif
+        errorMessage = emailDisabledMessage
     }
     #endif
 }
@@ -167,6 +153,7 @@ struct AuthLoginViewContent: View {
     @State private var showForgotPassword = false
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
+    private let emailDisabledMessage = "Email login is no longer supported. Use your phone number instead."
 
     var body: some View {
         ZStack {
@@ -260,38 +247,23 @@ struct AuthLoginViewContent: View {
         }
 
         isLoading = true
-        errorMessage = nil
-
-        let result = await AuthService.signIn(email: em, password: pw)
-
-        isLoading = false
-
-        switch result {
-        case .success:
-            NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
-            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
-            dismiss()
-        case .failure(let msg):
-            errorMessage = msg
-        }
+        defer { isLoading = false }
+        errorMessage = emailDisabledMessage
     }
 
     #if DEBUG
     private func signInAsTestUser() async {
-        let em = AppConstants.devTestEmail
-        let pw = AppConstants.devTestPassword
         isLoading = true
-        errorMessage = nil
-        let result = await AuthService.signIn(email: em, password: pw)
-        isLoading = false
-        switch result {
-        case .success:
+        defer { isLoading = false }
+        #if DEBUG
+        if !AppConstants.authRequired {
+            DevSignupService.ensureFallbackDevUserId()
             NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
-            NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
             dismiss()
-        case .failure(let msg):
-            errorMessage = msg
+            return
         }
+        #endif
+        errorMessage = emailDisabledMessage
     }
     #endif
 }

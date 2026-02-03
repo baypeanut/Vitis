@@ -37,6 +37,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS taste_snapshot_loves text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS taste_snapshot_avoids text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS taste_snapshot_mood text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS weekly_goal text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_key ON public.profiles (lower(trim(username)));
 
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;

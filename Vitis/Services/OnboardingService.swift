@@ -30,59 +30,10 @@ enum OnboardingService {
         username: String,
         avatarJpegData: Data?
     ) async throws {
-        let result = await AuthService.signUp(email: email, password: password, username: username)
-        switch result {
-        case .success:
-            break
-        case .failure(let msg):
-            #if DEBUG
-            print("[OnboardingService] signUp failed: \(msg)")
-            #endif
-            throw NSError(domain: "OnboardingService", code: -1, userInfo: [NSLocalizedDescriptionKey: msg])
-        }
-
-        guard let uid = await AuthService.currentUserId() else {
-            #if DEBUG
-            print("[OnboardingService] currentUserId nil after signUp - is Confirm email disabled?")
-            #endif
-            throw NSError(domain: "OnboardingService", code: -2, userInfo: [NSLocalizedDescriptionKey: userFacing("session")])
-        }
-
-        var avatarURL: String?
-        if let data = avatarJpegData {
-            do {
-                avatarURL = try await AvatarStorageService.uploadAvatar(userId: uid, jpegData: data)
-            } catch {
-                #if DEBUG
-                print("[OnboardingService] avatar upload failed: \(error)")
-                #endif
-                // Continue without profile photo; do not block user.
-            }
-        }
-
-        let fullName = [firstName, lastName?.trimmingCharacters(in: .whitespaces)].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
-        do {
-            try await AuthService.updateProfile(userId: uid, fullName: fullName.isEmpty ? nil : fullName, avatarURL: avatarURL)
-        } catch {
-            #if DEBUG
-            print("[OnboardingService] updateProfile failed: \(error)")
-            #endif
-            throw NSError(domain: "OnboardingService", code: -3, userInfo: [NSLocalizedDescriptionKey: userFacing("profile")])
-        }
-
-        struct Row: Encodable {
-            let user_id: UUID
-            let phone_e164: String
-        }
-        do {
-            try await supabase.from("user_private")
-                .upsert(Row(user_id: uid, phone_e164: phoneE164), onConflict: "user_id")
-                .execute()
-        } catch {
-            #if DEBUG
-            print("[OnboardingService] user_private upsert failed: \(error)")
-            #endif
-            throw NSError(domain: "OnboardingService", code: -4, userInfo: [NSLocalizedDescriptionKey: userFacing("phone")])
-        }
+        throw NSError(
+            domain: "OnboardingService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "Email onboarding is no longer supported."]
+        )
     }
 }

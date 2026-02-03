@@ -101,15 +101,7 @@ struct ForgotPasswordView: View {
         isLoading = true
         errorMessage = nil
 
-        let result = await AuthService.resetPasswordForEmail(em)
-
-        isLoading = false
-
-        switch result {
-        case .success:
-            didSucceed = true
-        case .failure(let msg):
-            errorMessage = msg
-        }
+        defer { isLoading = false }
+        errorMessage = "Password reset by email is no longer supported. Use phone sign-in instead."
     }
 }

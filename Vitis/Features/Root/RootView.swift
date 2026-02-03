@@ -2,8 +2,7 @@
 //  RootView.swift
 //  Vitis
 //
-//  Auth gate: when authRequired, show OnboardingFlowView when not signed in; else TabView.
-//  Dev (authRequired = false): main tabs + guest/mock. Sign out → onboarding (test sign-up).
+//  Auth gate: phone OTP + profile setup. Restores session if available.
 //
 
 import SwiftUI
@@ -13,54 +12,26 @@ enum Tab {
 }
 
 struct RootView: View {
-    @State private var showOnboarding = true
-    @State private var checked = false
-    /// Dev mode: sign out → true → show onboarding to test sign-up.
-    @State private var devSignedOut = false
     @State private var selectedTab: Tab = .cellar
+    @State private var authStore = AuthStore.shared
     @State private var showAddWineFromCarousel = false
-    @State private var isNewUser = true
-    @State private var hasCheckedUser = false
-    @AppStorage("vitis_has_seen_carousel") private var hasSeenCarousel = false
     @ObservedObject private var recovery = AuthRecoveryState.shared
 
     var body: some View {
         Group {
-            if !hasCheckedUser {
+            switch authStore.state {
+            case .checking:
                 VitisTheme.background.overlay {
                     ProgressView().tint(VitisTheme.accent)
                 }
                 .ignoresSafeArea()
-            } else if isNewUser && !hasSeenCarousel {
-                OnboardingCarouselView(
-                    hasSeenCarousel: $hasSeenCarousel,
-                    onComplete: {
-                        if AppConstants.authRequired {
-                            showOnboarding = true
-                        } else {
-                            Task { await AuthService.ensureGuestSessionIfNeeded() }
-                            showOnboarding = false
-                            devSignedOut = false
-                        }
-                    },
-                    onAddFirstTasting: {
-                        if AppConstants.authRequired {
-                            showOnboarding = true
-                        } else {
-                            Task {
-                                await AuthService.ensureGuestSessionIfNeeded()
-                                await ProfileStore.shared.load()
-                            }
-                            showOnboarding = false
-                            devSignedOut = false
-                            selectedTab = .cellar
-                            showAddWineFromCarousel = true
-                        }
-                    }
-                )
-            } else if !AppConstants.authRequired {
-                if devSignedOut {
-                    OnboardingFlowView()
+            case .unauthenticated:
+                PhoneEntryView()
+            case .awaitingCode(let phone):
+                CodeEntryView(phoneDisplay: phone)
+            case .authenticated(let userId):
+                if authStore.needsProfileSetup {
+                    ProfileSetupView(userId: userId)
                 } else {
                     mainTabs
                         .fullScreenCover(isPresented: $showAddWineFromCarousel) {
@@ -70,46 +41,23 @@ struct RootView: View {
                             )
                         }
                 }
-            } else if !checked {
-                VitisTheme.background.overlay {
-                    ProgressView().tint(VitisTheme.accent)
-                }
-                .ignoresSafeArea()
-            } else if showOnboarding {
-                OnboardingFlowView()
-            } else {
-                mainTabs
-                    .fullScreenCover(isPresented: $showAddWineFromCarousel) {
-                        AddWineSheet(
-                            isPresented: $showAddWineFromCarousel,
-                            onWineAdded: { showAddWineFromCarousel = false }
-                        )
-                    }
             }
         }
         .task {
-            if AppConstants.authRequired {
-                await checkSession()
-            } else if !devSignedOut {
-                await AuthService.ensureGuestSessionIfNeeded()
-            }
-            await ProfileStore.shared.load()
-            let uid = await AuthService.currentUserId()
-            if uid != nil {
-                isNewUser = false
-                hasSeenCarousel = true
-            }
-            hasCheckedUser = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
-            Task {
-                await ProfileStore.shared.load()
-                if AppConstants.authRequired {
-                    await checkSession()
-                } else {
-                    devSignedOut = false
+            if !authStore.sessionRestored {
+                await authStore.restoreSession()
+                if case .authenticated = authStore.state {
+                    await ProfileStore.shared.load()
                 }
             }
+        }
+        .onChange(of: authStore.state) { _, newState in
+            if case .authenticated = newState {
+                Task { await ProfileStore.shared.load() }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .vitisSwitchToCellarTab)) { _ in
+            selectedTab = .cellar
         }
         .fullScreenCover(isPresented: Binding(
             get: { recovery.showNewPasswordView },
@@ -139,25 +87,13 @@ struct RootView: View {
                 .tag(Tab.profile)
         }
         .tint(VitisTheme.accent)
-        .onReceive(NotificationCenter.default.publisher(for: .vitisSwitchToCellarTab)) { _ in
-            selectedTab = .cellar
-        }
-    }
-
-    private func checkSession() async {
-        let uid = await AuthService.currentUserId()
-        showOnboarding = (uid == nil)
-        checked = true
     }
 
     private func didSignOut() {
         AnalyticsService.reset()
-        if !AppConstants.authRequired {
-            DevSignupService.clearDevUserId()
+        Task {
+            await AuthStore.shared.signOut()
             ProfileStore.shared.clearForSignOut()
-            devSignedOut = true
-        } else {
-            showOnboarding = true
         }
     }
 }
