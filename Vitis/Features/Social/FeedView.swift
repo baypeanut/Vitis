@@ -209,7 +209,8 @@ struct FeedView: View {
                         },
                         onDelete: { Task { await viewModel.deleteFeedItem(item) } },
                         canDelete: viewModel.currentUserId == item.userId,
-                        currentUserId: viewModel.currentUserId
+                        currentUserId: viewModel.currentUserId,
+                        hasAlsoRated: viewModel.currentUserId != item.userId && viewModel.hasTasted(wineId: item.wineId)
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, index > 0 && index % 5 == 0 ? 0 : 6)
