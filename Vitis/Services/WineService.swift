@@ -125,33 +125,62 @@ enum WineService {
             let note_tags: [String]?
             let comment: String?
             let created_at: Date
-            let profiles: ProfileRef?
-            
-            struct ProfileRef: Decodable {
-                let username: String?
-                let full_name: String?
-                let avatar_url: String?
-            }
         }
         
+        struct ProfileRow: Decodable {
+            let id: UUID
+            let username: String?
+            let full_name: String?
+            let avatar_url: String?
+        }
+        
+        // Fetch tastings
         var query = supabase
             .from("tastings")
-            .select("id, user_id, rating, note_tags, comment, created_at, profiles(username, full_name, avatar_url)")
+            .select("id, user_id, rating, note_tags, comment, created_at")
             .eq("wine_id", value: wineId)
         
         if let userId = excludeUserId {
             query = query.neq("user_id", value: userId)
         }
         
-        let rows: [TastingRow] = try await query
+        let tastingRows: [TastingRow] = try await query
             .order("rating", ascending: false)
             .order("created_at", ascending: false)
             .limit(limit)
             .execute()
             .value
         
-        return rows.compactMap { row -> TastingWithProfile? in
-            guard let profile = row.profiles else { return nil }
+        #if DEBUG
+        print("[WineService] Fetched \(tastingRows.count) tasting rows for wine \(wineId)")
+        #endif
+        
+        guard !tastingRows.isEmpty else { return [] }
+        
+        // Fetch profiles for all user_ids
+        let userIds = Array(Set(tastingRows.map { $0.user_id }))
+        let profileRows: [ProfileRow] = try await supabase
+            .from("profiles")
+            .select("id, username, full_name, avatar_url")
+            .in("id", values: userIds)
+            .execute()
+            .value
+        
+        #if DEBUG
+        print("[WineService] Fetched \(profileRows.count) profile rows")
+        #endif
+        
+        // Create a map of user_id -> profile
+        let profileMap = Dictionary(uniqueKeysWithValues: profileRows.map { ($0.id, $0) })
+        
+        // Join tastings with profiles
+        return tastingRows.compactMap { row -> TastingWithProfile? in
+            guard let profile = profileMap[row.user_id] else {
+                #if DEBUG
+                print("[WineService] No profile found for user_id=\(row.user_id.uuidString)")
+                #endif
+                return nil
+            }
             return TastingWithProfile(
                 id: row.id,
                 userId: row.user_id,
