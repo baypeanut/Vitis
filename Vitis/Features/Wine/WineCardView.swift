@@ -85,6 +85,10 @@ struct WineCardView: View {
                             activityCommentsSection
                         }
                         
+                        if !friendsTastings.isEmpty {
+                            friendsTastingsSection
+                        }
+                        
                         if !otherTastings.isEmpty {
                             otherTastingsSection
                         }
@@ -417,14 +421,42 @@ struct WineCardView: View {
             )
     }
     
-    // MARK: - Other Tastings Section
+    // MARK: - Friends Tastings Section
+    
+    private var friendsTastingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionDivider
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("What your friends are saying")
+                    .font(VitisTheme.uiFont(size: 18, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 24)
+                
+                VStack(spacing: 0) {
+                    ForEach(Array(friendsTastings.enumerated()), id: \.element.id) { idx, tasting in
+                        tastingRow(tasting)
+                        if idx < friendsTastings.count - 1 {
+                            Rectangle()
+                                .fill(VitisTheme.border)
+                                .frame(height: 1)
+                                .padding(.leading, 24)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 20)
+        }
+    }
+    
+    // MARK: - Global Tastings Section
     
     private var otherTastingsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionDivider
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("What others are saying")
+                Text("Global comments")
                     .font(VitisTheme.uiFont(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 24)
@@ -519,7 +551,18 @@ struct WineCardView: View {
         let allTastings: [TastingWithProfile]
         do {
             allTastings = try await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: nil, limit: 100)
+            #if DEBUG
+            print("[WineCardView] Fetched \(allTastings.count) tastings for wine \(wine.id)")
+            print("[WineCardView] Current user ID: \(currentUserId?.uuidString ?? "nil")")
+            print("[WineCardView] Following IDs: \(followingIds.map { $0.uuidString })")
+            for tasting in allTastings {
+                print("[WineCardView] Tasting: user=\(tasting.userId.uuidString), rating=\(tasting.rating), comment=\(tasting.comment ?? "nil")")
+            }
+            #endif
         } catch {
+            #if DEBUG
+            print("[WineCardView] Error fetching tastings: \(error)")
+            #endif
             allTastings = []
         }
         
@@ -530,6 +573,11 @@ struct WineCardView: View {
         let otherTastingsResult = allTastings.filter { 
             !followingIds.contains($0.userId) && $0.userId != currentUserId 
         }
+        
+        #if DEBUG
+        print("[WineCardView] Friends tastings: \(friendsTastingsResult.count)")
+        print("[WineCardView] Other tastings: \(otherTastingsResult.count)")
+        #endif
         
         // Fetch activity comments
         let activityCommentsResult: [CommentWithProfile]
