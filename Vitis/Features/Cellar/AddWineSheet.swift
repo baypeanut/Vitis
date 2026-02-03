@@ -16,12 +16,26 @@ struct AddWineSheet: View {
     @Binding var isPresented: Bool
     var initialWine: Wine? = nil
     var wineIdToRemoveFromWishlist: UUID? = nil
+    var wishlistOnlyMode: Bool = false
+    var wishlistWineIds: Set<UUID> = []
+    var tastedWineIds: Set<UUID> = []
     var onWineAdded: () -> Void
 
-    init(isPresented: Binding<Bool>, initialWine: Wine? = nil, wineIdToRemoveFromWishlist: UUID? = nil, onWineAdded: @escaping () -> Void) {
+    init(
+        isPresented: Binding<Bool>,
+        initialWine: Wine? = nil,
+        wineIdToRemoveFromWishlist: UUID? = nil,
+        wishlistOnlyMode: Bool = false,
+        wishlistWineIds: Set<UUID> = [],
+        tastedWineIds: Set<UUID> = [],
+        onWineAdded: @escaping () -> Void
+    ) {
         _isPresented = isPresented
         self.initialWine = initialWine
         self.wineIdToRemoveFromWishlist = wineIdToRemoveFromWishlist
+        self.wishlistOnlyMode = wishlistOnlyMode
+        self.wishlistWineIds = wishlistWineIds
+        self.tastedWineIds = tastedWineIds
         self.onWineAdded = onWineAdded
         _flowStep = State(initialValue: initialWine.map { .rating($0) } ?? .search)
         _selectedWine = State(initialValue: initialWine)
@@ -77,6 +91,7 @@ struct AddWineSheet: View {
     }
 
     private var navigationTitle: String {
+        if wishlistOnlyMode { return "Add to Want to Try" }
         switch flowStep {
         case .search: return "Add Wine"
         case .rating: return "Rate"
@@ -210,13 +225,18 @@ struct AddWineSheet: View {
     }
 
     private func wineRow(_ wine: Wine) -> some View {
-        Button {
-            selectedWine = wine
-            rating = 5.0
-            selectedNotes = []
-            comment = ""
-            flowStep = .rating(wine)
-            AnalyticsService.firstTastingStarted()
+        let state = wishlistRowState(wineId: wine.id)
+        return Button {
+            if wishlistOnlyMode {
+                Task { await handleWishlistSelect(wine: wine) }
+            } else {
+                selectedWine = wine
+                rating = 5.0
+                selectedNotes = []
+                comment = ""
+                flowStep = .rating(wine)
+                AnalyticsService.firstTastingStarted()
+            }
         } label: {
             HStack(alignment: .center, spacing: 16) {
                 thumbnail(wine.labelImageURL)
@@ -230,26 +250,41 @@ struct AddWineSheet: View {
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if wishlistOnlyMode, let state {
+                    Text(state)
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText)
+                }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
         }
         .buttonStyle(.plain)
+        .disabled(wishlistOnlyMode && state != nil)
     }
 
     private func row(_ p: OFFProduct) -> some View {
         Button {
             Task {
-                do {
-                    let wine = try await viewModel.upsert(product: p)
-                    selectedWine = wine
-                    rating = 5.0
-                    selectedNotes = []
-                    comment = ""
-                    flowStep = .rating(wine)
-                    AnalyticsService.firstTastingStarted()
-                } catch {
-                    viewModel.errorMessage = ErrorMessage.userFacing(for: error)
+                if wishlistOnlyMode {
+                    do {
+                        let wine = try await viewModel.upsert(product: p)
+                        await handleWishlistSelect(wine: wine)
+                    } catch {
+                        viewModel.errorMessage = ErrorMessage.userFacing(for: error)
+                    }
+                } else {
+                    do {
+                        let wine = try await viewModel.upsert(product: p)
+                        selectedWine = wine
+                        rating = 5.0
+                        selectedNotes = []
+                        comment = ""
+                        flowStep = .rating(wine)
+                        AnalyticsService.firstTastingStarted()
+                    } catch {
+                        viewModel.errorMessage = ErrorMessage.userFacing(for: error)
+                    }
                 }
             }
         } label: {
@@ -320,6 +355,36 @@ struct AddWineSheet: View {
             if countBefore == 0 {
                 AnalyticsService.firstTastingSaved(wineId: wine.id, rating: rating)
             }
+            onWineAdded()
+            resetFlow()
+            isPresented = false
+        } catch {
+            saveError = ErrorMessage.userFacing(for: error)
+        }
+        isSaving = false
+    }
+
+    private func wishlistRowState(wineId: UUID) -> String? {
+        guard wishlistOnlyMode else { return nil }
+        if tastedWineIds.contains(wineId) { return "Tasted" }
+        if wishlistWineIds.contains(wineId) { return "Saved" }
+        return nil
+    }
+
+    @MainActor
+    private func handleWishlistSelect(wine: Wine) async {
+        if tastedWineIds.contains(wine.id) { return }
+        if wishlistWineIds.contains(wine.id) { return }
+        guard await AuthService.currentUserId() != nil else {
+            saveError = ErrorMessage.unauthorized
+            return
+        }
+        isSaving = true
+        saveError = nil
+        do {
+            try await CellarService.addToWishlist(wineId: wine.id, sourceUserId: nil, sourceContext: "profile")
+            AnalyticsService.wishlistAdd(wineId: wine.id)
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
             onWineAdded()
             resetFlow()
             isPresented = false

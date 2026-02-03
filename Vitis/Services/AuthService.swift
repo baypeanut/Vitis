@@ -8,8 +8,15 @@
 import Foundation
 import Supabase
 
+import os
+
+private extension Logger {
+    static let auth = Logger(subsystem: "com.ahmet.vitis", category: "AuthService")
+}
+
 enum AuthService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
+    private static let emailRedirectURL = URL(string: "vitis://auth-callback")!
 
     /// Call when no session (e.g. not logged in). Connection OK if we reach Supabase.
     static func checkConnection() async -> ConnectionResult {
@@ -72,51 +79,72 @@ enum AuthService {
         }
     }
 
-    /// Sign up, create profile, then enter app. Requires "Confirm email" off in Supabase Auth.
-    /// Retries once with backoff on rate-limit errors.
-    static func signUp(email: String, password: String, username: String) async -> AuthResult {
-        func attempt() async throws -> AuthResult {
-            let resp = try await supabase.auth.signUp(email: email, password: password)
-            guard resp.session != nil else {
-                return .failure("Email confirmation may be enabled. In Supabase Auth → Providers → Email, turn off \"Confirm email\"; or check your inbox.")
-            }
-            do {
-                try await createProfile(userId: resp.user.id, username: username)
-                return .success
-            } catch {
-                #if DEBUG
-                print("[AuthService] createProfile failed: \(error)")
-                #endif
-                return .failure("Could not create profile. Username or email may already be in use; try different values.")
-            }
-        }
+    // MARK: - Phone OTP
+
+    static func sendOTP(phoneE164: String) async throws {
         do {
-            return try await attempt()
+            try await supabase.auth.signInWithOTP(
+                phone: phoneE164,
+                shouldCreateUser: true
+            )
         } catch {
-            guard isRateLimitLikeError(error) else {
-                return .failure(friendlyMessage(for: error))
-            }
-            try? await Task.sleep(for: .seconds(2))
-            do {
-                return try await attempt()
-            } catch {
-                return .failure(friendlyMessage(for: error))
-            }
+            throw mapOTPError(error)
         }
     }
 
-    private static func isRateLimitLikeError(_ error: Error) -> Bool {
-        let s = error.localizedDescription.lowercased()
-        return s.contains("rate") || s.contains("limit") || s.contains("too many")
+    static func sendMagicLink(email: String) async throws {
+        do {
+            try await supabase.auth.signInWithOTP(
+                email: email,
+                redirectTo: emailRedirectURL,
+                shouldCreateUser: false
+            )
+        } catch {
+            throw mapOTPError(error)
+        }
     }
 
-    static func signIn(email: String, password: String) async -> AuthResult {
+    static func requestAddEmail(email: String) async throws {
         do {
-            _ = try await supabase.auth.signIn(email: email, password: password)
-            return .success
+            _ = try await supabase.auth.session
         } catch {
-            return .failure(friendlyMessage(for: error))
+            throw AuthError.notAuthenticated
         }
+        do {
+            try await supabase.auth.update(
+                user: UserAttributes(email: email),
+                redirectTo: emailRedirectURL
+            )
+        } catch {
+            throw mapOTPError(error)
+        }
+    }
+
+    static func currentUserEmail() async -> String? {
+        (try? await supabase.auth.session)?.user.email
+    }
+
+    static func verifyOTP(phoneE164: String, code: String) async throws -> UUID {
+        do {
+            let response = try await supabase.auth.verifyOTP(
+                phone: phoneE164,
+                token: code,
+                type: .sms
+            )
+            return response.user.id
+        } catch {
+            throw mapOTPError(error)
+        }
+    }
+
+    @discardableResult
+    static func establishSession(from url: URL) async throws -> Session {
+        try await supabase.auth.session(from: url)
+    }
+
+    @discardableResult
+    static func handleOpenURL(_ url: URL) async throws -> Session {
+        try await supabase.auth.session(from: url)
     }
 
     static func signOut() async throws {
@@ -128,7 +156,7 @@ enum AuthService {
     /// This calls a Postgres function that deletes the user from auth.users, which triggers cascade deletes.
     static func deleteAccount() async -> AuthResult {
         do {
-            guard let userId = await currentUserId() else {
+            guard await currentUserId() != nil else {
                 return .failure("Not signed in.")
             }
             
@@ -147,63 +175,6 @@ enum AuthService {
         }
     }
 
-    // MARK: - Forgot / reset password
-
-    /// Deep link for password reset. Must match Supabase Dashboard → Auth → URL Configuration → Redirect URLs.
-    static let resetPasswordRedirectURL = URL(string: "vitis://auth/reset")!
-
-    /// Sends a password reset email. Redirect URL must be allowlisted in Supabase Dashboard.
-    static func resetPasswordForEmail(_ email: String) async -> AuthResult {
-        let em = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !em.isEmpty, em.contains("@") else {
-            return .failure("Geçerli bir e-posta adresi girin.")
-        }
-        do {
-            try await supabase.auth.resetPasswordForEmail(em, redirectTo: resetPasswordRedirectURL)
-            return .success
-        } catch {
-            return .failure(friendlyMessage(for: error))
-        }
-    }
-
-    /// Updates the current user's password. Call only when session is a recovery session (after handling reset link).
-    /// Never store password in Postgres; optionally update profile.password_updated_at via updateProfile.
-    static func updatePassword(_ newPassword: String) async -> AuthResult {
-        do {
-            _ = try await supabase.auth.update(user: UserAttributes(password: newPassword))
-            if let uid = (try? await supabase.auth.session)?.user.id {
-                try? await updateProfile(userId: uid, passwordUpdatedAt: Date())
-            }
-            return .success
-        } catch {
-            return .failure(friendlyMessage(for: error))
-        }
-    }
-
-    private static func createProfile(userId: UUID, username: String) async throws {
-        struct ProfileRow: Encodable {
-            let id: UUID
-            let username: String
-        }
-        let row = ProfileRow(id: userId, username: username)
-        #if DEBUG
-        print("[AuthService] createProfile insert payload id=\(row.id) username=\(row.username)")
-        #endif
-        do {
-            try await supabase.from("profiles")
-                .upsert(row, onConflict: "id")
-                .execute()
-            #if DEBUG
-            print("[AuthService] createProfile upsert success")
-            #endif
-        } catch {
-            #if DEBUG
-            print("[AuthService] createProfile upsert failed: \(error)")
-            #endif
-            throw error
-        }
-    }
-
     static func getProfile(userId: UUID) async throws -> Profile? {
         struct Row: Decodable {
             let id: UUID
@@ -218,7 +189,8 @@ enum AuthService {
             let weekly_goal: String?
             let created_at: Date?
         }
-        let rows: [Row] = try await supabase.from("profiles")
+        let rows: [Row] = try await supabase
+            .from("profiles")
             .select("id, username, full_name, avatar_url, bio, instagram_url, taste_snapshot_loves, taste_snapshot_avoids, taste_snapshot_mood, weekly_goal, created_at")
             .eq("id", value: userId)
             .limit(1)
@@ -252,7 +224,8 @@ enum AuthService {
         tasteSnapshotLoves: String? = nil,
         tasteSnapshotAvoids: String? = nil,
         tasteSnapshotMood: String? = nil,
-        weeklyGoal: String? = nil
+        weeklyGoal: String? = nil,
+        email: String? = nil
     ) async throws {
         let u = ProfileUpdatePayload(
             username: username,
@@ -264,14 +237,41 @@ enum AuthService {
             taste_snapshot_loves: tasteSnapshotLoves,
             taste_snapshot_avoids: tasteSnapshotAvoids,
             taste_snapshot_mood: tasteSnapshotMood,
-            weekly_goal: weeklyGoal
+            weekly_goal: weeklyGoal,
+            email: email
         )
         guard u.hasAny else { return }
-        try await supabase.from("profiles").update(u).eq("id", value: userId).execute()
+        try await supabase
+            .from("profiles")
+            .update(u)
+            .eq("id", value: userId)
+            .execute()
+    }
+
+    static func upsertProfile(
+        userId: UUID,
+        username: String,
+        fullName: String,
+        email: String?
+    ) async throws {
+        struct Row: Encodable {
+            let id: UUID
+            let username: String
+            let full_name: String
+            let email: String?
+        }
+        let row = Row(id: userId, username: username, full_name: fullName, email: email)
+        try await supabase
+            .from("profiles")
+            .upsert(row, onConflict: "id")
+            .execute()
     }
 
     /// User-facing message for auth/connection errors. Never "Account not found" for Auth API failures.
     static func friendlyMessage(for error: Error) -> String {
+        if let authError = error as? AuthError, let message = authError.errorDescription {
+            return message
+        }
         let s = error.localizedDescription.lowercased()
         if s.contains("invalid login") || s.contains("invalid_credentials") || s.contains("invalid grant") {
             return "Invalid email or password."
@@ -301,11 +301,78 @@ enum AuthService {
             return "Session expired. Please sign in again."
         }
         #if DEBUG
-        print("[AuthService] friendlyMessage fallback – raw: \(error.localizedDescription)")
+        Logger.auth.error("friendlyMessage fallback – raw: \(error.localizedDescription)")
         let ne = error as NSError
-        print("[AuthService] domain=\(ne.domain) code=\(ne.code) userInfo=\(ne.userInfo)")
+        Logger.auth.error("domain=\(ne.domain) code=\(ne.code) userInfo=\(ne.userInfo)")
         #endif
         return ErrorMessage.unknown
+    }
+
+    private static func mapOTPError(_ error: Error) -> Error {
+        let s = error.localizedDescription.lowercased()
+        if s.contains("email") && (s.contains("already") || s.contains("exists") || s.contains("duplicate")) {
+            return AuthError.emailAlreadyInUse
+        }
+        if s.contains("invalid") && s.contains("phone") {
+            return AuthError.invalidPhone
+        }
+        if s.contains("invalid") && s.contains("email") {
+            return AuthError.invalidEmail
+        }
+        if s.contains("user") && s.contains("not found") {
+            return AuthError.emailNotFound
+        }
+        if s.contains("signups") && s.contains("not allowed") {
+            return AuthError.emailNotFound
+        }
+        if s.contains("signup") && s.contains("disabled") {
+            return AuthError.emailNotFound
+        }
+        if s.contains("otp") && s.contains("expired") {
+            return AuthError.codeExpired
+        }
+        if s.contains("otp") && s.contains("invalid") {
+            return AuthError.invalidCode
+        }
+        if s.contains("rate") || s.contains("limit") || s.contains("too many") {
+            return AuthError.rateLimited
+        }
+        return error
+    }
+}
+
+enum AuthError: LocalizedError, Equatable {
+    case invalidPhone
+    case invalidEmail
+    case invalidCode
+    case codeExpired
+    case rateLimited
+    case emailNotFound
+    case emailAlreadyInUse
+    case notAuthenticated
+    case unknown
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidPhone:
+            return "Enter a valid phone number."
+        case .invalidEmail:
+            return "Enter a valid email address."
+        case .invalidCode:
+            return "Invalid code. Try again."
+        case .codeExpired:
+            return "Code expired. Request a new one."
+        case .rateLimited:
+            return "Too many attempts. Try again later."
+        case .emailNotFound:
+            return "No account found for this email."
+        case .emailAlreadyInUse:
+            return "This email is already linked to another account."
+        case .notAuthenticated:
+            return ErrorMessage.unauthorized
+        case .unknown:
+            return ErrorMessage.unknown
+        }
     }
 }
 
@@ -322,16 +389,19 @@ private struct ProfileUpdatePayload: Encodable {
     let taste_snapshot_avoids: String?
     let taste_snapshot_mood: String?
     let weekly_goal: String?
+    let email: String?
 
     var hasAny: Bool {
         username != nil || full_name != nil || avatar_url != nil || bio != nil || password_updated_at != nil
             || instagram_url != nil || taste_snapshot_loves != nil
             || taste_snapshot_avoids != nil || taste_snapshot_mood != nil || weekly_goal != nil
+            || email != nil
     }
 
     enum CodingKeys: String, CodingKey {
         case username, full_name, avatar_url, bio, password_updated_at
         case instagram_url, taste_snapshot_loves, taste_snapshot_avoids, taste_snapshot_mood, weekly_goal
+        case email
     }
 
     func encode(to encoder: Encoder) throws {
@@ -346,6 +416,7 @@ private struct ProfileUpdatePayload: Encodable {
         if let v = taste_snapshot_avoids { try c.encode(v, forKey: .taste_snapshot_avoids) }
         if let v = taste_snapshot_mood { try c.encode(v, forKey: .taste_snapshot_mood) }
         if let v = weekly_goal { try c.encode(v, forKey: .weekly_goal) }
+        if let v = email { try c.encode(v, forKey: .email) }
     }
 }
 

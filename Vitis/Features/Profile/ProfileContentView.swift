@@ -25,6 +25,7 @@ struct ProfileContentView: View {
     var onGrapeTap: ((String) -> Void)?
     var onRatedTap: (() -> Void)?
     var onWantToTryTap: (() -> Void)?
+    var onAddWishlistSearch: (() -> Void)?
     var onWantToTryToggle: ((CellarItem) async -> Void)?
     var onRemoveWishlistItem: ((CellarItem) async -> Void)?
     var onMarkAsTasted: ((CellarItem) -> Void)?
@@ -57,6 +58,26 @@ struct ProfileContentView: View {
             .padding(.top, 24)
             .padding(.bottom, 40)
         }
+    }
+
+    private func wantToTrySearchBar(onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                Text("Search wines to add")
+                    .font(VitisTheme.uiFont(size: 16))
+                    .foregroundStyle(VitisTheme.secondaryText)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color(white: 0.97))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .padding(.bottom, 16)
     }
 
     private func header(_ p: Profile) -> some View {
@@ -272,6 +293,9 @@ struct ProfileContentView: View {
     @ViewBuilder
     private var wantToTryTabContent: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if isOwn, let onSearch = onAddWishlistSearch {
+                wantToTrySearchBar(onTap: onSearch)
+            }
             if viewModel.wishlistPreview.isEmpty {
                 Text(isOwn
                     ? "No wines saved yet. Tap the bookmark on any feed post to add."

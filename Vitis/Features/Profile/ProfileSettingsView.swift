@@ -18,6 +18,8 @@ struct ProfileSettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var deleteError: String?
+    @State private var showAddEmailSheet = false
+    @State private var currentEmail: String?
     
     var body: some View {
         ZStack {
@@ -29,6 +31,20 @@ struct ProfileSettingsView: View {
                     icon: "pencil",
                     action: {
                         showEditProfile = true
+                    }
+                )
+                
+                Rectangle()
+                    .fill(VitisTheme.border)
+                    .frame(height: 1)
+                    .padding(.horizontal, 24)
+
+                settingsButton(
+                    title: currentEmail == nil ? "Add email" : "Email",
+                    detail: currentEmail,
+                    icon: "envelope",
+                    action: {
+                        showAddEmailSheet = true
                     }
                 )
                 
@@ -90,6 +106,9 @@ struct ProfileSettingsView: View {
                 )
             }
         }
+        .sheet(isPresented: $showAddEmailSheet) {
+            AddEmailSheet(isPresented: $showAddEmailSheet)
+        }
         .alert("Delete Account", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -107,6 +126,12 @@ struct ProfileSettingsView: View {
                         .tint(.white)
                         .scaleEffect(1.2)
                 }
+            }
+        }
+        .task { await loadCurrentEmail() }
+        .onChange(of: showAddEmailSheet) { _, isShown in
+            if !isShown {
+                Task { await loadCurrentEmail() }
             }
         }
     }
@@ -129,17 +154,25 @@ struct ProfileSettingsView: View {
         }
     }
     
-    private func settingsButton(title: String, icon: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func settingsButton(title: String, detail: String? = nil, icon: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 18))
                     .foregroundStyle(isDestructive ? .red : VitisTheme.accent)
                     .frame(width: 24)
-                
-                Text(title)
-                    .font(VitisTheme.uiFont(size: 16))
-                    .foregroundStyle(isDestructive ? .red : .primary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(VitisTheme.uiFont(size: 16))
+                        .foregroundStyle(isDestructive ? .red : .primary)
+                    if let detail {
+                        Text(detail)
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                            .lineLimit(1)
+                    }
+                }
                 
                 Spacer()
                 
@@ -152,5 +185,9 @@ struct ProfileSettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func loadCurrentEmail() async {
+        currentEmail = await AuthService.currentUserEmail()
     }
 }

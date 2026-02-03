@@ -254,20 +254,7 @@ struct AuthView: View {
         isLoading = true
         errorMessage = nil
 
-        let result: AuthResult
-        if mode == .signUp {
-            result = await AuthService.signUp(email: em, password: pw, username: un)
-        } else {
-            result = await AuthService.signIn(email: em, password: pw)
-        }
-
-        isLoading = false
-
-        switch result {
-        case .success:
-            onAuthenticated()
-        case .failure(let msg):
-            errorMessage = msg
-        }
+        defer { isLoading = false }
+        errorMessage = "Email authentication is no longer supported. Please sign in with your phone number."
     }
 }
