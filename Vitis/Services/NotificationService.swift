@@ -20,6 +20,7 @@ struct NotificationItem: Identifiable, Sendable {
     let actorUsername: String?
     let actorAvatarUrl: String?
     let commentPreview: String?
+    let tastingTitle: String?
 }
 
 enum NotificationService {
@@ -102,9 +103,35 @@ enum NotificationService {
             }
         }
 
+        let postIds = Set(rows.map(\.post_id))
+        var postMap: [UUID: (wineName: String?, wineProducer: String?, wineVintage: Int?)] = [:]
+        if !postIds.isEmpty {
+            struct PostRow: Decodable {
+                let id: UUID
+                let wine_name: String?
+                let wine_producer: String?
+                let wine_vintage: Int?
+            }
+            let posts: [PostRow] = (try? await supabase
+                .from("feed_with_details")
+                .select("id, wine_name, wine_producer, wine_vintage")
+                .in("id", values: Array(postIds))
+                .execute()
+                .value) ?? []
+            for p in posts {
+                postMap[p.id] = (p.wine_name, p.wine_producer, p.wine_vintage)
+            }
+        }
+
         return rows.map { r in
             let actor = actorMap[r.actor_id]
             let commentPreview = r.comment_id.flatMap { commentMap[$0] }
+            let post = postMap[r.post_id]
+            let tastingTitle = formatTastingTitle(
+                wineName: post?.wineName,
+                wineProducer: post?.wineProducer,
+                wineVintage: post?.wineVintage
+            )
             return NotificationItem(
                 id: r.id,
                 recipientId: r.recipient_id,
@@ -116,9 +143,23 @@ enum NotificationService {
                 isRead: r.is_read,
                 actorUsername: actor?.username,
                 actorAvatarUrl: actor?.avatar_url,
-                commentPreview: commentPreview
+                commentPreview: commentPreview,
+                tastingTitle: tastingTitle
             )
         }
+    }
+
+    private static func formatTastingTitle(wineName: String?, wineProducer: String?, wineVintage: Int?) -> String? {
+        let trimmedName = wineName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedProducer = wineProducer?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasName = trimmedName?.isEmpty == false
+        let hasProducer = trimmedProducer?.isEmpty == false
+        guard hasName || hasProducer else { return nil }
+        var parts: [String] = []
+        if let producer = trimmedProducer, !producer.isEmpty { parts.append(producer) }
+        if let name = trimmedName, !name.isEmpty { parts.append(name) }
+        if let vintage = wineVintage { parts.append(String(vintage)) }
+        return parts.joined(separator: " ")
     }
 
     static func markAsRead(notificationId: UUID) async throws {
