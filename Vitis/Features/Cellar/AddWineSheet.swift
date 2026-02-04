@@ -230,8 +230,13 @@ struct AddWineSheet: View {
     }
 
     private func wineRow(_ wine: Wine) -> some View {
-        let state = wishlistRowState(wineId: wine.id)
+        let state = rowState(wineId: wine.id)
+        let isTasted = tastedWineIds.contains(wine.id)
         return Button {
+            // Don't allow selecting already tasted wines in regular mode
+            if !wishlistOnlyMode && addToCellarStatus == nil && isTasted {
+                return
+            }
             if let status = addToCellarStatus {
                 Task { await handleCellarSelect(wine: wine, status: status) }
             } else if wishlistOnlyMode {
@@ -257,7 +262,7 @@ struct AddWineSheet: View {
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if wishlistOnlyMode, let state {
+                if let state {
                     Text(state)
                         .font(VitisTheme.uiFont(size: 13))
                         .foregroundStyle(VitisTheme.secondaryText)
@@ -267,7 +272,7 @@ struct AddWineSheet: View {
             .padding(.vertical, 16)
         }
         .buttonStyle(.plain)
-        .disabled(wishlistOnlyMode && state != nil)
+        .disabled(state != nil)
     }
 
     private func row(_ p: OFFProduct) -> some View {
@@ -275,6 +280,10 @@ struct AddWineSheet: View {
             Task {
                 do {
                     let wine = try await viewModel.upsert(product: p)
+                    // Check if wine has been tasted after upserting
+                    if !wishlistOnlyMode && addToCellarStatus == nil && tastedWineIds.contains(wine.id) {
+                        return
+                    }
                     if let status = addToCellarStatus {
                         await handleCellarSelect(wine: wine, status: status)
                     } else if wishlistOnlyMode {
@@ -368,10 +377,9 @@ struct AddWineSheet: View {
         isSaving = false
     }
 
-    private func wishlistRowState(wineId: UUID) -> String? {
-        guard wishlistOnlyMode else { return nil }
+    private func rowState(wineId: UUID) -> String? {
         if tastedWineIds.contains(wineId) { return "Tasted" }
-        if wishlistWineIds.contains(wineId) { return "Saved" }
+        if wishlistOnlyMode && wishlistWineIds.contains(wineId) { return "Saved" }
         return nil
     }
 
