@@ -25,6 +25,7 @@ final class ProfileViewModel {
     var followingCount: Int = 0
     var recentActivity: [FeedItem] = []
     var allTastings: [Tasting] = []
+    var tastingCheersCounts: [UUID: Int] = [:]
     var tasteGrapes: [TasteProfileItem] = []
     var tasteRegions: [TasteProfileItem] = []
     var tasteStyles: [TasteProfileItem] = []
@@ -69,6 +70,7 @@ final class ProfileViewModel {
         var newTasteProfile: (grapes: [TasteProfileItem], regions: [TasteProfileItem], styles: [TasteProfileItem])?
         var newWishlistPreview: [CellarItem]?
         var newMyWishlistWineIds: Set<UUID>?
+        var newCheersCounts: [UUID: Int]?
 
         let current = await AuthService.currentUserId()
         guard loadId == currentLoadId else {
@@ -110,6 +112,7 @@ final class ProfileViewModel {
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
             newTastings = tastings
             newTasteProfile = ProfileService.computeTasteProfile(from: tastings)
+            newCheersCounts = await TastingService.fetchLikeCountsForTastings(tastingIds: tastings.map(\.id))
         } catch {
             guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
             if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
@@ -138,6 +141,7 @@ final class ProfileViewModel {
         if let f = newFollowersCount { followersCount = f }
         if let f = newFollowingCount { followingCount = f }
         if let t = newTastings { allTastings = t }
+        if let c = newCheersCounts { tastingCheersCounts = c }
         if let w = newWishlistPreview { wishlistPreview = w }
         if let w = newMyWishlistWineIds { myWishlistWineIds = w }
         if let tp = newTasteProfile {

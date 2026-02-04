@@ -113,11 +113,13 @@ struct NotificationsView: View {
     private func notificationText(_ n: NotificationItem) -> some View {
         let name = n.actorUsername ?? "Someone"
         if n.type == "like" {
-            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(" liked your tasting.").foregroundStyle(.primary))
+            let tastingText = n.tastingTitle?.isEmpty == false ? " liked your tasting of \(n.tastingTitle!)." : " liked your tasting."
+            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(tastingText).foregroundStyle(.primary))
                 .font(VitisTheme.uiFont(size: 15))
         } else {
             VStack(alignment: .leading, spacing: 2) {
-                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(" commented: ").foregroundStyle(.primary))
+                let commentLead = n.tastingTitle?.isEmpty == false ? " commented on your tasting of \(n.tastingTitle!): " : " commented: "
+                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(commentLead).foregroundStyle(.primary))
                     .font(VitisTheme.uiFont(size: 15))
                 if let prev = n.commentPreview {
                     Text(prev)

@@ -392,6 +392,7 @@ struct ProfileContentView: View {
 
     private func tastingActivityRow(_ tasting: Tasting) -> some View {
         let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
+        let cheersCount = viewModel.tastingCheersCounts[tasting.id] ?? 0
         return NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.userId, sourceUserId: viewModel.userId, sourceContext: "profile")) {
             HStack(alignment: .top, spacing: 12) {
                 cellarAvatarCircle()
@@ -418,9 +419,21 @@ struct ProfileContentView: View {
                             .lineLimit(3)
                     }
                     
-                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                    HStack(spacing: 8) {
+                        if cheersCount > 0 {
+                            HStack(spacing: 4) {
+                                Text("\(cheersCount)")
+                                    .font(VitisTheme.uiFont(size: 12))
+                                    .foregroundStyle(VitisTheme.secondaryText)
+                                Image(systemName: "wineglass.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(VitisTheme.secondaryText)
+                            }
+                        }
+                        Text(VitisTheme.compactTimestamp(tasting.createdAt))
+                            .font(VitisTheme.uiFont(size: 13))
+                            .foregroundStyle(VitisTheme.secondaryText)
+                    }
                 }
             }
             .padding(.vertical, 12)

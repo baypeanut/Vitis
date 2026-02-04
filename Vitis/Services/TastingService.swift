@@ -164,6 +164,50 @@ enum TastingService {
         }
     }
 
+    /// Fetch like (cheers) counts for a set of tastings keyed by tasting_id.
+    static func fetchLikeCountsForTastings(tastingIds: [UUID]) async -> [UUID: Int] {
+        guard !tastingIds.isEmpty else { return [:] }
+        struct ActivityRow: Decodable {
+            let id: UUID
+            let tasting_id: UUID?
+        }
+        let activities: [ActivityRow] = (try? await supabase
+            .from("activity_feed")
+            .select("id, tasting_id")
+            .in("tasting_id", values: tastingIds)
+            .execute()
+            .value) ?? []
+
+        var activityByTasting: [UUID: UUID] = [:]
+        for activity in activities {
+            if let tastingId = activity.tasting_id, activityByTasting[tastingId] == nil {
+                activityByTasting[tastingId] = activity.id
+            }
+        }
+
+        let activityIds = Array(Set(activityByTasting.values))
+        guard !activityIds.isEmpty else { return [:] }
+
+        struct LikeRow: Decodable { let activity_id: UUID }
+        let likes: [LikeRow] = (try? await supabase
+            .from("likes")
+            .select("activity_id")
+            .in("activity_id", values: activityIds)
+            .execute()
+            .value) ?? []
+
+        var countsByActivity: [UUID: Int] = [:]
+        for like in likes {
+            countsByActivity[like.activity_id, default: 0] += 1
+        }
+
+        var countsByTasting: [UUID: Int] = [:]
+        for (tastingId, activityId) in activityByTasting {
+            countsByTasting[tastingId] = countsByActivity[activityId, default: 0]
+        }
+        return countsByTasting
+    }
+
     /// Update an existing tasting.
     static func updateTasting(
         id: UUID,
