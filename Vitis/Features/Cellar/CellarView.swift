@@ -35,9 +35,13 @@ struct CellarView: View {
             viewModel.groupTastingsByCategory()
         }
         .sheet(isPresented: $showAddWine) {
-            AddWineSheet(isPresented: $showAddWine) {
-                Task { await viewModel.load() }
-            }
+            AddWineSheet(
+                isPresented: $showAddWine,
+                tastedWineIds: Set(viewModel.tastings.map(\.wineId)),
+                onWineAdded: {
+                    Task { await viewModel.load() }
+                }
+            )
         }
         .sheet(isPresented: $showFilters) {
             CellarFilterSheet(
