@@ -116,12 +116,14 @@ struct TastingRateView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Aroma and palate")
-                .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                .foregroundStyle(.primary)
-            Text("Optional")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText)
+            HStack(spacing: 4) {
+                Text("Notes")
+                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                    .foregroundStyle(.primary)
+                Text("(optional)")
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.secondaryText)
+            }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 12) {
                 ForEach(availableNotes, id: \.self) { note in
                     noteChip(note)
@@ -133,12 +135,6 @@ struct TastingRateView: View {
     
     private var commentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Your thoughts")
-                .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                .foregroundStyle(.primary)
-            Text("Optional")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText)
             ZStack(alignment: .topLeading) {
                 if comment.isEmpty {
                     Text("What did you think? (optional)")
