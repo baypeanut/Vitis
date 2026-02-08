@@ -16,6 +16,7 @@ struct SocialWineDetailView: View {
 
     @State private var hostReview: SocialReview
     @State private var userRating: Double?
+    @State private var userTasting: Tasting?
     @State private var friendsAverage: Double?
     @State private var globalAverage: Double?
     @State private var groupedMutual: [GroupedFriendReview] = []
@@ -78,6 +79,7 @@ struct SocialWineDetailView: View {
                         headerSection
                         ratingDashboardSection
                         hostReviewSection
+                        userReviewSection
                         if !groupedMutual.isEmpty {
                             mutualSection
                         }
@@ -200,9 +202,14 @@ struct SocialWineDetailView: View {
             HStack(alignment: .top, spacing: 12) {
                 reviewAvatar(url: hostReview.avatarURL, displayName: hostReview.displayName, size: 44)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(hostReview.displayName)
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(hostReview.displayName)
+                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        Text(String(format: "%.1f", hostReview.rating))
+                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                    }
                     if let comment = hostReview.comment, !comment.isEmpty {
                         Text(comment)
                             .font(VitisTheme.uiFont(size: 14))
@@ -218,6 +225,44 @@ struct SocialWineDetailView: View {
         }
         .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
         .padding(.vertical, 14)
+    }
+
+    // MARK: - User Review (current user's rate, palate, comment)
+
+    @ViewBuilder
+    private var userReviewSection: some View {
+        if let t = userTasting, currentUserId != hostItem.userId {
+            VStack(alignment: .leading, spacing: 12) {
+                Rectangle()
+                    .fill(VitisTheme.divider(for: colorScheme))
+                    .frame(height: 1)
+                HStack(alignment: .top, spacing: 12) {
+                    reviewAvatar(url: nil, displayName: "You", size: 44)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .center, spacing: 8) {
+                            Text("You")
+                                .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            Text(String(format: "%.1f", t.rating))
+                                .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                                .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                        }
+                        if let comment = t.comment, !comment.isEmpty {
+                            Text(comment)
+                                .font(VitisTheme.uiFont(size: 14))
+                                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let tags = t.noteTags, !tags.isEmpty {
+                            tasteTagsPills(tags)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            .padding(.vertical, 14)
+        }
     }
 
     // MARK: - Mutual Section (grouped, with full cards vs compact quick ratings)
@@ -367,14 +412,14 @@ struct SocialWineDetailView: View {
 
     // MARK: - Data & Grouping
 
-    private func loadData() async {
+        private func loadData() async {
         isLoading = true
         let hostId = hostItem.userId
         do {
             let allTastings = try await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: nil, limit: 100)
             var mutual: [TastingWithProfile] = []
             for t in allTastings {
-                if t.userId != hostId, await ProfileService.isMutualFriend(viewerId: hostId, ownerId: t.userId) {
+                if t.userId != hostId, t.userId != currentUserId, await ProfileService.isMutualFriend(viewerId: hostId, ownerId: t.userId) {
                     mutual.append(t)
                 }
             }
@@ -387,8 +432,11 @@ struct SocialWineDetailView: View {
             globalAverage = allTastings.isEmpty ? nil : allTastings.map(\.rating).reduce(0, +) / Double(allTastings.count)
 
             if let uid = currentUserId {
-                userRating = (try? await TastingService.fetchUserTastingForWine(userId: uid, wineId: wine.id))?.rating
+                let t = try? await TastingService.fetchUserTastingForWine(userId: uid, wineId: wine.id)
+                userTasting = t
+                userRating = t?.rating
             } else {
+                userTasting = nil
                 userRating = nil
             }
         } catch {
