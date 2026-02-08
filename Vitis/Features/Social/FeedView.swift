@@ -45,6 +45,9 @@ struct FeedView: View {
             .onReceive(NotificationCenter.default.publisher(for: .vitisWishlistUpdated)) { _ in
                 Task { await viewModel.refreshWishlistIds() }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .vitisTastingCreated)) { _ in
+                Task { await viewModel.refresh() }
+            }
     }
 
     private var mainContent: some View {

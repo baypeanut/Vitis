@@ -223,30 +223,32 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT DISTINCT ON (a.id)
-    a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
-    p.username, p.full_name, p.avatar_url,
-    w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
-    tw.name, tw.producer, tw.vintage, tw.label_image_url,
-    t.note_tags, t.rating, t.comment
-  FROM public.activity_feed a
-  INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
-  LEFT JOIN public.wines w ON w.id = a.wine_id
-  LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
-  LEFT JOIN public.tastings t ON (
-    a.activity_type = 'had_wine' AND (
-      (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
-      OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
-          AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+  SELECT * FROM (
+    SELECT DISTINCT ON (a.id)
+      a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
+      p.username, p.full_name, p.avatar_url,
+      w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
+      tw.name, tw.producer, tw.vintage, tw.label_image_url,
+      t.note_tags, t.rating, t.comment
+    FROM public.activity_feed a
+    INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
+    LEFT JOIN public.wines w ON w.id = a.wine_id
+    LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
+    LEFT JOIN public.tastings t ON (
+      a.activity_type = 'had_wine' AND (
+        (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
+        OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
+            AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+      )
     )
-  )
-  WHERE a.activity_type = 'had_wine'
-    AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
-  ORDER BY a.id,
-    CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
-    CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
-    ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at))),
-    a.created_at DESC
+    WHERE a.activity_type = 'had_wine'
+      AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+    ORDER BY a.id,
+      CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
+      CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
+      ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)))
+  ) sub
+  ORDER BY created_at DESC
   LIMIT p_limit OFFSET p_offset;
 $$;
 
@@ -290,31 +292,33 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT DISTINCT ON (a.id)
-    a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
-    p.username, p.full_name, p.avatar_url,
-    w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
-    tw.name, tw.producer, tw.vintage, tw.label_image_url,
-    t.note_tags, t.rating, t.comment
-  FROM public.activity_feed a
-  INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
-  INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = p_viewer_id
-  LEFT JOIN public.wines w ON w.id = a.wine_id
-  LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
-  LEFT JOIN public.tastings t ON (
-    a.activity_type = 'had_wine' AND (
-      (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
-      OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
-          AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+  SELECT * FROM (
+    SELECT DISTINCT ON (a.id)
+      a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
+      p.username, p.full_name, p.avatar_url,
+      w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
+      tw.name, tw.producer, tw.vintage, tw.label_image_url,
+      t.note_tags, t.rating, t.comment
+    FROM public.activity_feed a
+    INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
+    INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = p_viewer_id
+    LEFT JOIN public.wines w ON w.id = a.wine_id
+    LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
+    LEFT JOIN public.tastings t ON (
+      a.activity_type = 'had_wine' AND (
+        (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
+        OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
+            AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+      )
     )
-  )
-  WHERE a.activity_type = 'had_wine'
-    AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
-  ORDER BY a.id,
-    CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
-    CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
-    ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at))),
-    a.created_at DESC
+    WHERE a.activity_type = 'had_wine'
+      AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+    ORDER BY a.id,
+      CASE WHEN t.id IS NULL THEN 1 ELSE 0 END,
+      CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
+      ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)))
+  ) sub
+  ORDER BY created_at DESC
   LIMIT p_limit OFFSET p_offset;
 $$;
 
