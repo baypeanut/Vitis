@@ -46,7 +46,7 @@ struct ProfileContentView: View {
                         .foregroundStyle(.red)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.red.opacity(0.08))
+                        .background(VitisTheme.dangerMuted(for: colorScheme).opacity(0.15))
                 }
                 if let p = viewModel.profile {
                     header(p)

@@ -270,6 +270,7 @@ enum ProfileService {
             .update(payload)
             .eq("id", value: userId)
             .execute()
+        await AuditService.log(userId: userId, eventType: "privacy_setting_changed", metadata: payload)
     }
 
     /// True if viewer and owner follow each other.

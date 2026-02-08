@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct AuthView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var mode: Mode = .signIn
     @State private var email = ""
     @State private var password = ""
@@ -88,20 +89,20 @@ struct AuthView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "wifi.exclamationmark")
                         .font(.system(size: 14))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
                     Text(msg)
                         .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
                 }
                 Button("Retry connection") {
                     Task { await checkConnection() }
                 }
                 .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.accent)
+                .foregroundStyle(VitisTheme.accent(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(Color.red.opacity(0.08))
+            .background(VitisTheme.dangerMuted(for: colorScheme).opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }

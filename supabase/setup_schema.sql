@@ -66,6 +66,28 @@ ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS public.app_config (key text PRIMARY KEY, value text NOT NULL);
 INSERT INTO public.app_config (key, value) VALUES ('app_env', 'production') ON CONFLICT (key) DO NOTHING;
 
+-- A9: audit_log (server-only readable; insert via RPC)
+CREATE TABLE IF NOT EXISTS public.audit_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  event_type text NOT NULL,
+  metadata jsonb DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user ON public.audit_log (user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON public.audit_log (created_at DESC);
+ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "audit_log_deny_all" ON public.audit_log;
+CREATE POLICY "audit_log_deny_all" ON public.audit_log FOR ALL USING (false) WITH CHECK (false);
+
+CREATE OR REPLACE FUNCTION public.audit_log_insert(p_user_id uuid, p_event_type text, p_metadata jsonb DEFAULT '{}')
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.audit_log (user_id, event_type, metadata) VALUES (p_user_id, p_event_type, p_metadata);
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.audit_log_insert(uuid, text, jsonb) TO authenticated;
+
 -- -----------------------------------------------------------------------------
 -- 3. Profiles RLS (privacy: hide deleted from others)
 -- -----------------------------------------------------------------------------
@@ -308,6 +330,14 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   is_read boolean NOT NULL DEFAULT false
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_recipient_created ON public.notifications (recipient_id, created_at DESC);
+-- Remove duplicate like notifications before creating unique index
+DELETE FROM public.notifications n1
+USING public.notifications n2
+WHERE n1.type = 'like' AND n2.type = 'like'
+  AND n1.recipient_id = n2.recipient_id AND n1.actor_id = n2.actor_id AND n1.post_id = n2.post_id
+  AND n1.id > n2.id;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_notifications_like_unique
+  ON public.notifications (recipient_id, actor_id, post_id) WHERE type = 'like';
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "notifications_select_own" ON public.notifications;
 CREATE POLICY "notifications_select_own" ON public.notifications FOR SELECT USING (auth.uid() = recipient_id);
@@ -341,6 +371,17 @@ BEGIN
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.notifications_mark_all_read(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.insert_like_notification_if_new(p_recipient_id uuid, p_actor_id uuid, p_post_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.notifications (recipient_id, actor_id, type, post_id)
+  VALUES (p_recipient_id, p_actor_id, 'like', p_post_id)
+  ON CONFLICT DO NOTHING;
+EXCEPTION WHEN unique_violation THEN NULL;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.insert_like_notification_if_new(uuid, uuid, uuid) TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- Tastings: wine logging with rating and optional notes (replaces duel/comparison)
@@ -1078,7 +1119,7 @@ END $$;
 
 -- -----------------------------------------------------------------------------
 -- 10. Dev signup: dev_accounts (no Supabase Auth, no email/SMS)
--- RLS disabled for test phase. Enable RLS and add policies before production.
+-- A8: RLS enabled, deny-all. Bypass only when app_env in ('local','staging').
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.dev_accounts (
   id uuid PRIMARY KEY,
@@ -1089,11 +1130,17 @@ CREATE TABLE IF NOT EXISTS public.dev_accounts (
   created_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE public.dev_accounts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dev_accounts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "dev_accounts_deny_all" ON public.dev_accounts;
+CREATE POLICY "dev_accounts_deny_all" ON public.dev_accounts FOR ALL USING (false) WITH CHECK (false);
+DROP POLICY IF EXISTS "dev_accounts_local_bypass" ON public.dev_accounts;
+CREATE POLICY "dev_accounts_local_bypass" ON public.dev_accounts FOR ALL
+  USING (auth.uid() IS NULL AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging')))
+  WITH CHECK (auth.uid() IS NULL AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging')));
 
 -- -----------------------------------------------------------------------------
--- 11. User account deletion function
--- Allows authenticated users to delete their own account
+-- 11. User account deletion (A4: soft delete + audit)
+-- Sets deleted_at on profile (hides from feeds, RLS excludes). Hard delete later via scheduled job.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.delete_current_user()
 RETURNS void
@@ -1102,25 +1149,18 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user_id uuid;
+  v_user_id uuid;
 BEGIN
-  -- Get the current user's ID from the JWT
-  current_user_id := auth.uid();
-  
-  -- Ensure user is authenticated
-  IF current_user_id IS NULL THEN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
-  
-  -- Delete the user from auth.users
-  -- This will cascade delete all related data in:
-  -- profiles, tastings, comparisons, rankings, follows, activity_feed,
-  -- comments_cheers, likes, comments, user_private, cellar_items, notifications
-  DELETE FROM auth.users WHERE id = current_user_id;
+
+  UPDATE public.profiles SET deleted_at = now() WHERE id = v_user_id;
+  PERFORM public.audit_log_insert(v_user_id, 'account_deleted_requested', '{}'::jsonb);
 END;
 $$;
 
--- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.delete_current_user() TO authenticated;
 
-COMMENT ON FUNCTION public.delete_current_user() IS 'Allows authenticated users to delete their own account and all associated data via CASCADE constraints';
+COMMENT ON FUNCTION public.delete_current_user() IS 'Soft delete: sets profiles.deleted_at, logs audit. Hard delete from auth.users after cooldown via scheduled job.';

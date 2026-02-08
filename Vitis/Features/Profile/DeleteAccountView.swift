@@ -101,7 +101,7 @@ struct DeleteAccountView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(viewModel.canDelete ? Color.green.opacity(0.5) : Color.clear, lineWidth: 1)
+                        .stroke(viewModel.canDelete ? VitisTheme.success.opacity(0.5) : Color.clear, lineWidth: 1)
                 )
                 .focused($isConfirmationFocused)
                 .accessibilityLabel("Type DELETE to confirm")
