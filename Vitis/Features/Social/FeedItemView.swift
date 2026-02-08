@@ -82,7 +82,7 @@ struct FeedItemView: View {
             }
         }
         .navigationDestination(item: $wineNavigationTarget) { target in
-            WineCardView(wine: target.wine, activityId: target.activityId, currentUserId: target.currentUserId, sourceUserId: target.sourceUserId, sourceContext: target.sourceContext)
+            SocialWineDetailView(wine: target.wine, hostItem: item, activityId: target.activityId, currentUserId: target.currentUserId)
         }
     }
     

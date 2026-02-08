@@ -99,7 +99,9 @@ enum TastingService {
             .from("activity_feed")
             .insert(activityPayload)
             .execute()
-        
+
+        NotificationCenter.default.post(name: .vitisTastingCreated, object: nil)
+
         // Remove from wishlist if present (user has now tried this wine)
         try? await CellarService.removeFromWishlist(wineId: wineId)
 
