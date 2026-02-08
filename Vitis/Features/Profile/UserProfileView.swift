@@ -40,6 +40,7 @@ struct UserProfileView: View {
     @State private var currentUserId: UUID?
     @State private var showUserCellar = false
     @State private var showWantToTry = false
+    @State private var alreadyTastedToast = false
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -52,6 +53,7 @@ struct UserProfileView: View {
     }
 
     var body: some View {
+        ZStack {
         NavigationStack {
             ZStack {
                 VitisTheme.background(for: colorScheme).ignoresSafeArea()
@@ -148,6 +150,30 @@ struct UserProfileView: View {
                     username: viewModel.profile?.username ?? "",
                     onDismiss: { showWantToTry = false }
                 )
+            }
+        }
+        if alreadyTastedToast {
+            Color.clear
+                .ignoresSafeArea()
+                .overlay(alignment: .center) {
+                    Text("You've already tasted this wine")
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(VitisTheme.secondaryElevated(for: colorScheme))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+                }
+                .allowsHitTesting(false)
+        }
+        }
+        .animation(.easeInOut(duration: 0.2), value: alreadyTastedToast)
+        .onReceive(NotificationCenter.default.publisher(for: .vitisAlreadyTastedToast)) { _ in
+            alreadyTastedToast = true
+            Task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                alreadyTastedToast = false
             }
         }
         .id(userId)

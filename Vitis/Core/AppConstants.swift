@@ -41,4 +41,6 @@ extension Notification.Name {
     static let vitisWishlistUpdated = Notification.Name("vitisWishlistUpdated")
     /// Tasting created; Feed should refresh to show new activity.
     static let vitisTastingCreated = Notification.Name("vitisTastingCreated")
+    /// User tried to add an already-tasted wine to wishlist. Observers show toast.
+    static let vitisAlreadyTastedToast = Notification.Name("vitisAlreadyTastedToast")
 }

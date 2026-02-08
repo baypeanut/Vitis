@@ -89,15 +89,13 @@ enum CellarService {
 
     /// Add wine to current user's wishlist. Uses auth.uid(); never accepts userId for writes.
     /// sourceUserId/sourceContext for trust hints (e.g. who suggested this wine).
-    /// Returns silently if user has already tasted this wine (can't add tasted wines to wishlist).
-    static func addToWishlist(wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws {
+    /// - Returns: true if added, false if skipped (user already tasted this wine).
+    @discardableResult
+    static func addToWishlist(wineId: UUID, sourceUserId: UUID? = nil, sourceContext: String? = nil) async throws -> Bool {
         guard let uid = await AuthService.currentUserId() else { throw CellarError.notAuthenticated }
-        
-        // Don't add to wishlist if user has already tasted this wine
         if await TastingService.hasTasted(userId: uid, wineId: wineId) {
-            return
+            return false
         }
-        
         struct Insert: Encodable {
             let user_id: UUID
             let wine_id: UUID
@@ -108,13 +106,14 @@ enum CellarService {
         let payload = Insert(user_id: uid, wine_id: wineId, status: "wishlist", source_user_id: sourceUserId, source_context: sourceContext)
         do {
             try await supabase.from("cellar_items").insert(payload).execute()
+            return true
         } catch {
             let msg = (error as NSError).userInfo[NSLocalizedDescriptionKey] as? String ?? ""
-            if msg.contains("23505") || msg.lowercased().contains("unique") || msg.lowercased().contains("duplicate") { return }
+            if msg.contains("23505") || msg.lowercased().contains("unique") || msg.lowercased().contains("duplicate") { return false }
             if (sourceUserId != nil || sourceContext != nil) && (msg.contains("column") || msg.contains("does not exist")) {
                 let fallback = Insert(user_id: uid, wine_id: wineId, status: "wishlist", source_user_id: nil, source_context: nil)
                 try await supabase.from("cellar_items").insert(fallback).execute()
-                return
+                return true
             }
             throw error
         }
@@ -138,10 +137,8 @@ enum CellarService {
         if existing.contains(wineId) {
             try await removeFromWishlist(wineId: wineId)
             return false
-        } else {
-            try await addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext)
-            return true
         }
+        return try await addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: sourceContext)
     }
 
     enum CellarError: Error {
