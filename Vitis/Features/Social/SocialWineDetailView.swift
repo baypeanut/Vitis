@@ -107,7 +107,9 @@ struct SocialWineDetailView: View {
                     .padding(.vertical, 10)
                     .background(VitisTheme.secondaryElevated(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
                     .transition(.opacity)
+                    .zIndex(999)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: alreadyTastedToast)
@@ -399,7 +401,7 @@ struct SocialWineDetailView: View {
     private static func groupByUser(_ tastings: [TastingWithProfile]) -> [GroupedFriendReview] {
         let byUser = Dictionary(grouping: tastings) { $0.userId }
         return byUser.compactMap { userId, list -> GroupedFriendReview? in
-            guard let first = list.first else { return nil }
+            guard !list.isEmpty else { return nil }
             let sorted = list.sorted { $0.createdAt > $1.createdAt }
             let withComment = sorted.first { ($0.comment?.isEmpty ?? true) == false }
             let primary = withComment ?? sorted.first!

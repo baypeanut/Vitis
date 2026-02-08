@@ -21,6 +21,7 @@ struct WantToTryView: View {
     @State private var currentUserId: UUID?
     @State private var myWishlistWineIds: Set<UUID> = []
     @State private var wishlistToggleError: String?
+    @State private var alreadyTastedToast = false
     @State private var searchViewModel = AddWineViewModel()
     @State private var isAddingToWishlist = false
 
@@ -87,6 +88,28 @@ struct WantToTryView: View {
                     Task { await load() }
                 }
             )
+        }
+        .overlay(alignment: .center) {
+            if alreadyTastedToast {
+                Text("You've already tasted this wine")
+                    .font(VitisTheme.uiFont(size: 14))
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(VitisTheme.secondaryElevated(for: colorScheme))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+                    .transition(.opacity)
+                    .zIndex(999)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: alreadyTastedToast)
+        .onReceive(NotificationCenter.default.publisher(for: .vitisAlreadyTastedToast)) { _ in
+            alreadyTastedToast = true
+            Task {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                alreadyTastedToast = false
+            }
         }
     }
 
@@ -336,17 +359,30 @@ struct WantToTryView: View {
         let wineId = item.wineId
         let wasIn = myWishlistWineIds.contains(wineId)
         wishlistToggleError = nil
-        myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
+        if wasIn {
+            myWishlistWineIds.remove(wineId)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            do {
+                try await CellarService.removeFromWishlist(wineId: wineId)
+                NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            } catch {
+                myWishlistWineIds.insert(wineId)
+                wishlistToggleError = "Could not update."
+            }
+            return
+        }
+        myWishlistWineIds.insert(wineId)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         do {
-            if wasIn {
-                try await CellarService.removeFromWishlist(wineId: wineId)
+            let added = try await CellarService.addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: "wishlist")
+            if added {
+                NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
             } else {
-                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: sourceUserId, sourceContext: "wishlist")
+                myWishlistWineIds.remove(wineId)
+                NotificationCenter.default.post(name: .vitisAlreadyTastedToast, object: nil)
             }
-            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } catch {
-            myWishlistWineIds = wasIn ? myWishlistWineIds.union([wineId]) : myWishlistWineIds.filter { $0 != wineId }
+            myWishlistWineIds.remove(wineId)
             wishlistToggleError = "Could not update."
         }
     }

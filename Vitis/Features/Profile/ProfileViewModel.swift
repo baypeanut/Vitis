@@ -188,18 +188,31 @@ final class ProfileViewModel {
         let wineId = item.wineId
         let wasIn = myWishlistWineIds.contains(wineId)
         wishlistToggleError = nil
-        myWishlistWineIds = wasIn ? myWishlistWineIds.filter { $0 != wineId } : myWishlistWineIds.union([wineId])
-        UIImpactFeedbackGenerator(style: UIImpactFeedbackGenerator.FeedbackStyle.light).impactOccurred()
-        do {
-            if wasIn {
+        if wasIn {
+            myWishlistWineIds.remove(wineId)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            do {
                 try await CellarService.removeFromWishlist(wineId: wineId)
-            } else {
-                try await CellarService.addToWishlist(wineId: wineId, sourceUserId: userId, sourceContext: "wishlist")
-                AnalyticsService.wishlistSaveFromUser(wineId: wineId, sourceUserId: userId)
+                NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            } catch {
+                myWishlistWineIds.insert(wineId)
+                wishlistToggleError = "Could not update."
             }
-            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            return
+        }
+        myWishlistWineIds.insert(wineId)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        do {
+            let added = try await CellarService.addToWishlist(wineId: wineId, sourceUserId: userId, sourceContext: "wishlist")
+            if added {
+                AnalyticsService.wishlistSaveFromUser(wineId: wineId, sourceUserId: userId)
+                NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
+            } else {
+                myWishlistWineIds.remove(wineId)
+                NotificationCenter.default.post(name: .vitisAlreadyTastedToast, object: nil)
+            }
         } catch {
-            myWishlistWineIds = wasIn ? myWishlistWineIds.union([wineId]) : myWishlistWineIds.filter { $0 != wineId }
+            myWishlistWineIds.remove(wineId)
             wishlistToggleError = "Could not update."
         }
     }
