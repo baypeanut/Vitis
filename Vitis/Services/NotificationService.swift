@@ -2,7 +2,7 @@
 //  NotificationService.swift
 //  Vitis
 //
-//  In-app notifications for like and comment.
+//  In-app notifications for like, comment, and follow.
 //
 
 import Foundation
@@ -13,7 +13,7 @@ struct NotificationItem: Identifiable, Sendable {
     let recipientId: UUID
     let actorId: UUID
     let type: String
-    let postId: UUID
+    let postId: UUID?
     let commentId: UUID?
     let createdAt: Date
     let isRead: Bool
@@ -26,17 +26,24 @@ struct NotificationItem: Identifiable, Sendable {
 enum NotificationService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
 
-    /// Create notification when user likes a post. Call after successful like insert.
+    /// Create notification when user likes a post. Idempotent; uses RPC to prevent duplicates.
     static func createLikeNotification(recipientId: UUID, actorId: UUID, postId: UUID) async {
+        guard actorId != recipientId else { return }
+        let params: [String: UUID] = ["p_recipient_id": recipientId, "p_actor_id": actorId, "p_post_id": postId]
+        _ = try? await supabase.rpc("insert_like_notification_if_new", params: params).execute()
+    }
+
+    /// Create notification when user follows. Recipient gets "X started following you".
+    static func createFollowNotification(recipientId: UUID, actorId: UUID) async {
         guard actorId != recipientId else { return }
         struct Insert: Encodable {
             let recipient_id: UUID
             let actor_id: UUID
             let type: String
-            let post_id: UUID
+            let post_id: UUID? = nil
         }
         _ = try? await supabase.from("notifications")
-            .insert(Insert(recipient_id: recipientId, actor_id: actorId, type: "like", post_id: postId))
+            .insert(Insert(recipient_id: recipientId, actor_id: actorId, type: "follow"))
             .execute()
     }
 
@@ -63,7 +70,7 @@ enum NotificationService {
             let recipient_id: UUID
             let actor_id: UUID
             let type: String
-            let post_id: UUID
+            let post_id: UUID?
             let comment_id: UUID?
             let created_at: Date
             let is_read: Bool
@@ -103,30 +110,33 @@ enum NotificationService {
             }
         }
 
-        let postIds = Set(rows.map(\.post_id))
+        let postIds = Set(rows.compactMap(\.post_id))
         var postMap: [UUID: (wineName: String?, wineProducer: String?, wineVintage: Int?)] = [:]
         if !postIds.isEmpty {
             struct PostRow: Decodable {
                 let id: UUID
-                let wine_name: String?
-                let wine_producer: String?
-                let wine_vintage: Int?
+                let wines: WineRef?
+                struct WineRef: Decodable {
+                    let name: String?
+                    let producer: String?
+                    let vintage: Int?
+                }
             }
             let posts: [PostRow] = (try? await supabase
-                .from("feed_with_details")
-                .select("id, wine_name, wine_producer, wine_vintage")
+                .from("activity_feed")
+                .select("id, wines(name, producer, vintage)")
                 .in("id", values: Array(postIds))
                 .execute()
                 .value) ?? []
             for p in posts {
-                postMap[p.id] = (p.wine_name, p.wine_producer, p.wine_vintage)
+                postMap[p.id] = (p.wines?.name, p.wines?.producer, p.wines?.vintage)
             }
         }
 
         return rows.map { r in
             let actor = actorMap[r.actor_id]
             let commentPreview = r.comment_id.flatMap { commentMap[$0] }
-            let post = postMap[r.post_id]
+            let post = r.post_id.flatMap { postMap[$0] }
             let tastingTitle = formatTastingTitle(
                 wineName: post?.wineName,
                 wineProducer: post?.wineProducer,
@@ -168,7 +178,16 @@ enum NotificationService {
 
     static func markAllAsRead() async throws {
         guard let uid = await AuthService.currentUserId() else { return }
-        try await supabase.from("notifications").update(["is_read": true]).eq("recipient_id", value: uid).execute()
+        do {
+            _ = try await supabase.rpc("notifications_mark_all_read", params: ["p_recipient_id": uid]).execute()
+        } catch {
+            // Fallback if RPC not deployed: direct UPDATE (RLS allows recipient to update own)
+            try await supabase.from("notifications")
+                .update(["is_read": true])
+                .eq("recipient_id", value: uid)
+                .eq("is_read", value: false)
+                .execute()
+        }
     }
 
     static func fetchUnreadCount() async -> Int {

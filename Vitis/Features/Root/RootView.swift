@@ -12,6 +12,8 @@ enum Tab {
 }
 
 struct RootView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("appearance_preference") private var appearanceRaw = AppearanceOption.system.rawValue
     @State private var selectedTab: Tab = .cellar
     @State private var authStore = AuthStore.shared
     @State private var showAddWineFromCarousel = false
@@ -21,8 +23,8 @@ struct RootView: View {
         Group {
             switch authStore.state {
             case .checking:
-                VitisTheme.background.overlay {
-                    ProgressView().tint(VitisTheme.accent)
+                VitisTheme.background(for: colorScheme).overlay {
+                    ProgressView().tint(VitisTheme.accent(for: colorScheme))
                 }
                 .ignoresSafeArea()
             case .unauthenticated:
@@ -75,6 +77,7 @@ struct RootView: View {
                 authStore.authResultEvent = nil
             }
         }
+        .preferredColorScheme(AppearanceStorage.resolvedColorScheme(for: appearanceRaw))
     }
 
     private var mainTabs: some View {
@@ -94,7 +97,10 @@ struct RootView: View {
                 .tabItem { Image(systemName: "person.crop.circle") }
                 .tag(Tab.profile)
         }
-        .tint(VitisTheme.accent)
+        .tint(VitisTheme.accentWine(for: colorScheme))
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(VitisTheme.tabBarBackground(for: colorScheme), for: .tabBar)
+        .tabBarTheme()
     }
 
     private func didSignOut() {

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct AuthLoginView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     @State private var email = ""
     @State private var password = ""
@@ -21,12 +22,12 @@ struct AuthLoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     SerifTitleText(title: "Log in")
                     Text("Sign in with your email and password.")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
 
                     UnderlineTextField(
                         placeholder: "Email",
@@ -60,7 +61,7 @@ struct AuthLoginView: View {
                         showForgotPassword = true
                     }
                     .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .padding(.top, 4)
 
                     #if DEBUG
@@ -69,7 +70,7 @@ struct AuthLoginView: View {
                             Task { await signInAsTestUser() }
                         }
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.accent)
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
                         .padding(.top, 8)
                     }
                     #endif
@@ -90,7 +91,7 @@ struct AuthLoginView: View {
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
             .sheet(isPresented: $showForgotPassword) {
@@ -145,6 +146,7 @@ struct AuthLoginView: View {
 // MARK: - AuthLoginViewContent (for navigation push, no NavigationStack wrapper)
 
 struct AuthLoginViewContent: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var password = ""
@@ -157,12 +159,12 @@ struct AuthLoginViewContent: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(alignment: .leading, spacing: 24) {
                 SerifTitleText(title: "Log in")
                 Text("Sign in with your email and password.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
 
                 UnderlineTextField(
                     placeholder: "Email",
@@ -196,7 +198,7 @@ struct AuthLoginViewContent: View {
                     showForgotPassword = true
                 }
                 .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .padding(.top, 4)
 
                 #if DEBUG
@@ -205,7 +207,7 @@ struct AuthLoginViewContent: View {
                         Task { await signInAsTestUser() }
                     }
                     .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                     .padding(.top, 8)
                 }
                 #endif

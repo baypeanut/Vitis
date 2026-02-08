@@ -32,6 +32,8 @@ final class ProfileViewModel {
     var wishlistPreview: [CellarItem] = []
     var myWishlistWineIds: Set<UUID> = []
     var wishlistToggleError: String?
+    var privacySettings: PrivacySettings = .default
+    var isViewerFriend: Bool = false
     var isLoadingInitial = true
     var isRefreshing = false
     var errorMessage: String?
@@ -43,6 +45,17 @@ final class ProfileViewModel {
     var recentTastingsTop5: [Tasting] {
         let sorted = allTastings.sorted { $0.createdAt > $1.createdAt }
         return Array(sorted.prefix(5))
+    }
+
+    /// Visibility for another user's profile sections. Own profile: always true.
+    var cellarVisible: Bool {
+        isOwn || privacySettings.cellarVisibility == .everyone || (privacySettings.cellarVisibility == .friends && isViewerFriend)
+    }
+    var wishlistVisible: Bool {
+        isOwn || privacySettings.wishlistVisibility == .everyone || (privacySettings.wishlistVisibility == .friends && isViewerFriend)
+    }
+    var activityVisible: Bool {
+        isOwn || privacySettings.activityVisibility == .everyone || (privacySettings.activityVisibility == .friends && isViewerFriend)
     }
 
     init(userId: UUID) {
@@ -99,6 +112,8 @@ final class ProfileViewModel {
         let tastingsTask = Task { try await TastingService.fetchTastings(userId: uid, limit: 200) }
         let wishlistTask = Task { try await CellarService.fetchWishlist(userId: uid, limit: 15) }
         let myWishlistTask: Task<Set<UUID>, Error>? = (current != nil && current != uid) ? Task { try await CellarService.fetchWishlistWineIds(userId: current!) } : nil
+        let privacyTask = Task { try? await ProfileService.fetchPrivacySettings(userId: uid) }
+        let isFriendTask: Task<Bool, Never>? = (current != nil && current != uid) ? Task { await ProfileService.isMutualFriend(viewerId: current!, ownerId: uid) } : Task { true }
 
         newRatedCount = await countTask.value
         guard loadId == currentLoadId else { if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }; return }
@@ -130,6 +145,8 @@ final class ProfileViewModel {
         if let task = myWishlistTask {
             newMyWishlistWineIds = (try? await task.value) ?? []
         }
+        privacySettings = await privacyTask.value ?? .default
+        isViewerFriend = await (isFriendTask?.value ?? true)
 
         if loadId != currentLoadId {
             if isFirstLoad { isLoadingInitial = false } else { isRefreshing = false }

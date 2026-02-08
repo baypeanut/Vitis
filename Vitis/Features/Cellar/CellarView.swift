@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct CellarView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = CellarViewModel()
     @State private var showAddWine = false
     @State private var showFilters = false
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
@@ -56,7 +57,7 @@ struct CellarView: View {
         HStack(alignment: .center) {
             Text("My Cellar")
                 .font(VitisTheme.titleFont())
-                .foregroundStyle(.primary)
+                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
             Spacer()
             if !viewModel.needsAuth, let _ = viewModel.currentUserId {
                 HStack(spacing: 12) {
@@ -66,7 +67,7 @@ struct CellarView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal.decrease.circle")
                                 .font(.system(size: 22))
-                                .foregroundStyle(VitisTheme.accent)
+                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
                         }
                         .buttonStyle(.plain)
                     }
@@ -75,7 +76,7 @@ struct CellarView: View {
                     } label: {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 22))
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                     }
                     .buttonStyle(.plain)
                 }
@@ -92,7 +93,7 @@ struct CellarView: View {
         if viewModel.needsAuth {
             Text("Sign in to see your cellar.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let err = viewModel.errorMessage, viewModel.tastings.isEmpty {
             Text(err)
@@ -104,7 +105,7 @@ struct CellarView: View {
         } else if viewModel.isLoading && viewModel.tastings.isEmpty {
             ProgressView()
                 .progressViewStyle(.circular)
-                .tint(VitisTheme.accent)
+                .tint(VitisTheme.accent(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.tastings.isEmpty {
             emptyState
@@ -118,7 +119,7 @@ struct CellarView: View {
         VStack(spacing: 16) {
             Text("Your cellar is empty. Add wines you've tasted.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
@@ -129,7 +130,7 @@ struct CellarView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(VitisTheme.accent)
+                    .background(VitisTheme.accent(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
@@ -150,6 +151,7 @@ struct CellarView: View {
 }
 
 struct CellarFilterSheet: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var sortOption: CellarViewModel.SortOption
     @Binding var ratingFilter: CellarViewModel.RatingFilter
     @Binding var isPresented: Bool
@@ -162,7 +164,7 @@ struct CellarFilterSheet: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Sort By")
                             .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                         
                         ForEach(CellarViewModel.SortOption.allCases, id: \.self) { option in
                             Button {
@@ -171,16 +173,16 @@ struct CellarFilterSheet: View {
                                 HStack {
                                     Text(option.rawValue)
                                         .font(VitisTheme.uiFont(size: 15))
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                                     Spacer()
                                     if sortOption == option {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(VitisTheme.accent)
+                                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                                     }
                                 }
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
-                                .background(sortOption == option ? VitisTheme.accent.opacity(0.1) : Color.clear)
+                                .background(sortOption == option ? VitisTheme.surfaceSelected(for: colorScheme) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -194,7 +196,7 @@ struct CellarFilterSheet: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Rating Filter")
                             .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                         
                         ForEach(CellarViewModel.RatingFilter.allCases, id: \.self) { filter in
                             Button {
@@ -203,16 +205,16 @@ struct CellarFilterSheet: View {
                                 HStack {
                                     Text(filter.rawValue)
                                         .font(VitisTheme.uiFont(size: 15))
-                                        .foregroundStyle(.primary)
+                                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                                     Spacer()
                                     if ratingFilter == filter {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(VitisTheme.accent)
+                                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                                     }
                                 }
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
-                                .background(ratingFilter == filter ? VitisTheme.accent.opacity(0.1) : Color.clear)
+                                .background(ratingFilter == filter ? VitisTheme.surfaceSelected(for: colorScheme) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -223,7 +225,7 @@ struct CellarFilterSheet: View {
                 }
                 .padding(24)
             }
-            .background(VitisTheme.background)
+            .background(VitisTheme.backgroundPrimary(for: colorScheme))
             .navigationTitle("Filter & Sort")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -231,7 +233,7 @@ struct CellarFilterSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
         }

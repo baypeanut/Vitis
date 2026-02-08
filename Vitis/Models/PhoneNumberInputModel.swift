@@ -13,8 +13,8 @@ final class PhoneNumberInputModel {
     var selectedCountry: Country
     var nationalNumber: String = ""
 
-    init(defaultCountry: Country = CountriesStore.shared.defaultCountry) {
-        self.selectedCountry = defaultCountry
+    init(defaultCountry: Country? = nil) {
+        self.selectedCountry = defaultCountry ?? CountriesStore.shared.defaultCountry
     }
 
     var e164: String? {

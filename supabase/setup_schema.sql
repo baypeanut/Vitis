@@ -38,6 +38,10 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS taste_snapshot_avoids text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS taste_snapshot_mood text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS weekly_goal text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cellar_visibility text NOT NULL DEFAULT 'everyone' CHECK (cellar_visibility IN ('everyone', 'friends'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist_visibility text NOT NULL DEFAULT 'everyone' CHECK (wishlist_visibility IN ('everyone', 'friends'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS activity_visibility text NOT NULL DEFAULT 'everyone' CHECK (activity_visibility IN ('everyone', 'friends'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_key ON public.profiles (lower(trim(username)));
 
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
@@ -58,12 +62,17 @@ INSERT INTO public.wines (id, name, producer, vintage, variety, region, category
   ('a1000006-0000-0000-0000-000000000006', 'Dom Pérignon', 'Moët & Chandon', 2012, 'Chardonnay', 'Champagne', 'Sparkling')
 ON CONFLICT (id) DO NOTHING;
 
+-- A0: app_config for environment (local | staging | production)
+CREATE TABLE IF NOT EXISTS public.app_config (key text PRIMARY KEY, value text NOT NULL);
+INSERT INTO public.app_config (key, value) VALUES ('app_env', 'production') ON CONFLICT (key) DO NOTHING;
+
 -- -----------------------------------------------------------------------------
--- 3. Profiles RLS
+-- 3. Profiles RLS (privacy: hide deleted from others)
 -- -----------------------------------------------------------------------------
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "profiles_select" ON public.profiles;
-CREATE POLICY "profiles_select" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "profiles_select" ON public.profiles FOR SELECT
+  USING (auth.uid() = id OR deleted_at IS NULL);
 DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
 CREATE POLICY "profiles_insert_own" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
@@ -132,6 +141,33 @@ CREATE POLICY "Users can view follows" ON public.follows FOR SELECT USING (true)
 DROP POLICY IF EXISTS "Users can manage own follows" ON public.follows;
 CREATE POLICY "Users can manage own follows" ON public.follows FOR ALL USING (auth.uid() = follower_id);
 
+CREATE OR REPLACE FUNCTION public.is_mutual_friend(p_viewer_id uuid, p_owner_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.follows a
+    WHERE a.follower_id = p_viewer_id AND a.followed_id = p_owner_id
+  ) AND EXISTS (
+    SELECT 1 FROM public.follows b
+    WHERE b.follower_id = p_owner_id AND b.followed_id = p_viewer_id
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_view_activity(p_viewer_id uuid, p_owner_id uuid, p_visibility text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT p_viewer_id = p_owner_id OR p_visibility = 'everyone'
+    OR (p_visibility = 'friends' AND p_viewer_id IS NOT NULL AND public.is_mutual_friend(p_viewer_id, p_owner_id));
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_view_cellar(p_viewer_id uuid, p_owner_id uuid, p_visibility text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT p_viewer_id = p_owner_id OR p_visibility = 'everyone'
+    OR (p_visibility = 'friends' AND p_viewer_id IS NOT NULL AND public.is_mutual_friend(p_viewer_id, p_owner_id));
+$$;
+
 CREATE TABLE IF NOT EXISTS public.activity_feed (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -151,7 +187,16 @@ ALTER TABLE public.activity_feed ADD CONSTRAINT activity_feed_activity_type_chec
   CHECK (activity_type IN ('rank_update', 'new_entry', 'duel_win', 'had_wine'));
 ALTER TABLE public.activity_feed ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can read activity_feed" ON public.activity_feed;
-CREATE POLICY "Anyone can read activity_feed" ON public.activity_feed FOR SELECT USING (true);
+DROP POLICY IF EXISTS "activity_feed_select_privacy" ON public.activity_feed;
+CREATE POLICY "activity_feed_select_privacy" ON public.activity_feed FOR SELECT
+  USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.profiles pr
+      WHERE pr.id = activity_feed.user_id AND pr.deleted_at IS NULL
+        AND public.can_view_activity(auth.uid(), pr.id, pr.activity_visibility)
+    )
+  );
 DROP POLICY IF EXISTS "Users can insert own activity" ON public.activity_feed;
 CREATE POLICY "Users can insert own activity" ON public.activity_feed FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users can delete own activity" ON public.activity_feed;
@@ -175,7 +220,16 @@ CREATE INDEX IF NOT EXISTS idx_comments_cheers_activity ON public.comments_cheer
 CREATE INDEX IF NOT EXISTS idx_comments_cheers_user ON public.comments_cheers (user_id);
 ALTER TABLE public.comments_cheers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can read comments_cheers" ON public.comments_cheers;
-CREATE POLICY "Anyone can read comments_cheers" ON public.comments_cheers FOR SELECT USING (true);
+DROP POLICY IF EXISTS "comments_cheers_select_privacy" ON public.comments_cheers;
+CREATE POLICY "comments_cheers_select_privacy" ON public.comments_cheers FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.activity_feed a
+      JOIN public.profiles pr ON pr.id = a.user_id
+      WHERE a.id = comments_cheers.activity_id
+        AND (a.user_id = auth.uid() OR (pr.deleted_at IS NULL AND public.can_view_activity(auth.uid(), pr.id, pr.activity_visibility)))
+    )
+  );
 DROP POLICY IF EXISTS "Users can insert own comments/cheers" ON public.comments_cheers;
 CREATE POLICY "Users can insert own comments/cheers" ON public.comments_cheers FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users can delete own comments/cheers" ON public.comments_cheers;
@@ -209,28 +263,46 @@ ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "likes_select" ON public.likes;
-CREATE POLICY "likes_select" ON public.likes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "likes_select_privacy" ON public.likes;
+CREATE POLICY "likes_select_privacy" ON public.likes FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.activity_feed a
+      JOIN public.profiles pr ON pr.id = a.user_id
+      WHERE a.id = likes.activity_id
+        AND (a.user_id = auth.uid() OR (pr.deleted_at IS NULL AND public.can_view_activity(auth.uid(), pr.id, pr.activity_visibility)))
+    )
+  );
 DROP POLICY IF EXISTS "likes_insert_own" ON public.likes;
 CREATE POLICY "likes_insert_own" ON public.likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "likes_delete_own" ON public.likes;
 CREATE POLICY "likes_delete_own" ON public.likes FOR DELETE USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "comments_select" ON public.comments;
-CREATE POLICY "comments_select" ON public.comments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "comments_select_privacy" ON public.comments;
+CREATE POLICY "comments_select_privacy" ON public.comments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.activity_feed a
+      JOIN public.profiles pr ON pr.id = a.user_id
+      WHERE a.id = comments.activity_id
+        AND (a.user_id = auth.uid() OR (pr.deleted_at IS NULL AND public.can_view_activity(auth.uid(), pr.id, pr.activity_visibility)))
+    )
+  );
 DROP POLICY IF EXISTS "comments_insert_own" ON public.comments;
 CREATE POLICY "comments_insert_own" ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "comments_delete_own" ON public.comments;
 CREATE POLICY "comments_delete_own" ON public.comments FOR DELETE USING (auth.uid() = user_id);
 
 -- -----------------------------------------------------------------------------
--- Notifications: in-app for like and comment
+-- Notifications: like, comment, follow
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.notifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   recipient_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   actor_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type text NOT NULL CHECK (type IN ('like', 'comment')),
-  post_id uuid NOT NULL REFERENCES public.activity_feed(id) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('like', 'comment', 'follow')),
+  post_id uuid REFERENCES public.activity_feed(id) ON DELETE CASCADE,
   comment_id uuid REFERENCES public.comments(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   is_read boolean NOT NULL DEFAULT false
@@ -243,6 +315,32 @@ DROP POLICY IF EXISTS "notifications_insert" ON public.notifications;
 CREATE POLICY "notifications_insert" ON public.notifications FOR INSERT WITH CHECK (auth.uid() = actor_id);
 DROP POLICY IF EXISTS "notifications_update_own" ON public.notifications;
 CREATE POLICY "notifications_update_own" ON public.notifications FOR UPDATE USING (auth.uid() = recipient_id) WITH CHECK (auth.uid() = recipient_id);
+
+-- Mark all as read RPC (batch 500)
+CREATE OR REPLACE FUNCTION public.notifications_mark_all_read(p_recipient_id uuid)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE v_count int;
+BEGIN
+  IF auth.uid() != p_recipient_id THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+  WITH to_update AS (
+    SELECT id FROM public.notifications
+    WHERE recipient_id = p_recipient_id AND is_read = false
+    LIMIT 500
+  ),
+  updated AS (
+    UPDATE public.notifications SET is_read = true
+    WHERE id IN (SELECT id FROM to_update)
+    RETURNING id
+  )
+  SELECT count(*) INTO v_count FROM updated;
+  RETURN v_count;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.notifications_mark_all_read(uuid) TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- Tastings: wine logging with rating and optional notes (replaces duel/comparison)
@@ -267,10 +365,6 @@ CREATE INDEX IF NOT EXISTS idx_tastings_comment ON public.tastings USING gin(to_
 ALTER TABLE public.tastings ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "tastings_select_own" ON public.tastings;
-CREATE POLICY "tastings_select_own" ON public.tastings FOR SELECT USING (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "tastings_insert_own" ON public.tastings;
-CREATE POLICY "tastings_insert_own" ON public.tastings FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "tastings_update_own" ON public.tastings;
 CREATE POLICY "tastings_update_own" ON public.tastings FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
@@ -278,9 +372,21 @@ CREATE POLICY "tastings_update_own" ON public.tastings FOR UPDATE USING (auth.ui
 DROP POLICY IF EXISTS "tastings_delete_own" ON public.tastings;
 CREATE POLICY "tastings_delete_own" ON public.tastings FOR DELETE USING (auth.uid() = user_id);
 
--- Public read for feed (anyone can read all tastings for social feed)
+-- Privacy: owner or can_view_activity for others
 DROP POLICY IF EXISTS "tastings_select_public" ON public.tastings;
-CREATE POLICY "tastings_select_public" ON public.tastings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "tastings_select_privacy" ON public.tastings;
+CREATE POLICY "tastings_select_privacy" ON public.tastings FOR SELECT
+  USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.profiles pr
+      WHERE pr.id = tastings.user_id AND pr.deleted_at IS NULL
+        AND public.can_view_activity(auth.uid(), pr.id, pr.activity_visibility)
+    )
+  );
+
+DROP POLICY IF EXISTS "tastings_insert_own" ON public.tastings;
+CREATE POLICY "tastings_insert_own" ON public.tastings FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Dev mock: allow when auth.uid() IS NULL and user_id matches debugMockUserId
 DROP POLICY IF EXISTS "dev_mock_tastings" ON public.tastings;
@@ -339,22 +445,80 @@ ORDER BY a.id,
   CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
   ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)));
 
-CREATE OR REPLACE FUNCTION public.feed_following(
-  p_follower_id uuid,
-  p_limit int DEFAULT 30,
-  p_offset int DEFAULT 0
+-- A3: feed_global - enforces activity_visibility, excludes deleted
+DROP FUNCTION IF EXISTS public.feed_global(uuid, int, int);
+CREATE OR REPLACE FUNCTION public.feed_global(
+  p_viewer_id uuid, p_limit int DEFAULT 30, p_offset int DEFAULT 0
 )
-RETURNS SETOF public.feed_with_details
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT f.*
-  FROM public.feed_with_details f
-  JOIN public.follows fo ON fo.followed_id = f.user_id AND fo.follower_id = p_follower_id
-  WHERE f.activity_type = 'had_wine'
-  ORDER BY f.created_at DESC
+RETURNS TABLE (
+  id uuid, user_id uuid, activity_type text, wine_id uuid, target_wine_id uuid, content_text text, created_at timestamptz,
+  username text, full_name text, avatar_url text,
+  wine_name text, wine_producer text, wine_vintage int, wine_label_url text, wine_region text, wine_category text, wine_variety text,
+  target_wine_name text, target_wine_producer text, target_wine_vintage int, target_wine_label_url text,
+  tasting_note_tags text[], tasting_rating double precision, tasting_comment text
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT ON (a.id)
+    a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
+    p.username, p.full_name, p.avatar_url,
+    w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
+    tw.name, tw.producer, tw.vintage, tw.label_image_url,
+    t.note_tags, t.rating, t.comment
+  FROM public.activity_feed a
+  INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
+  LEFT JOIN public.wines w ON w.id = a.wine_id
+  LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
+  LEFT JOIN public.tastings t ON (
+    a.activity_type = 'had_wine' AND (
+      (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
+      OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
+          AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+    )
+  )
+  WHERE a.activity_type = 'had_wine' AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+  ORDER BY a.id, CASE WHEN t.id IS NULL THEN 1 ELSE 0 END, CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
+    ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at))), a.created_at DESC
   LIMIT p_limit OFFSET p_offset;
 $$;
+GRANT EXECUTE ON FUNCTION public.feed_global(uuid, int, int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.feed_global(uuid, int, int) TO anon;
+
+DROP FUNCTION IF EXISTS public.feed_following(uuid, int, int);
+CREATE OR REPLACE FUNCTION public.feed_following(
+  p_viewer_id uuid, p_limit int DEFAULT 30, p_offset int DEFAULT 0
+)
+RETURNS TABLE (
+  id uuid, user_id uuid, activity_type text, wine_id uuid, target_wine_id uuid, content_text text, created_at timestamptz,
+  username text, full_name text, avatar_url text,
+  wine_name text, wine_producer text, wine_vintage int, wine_label_url text, wine_region text, wine_category text, wine_variety text,
+  target_wine_name text, target_wine_producer text, target_wine_vintage int, target_wine_label_url text,
+  tasting_note_tags text[], tasting_rating double precision, tasting_comment text
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT ON (a.id)
+    a.id, a.user_id, a.activity_type, a.wine_id, a.target_wine_id, a.content_text, a.created_at,
+    p.username, p.full_name, p.avatar_url,
+    w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
+    tw.name, tw.producer, tw.vintage, tw.label_image_url,
+    t.note_tags, t.rating, t.comment
+  FROM public.activity_feed a
+  INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
+  INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = p_viewer_id
+  LEFT JOIN public.wines w ON w.id = a.wine_id
+  LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
+  LEFT JOIN public.tastings t ON (
+    a.activity_type = 'had_wine' AND (
+      (a.tasting_id IS NOT NULL AND a.tasting_id = t.id)
+      OR (a.tasting_id IS NULL AND t.user_id = a.user_id AND t.wine_id = a.wine_id
+          AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
+    )
+  )
+  WHERE a.activity_type = 'had_wine' AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+  ORDER BY a.id, CASE WHEN t.id IS NULL THEN 1 ELSE 0 END, CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
+    ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at))), a.created_at DESC
+  LIMIT p_limit OFFSET p_offset;
+$$;
+GRANT EXECUTE ON FUNCTION public.feed_following(uuid, int, int) TO authenticated;
 
 -- Cellar items: Had | Wishlist (separate from rankings/activity_feed)
 -- -----------------------------------------------------------------------------
@@ -379,7 +543,19 @@ CREATE INDEX IF NOT EXISTS idx_cellar_items_user_status_created
 ALTER TABLE public.cellar_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "cellar_items_select_own" ON public.cellar_items;
 DROP POLICY IF EXISTS "cellar_items_select_all" ON public.cellar_items;
-CREATE POLICY "cellar_items_select_all" ON public.cellar_items FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "cellar_items_select_privacy" ON public.cellar_items;
+CREATE POLICY "cellar_items_select_privacy" ON public.cellar_items FOR SELECT
+  USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.profiles pr
+      WHERE pr.id = cellar_items.user_id AND pr.deleted_at IS NULL
+        AND (
+          (cellar_items.status = 'had' AND public.can_view_cellar(auth.uid(), pr.id, pr.cellar_visibility))
+          OR (cellar_items.status = 'wishlist' AND public.can_view_cellar(auth.uid(), pr.id, pr.wishlist_visibility))
+        )
+    )
+  );
 DROP POLICY IF EXISTS "cellar_items_insert_own" ON public.cellar_items;
 CREATE POLICY "cellar_items_insert_own" ON public.cellar_items FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "cellar_items_update_own" ON public.cellar_items;

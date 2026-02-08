@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct UserCellarView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let userId: UUID
     let userName: String
+    var cellarLocked: Bool = false
     @State private var tastings: [Tasting] = []
     @State private var groupedTastings: [(category: String, tastings: [Tasting])] = []
     @State private var isLoading = false
@@ -18,12 +20,19 @@ struct UserCellarView: View {
     
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
             
-            if isLoading && tastings.isEmpty {
+            if cellarLocked {
+                Text("Cellar is visible to friends.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isLoading && tastings.isEmpty {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent)
+                    .tint(VitisTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let err = errorMessage {
                 Text(err)
@@ -35,7 +44,7 @@ struct UserCellarView: View {
             } else if groupedTastings.isEmpty {
                 Text("No wines rated yet")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 listContent
@@ -44,6 +53,7 @@ struct UserCellarView: View {
         .navigationTitle("\(userName)'s Wines")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            guard !cellarLocked else { return }
             currentUserId = await AuthService.currentUserId()
             await load()
         }

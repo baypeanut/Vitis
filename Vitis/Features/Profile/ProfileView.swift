@@ -22,6 +22,7 @@ private struct DrillDownTarget: Identifiable, Hashable {
 }
 
 struct ProfileView: View {
+    @Environment(\.colorScheme) private var colorScheme
     var onSignOut: () -> Void
 
     @State private var viewModel: ProfileViewModel?
@@ -39,11 +40,11 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 if !didRunEnsure {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent)
+                        .tint(VitisTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let vm = viewModel, (vm.isLoadingInitial || vm.isRefreshing || vm.profile == nil && !showErrorAfterDelay) {
                     ProfileSkeletonView()
@@ -73,7 +74,7 @@ struct ProfileView: View {
                             .multilineTextAlignment(.center)
                         Button("Sign out") { Task { await signOut() } }
                             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -88,7 +89,7 @@ struct ProfileView: View {
                     } label: {
                         Image(systemName: "line.3.horizontal")
                             .font(.system(size: 18))
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                     }
                 }
             }
@@ -118,7 +119,7 @@ struct ProfileView: View {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { drillDownTarget = nil }
                                 .font(VitisTheme.uiFont(size: 15))
-                                .foregroundStyle(VitisTheme.accent)
+                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
                         }
                     }
                 }
@@ -221,24 +222,27 @@ struct ProfileView: View {
 // MARK: - Profile loading skeleton
 
 private struct ProfileSkeletonView: View {
+    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
+        let placeholder = VitisTheme.placeholderBackground(for: colorScheme)
+        let card = VitisTheme.elevatedSurface(for: colorScheme)
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(spacing: 12) {
                     Circle()
-                        .fill(Color(white: 0.92))
+                        .fill(placeholder)
                         .frame(width: 88, height: 88)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(white: 0.92))
+                        .fill(placeholder)
                         .frame(width: 100, height: 14)
                     HStack(spacing: 16) {
                         ForEach(0..<3, id: \.self) { _ in
                             VStack(spacing: 4) {
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color(white: 0.92))
+                                    .fill(placeholder)
                                     .frame(width: 36, height: 14)
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color(white: 0.95))
+                                    .fill(card)
                                     .frame(width: 50, height: 12)
                             }
                         }
@@ -246,10 +250,10 @@ private struct ProfileSkeletonView: View {
                 }
                 .frame(maxWidth: .infinity)
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(white: 0.97))
+                    .fill(card)
                     .frame(height: 100)
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(white: 0.97))
+                    .fill(card)
                     .frame(height: 200)
             }
             .padding(.horizontal, 24)

@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct PasswordStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var vm: OnboardingViewModel
 
     var body: some View {
@@ -24,14 +25,14 @@ struct PasswordStepView: View {
                 } label: {
                     Image(systemName: vm.showPassword ? "eye.slash" : "eye")
                         .font(.system(size: 16))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
             }
             .onChange(of: vm.password) { _, _ in vm.passwordError = nil }
             Text("8 to 20 characters. Letters, numbers, special characters.")
                 .font(VitisTheme.uiFont(size: 13))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             if let err = vm.passwordError {
                 Text(err)
                     .font(VitisTheme.uiFont(size: 13))

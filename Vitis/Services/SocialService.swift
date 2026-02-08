@@ -159,6 +159,7 @@ enum SocialService {
         try await supabase.from("follows")
             .upsert(Insert(follower_id: uid, followed_id: targetID), onConflict: "follower_id,followed_id")
             .execute()
+        await NotificationService.createFollowNotification(recipientId: targetID, actorId: uid)
     }
 
     static func unfollowUser(targetID: UUID) async throws {

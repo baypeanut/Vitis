@@ -35,7 +35,15 @@ final class FeedService {
     // MARK: - Fetch
 
     func fetchGlobal(limit: Int? = nil, offset: Int = 0) async throws -> [FeedItem] {
-        try await fetchFromView(limit: limit ?? pageSize, offset: offset)
+        let client = SupabaseManager.shared.supabase
+        let uid = await AuthService.currentUserId()
+        let params = FeedGlobalParams(
+            pViewerId: uid,
+            pLimit: limit ?? pageSize,
+            pOffset: offset
+        )
+        let rows: [FeedRowPayload] = try await client.rpc("feed_global", params: params).execute().value
+        return rows.map { FeedItem.from(row: $0) }
     }
 
     func fetchFollowing(limit: Int? = nil, offset: Int = 0) async throws -> [FeedItem] {
@@ -43,26 +51,13 @@ final class FeedService {
         guard let uid = await AuthService.currentUserId() else { return [] }
 
         let params = FeedFollowingParams(
-            pFollowerId: uid,
+            pViewerId: uid,
             pLimit: limit ?? pageSize,
             pOffset: offset
         )
         let rows: [FeedRowPayload] = try await client.rpc("feed_following", params: params).execute().value
         // Filter to only had_wine activities
         return rows.filter { $0.activityType == .hadWine }.map { FeedItem.from(row: $0) }
-    }
-
-    private func fetchFromView(limit: Int, offset: Int) async throws -> [FeedItem] {
-        let client = SupabaseManager.shared.supabase
-        let rows: [FeedRowPayload] = try await client
-            .from("feed_with_details")
-            .select()
-            .eq("activity_type", value: "had_wine")
-            .order("created_at", ascending: false)
-            .range(from: offset, to: offset + limit - 1)
-            .execute()
-            .value
-        return rows.map { FeedItem.from(row: $0) }
     }
 
     // MARK: - Delete

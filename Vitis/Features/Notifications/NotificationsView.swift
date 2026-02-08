@@ -2,47 +2,50 @@
 //  NotificationsView.swift
 //  Vitis
 //
-//  In-app notifications for like and comment.
+//  In-app notifications for like, comment, and follow.
 //
 
 import SwiftUI
 import os
 
 struct NotificationsView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var items: [NotificationItem] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var unreadCount = 0
     @State private var selectedPostId: UUID?
     @State private var showCommentSheet = false
+    @State private var selectedActorId: UUID?
+    @State private var showProfileSheet = false
     @State private var currentUserId: UUID?
 
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 if isLoading && items.isEmpty {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent)
+                        .tint(VitisTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let err = errorMessage, items.isEmpty {
                     Text(err)
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .onTapGesture { errorMessage = nil }
                 } else if items.isEmpty {
                     Text("No notifications yet.")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(items) { n in
                                 notificationRow(n)
-                                Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
+                                Rectangle().fill(VitisTheme.divider(for: colorScheme)).frame(height: 1).padding(.leading, 24)
                             }
                             .padding(.bottom, 24)
                         }
@@ -58,7 +61,7 @@ struct NotificationsView: View {
                             Task { await markAllRead() }
                         }
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.accent)
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textSecondary(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                     }
                 }
             }
@@ -77,15 +80,24 @@ struct NotificationsView: View {
                     .presentationDetents([.medium, .large])
                 }
             }
+            .fullScreenCover(isPresented: $showProfileSheet) {
+                if let actorId = selectedActorId {
+                    UserProfileView(userId: actorId, onDismiss: {
+                        showProfileSheet = false
+                        selectedActorId = nil
+                    }) { Task { await load() } }
+                }
+            }
             .task { currentUserId = await AuthService.currentUserId() }
             .onChange(of: showCommentSheet) { _, v in if !v { selectedPostId = nil } }
+            .onChange(of: showProfileSheet) { _, v in if !v { selectedActorId = nil } }
         }
     }
 
     private func notificationRow(_ n: NotificationItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Circle()
-                .fill(n.isRead ? Color.clear : VitisTheme.accent)
+                .fill(n.isRead ? Color.clear : VitisTheme.accent(for: colorScheme))
                 .frame(width: 8, height: 8)
                 .opacity(n.isRead ? 0 : 1)
             avatar(url: n.actorAvatarUrl, name: n.actorUsername ?? "?")
@@ -93,7 +105,7 @@ struct NotificationsView: View {
                 notificationText(n)
                 Text(VitisTheme.compactTimestamp(n.createdAt))
                     .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -103,7 +115,12 @@ struct NotificationsView: View {
         .onTapGesture {
             Task {
                 if !n.isRead { try? await NotificationService.markAsRead(notificationId: n.id) }
-                selectedPostId = n.postId
+            }
+            if n.type == "follow" {
+                selectedActorId = n.actorId
+                showProfileSheet = true
+            } else if let postId = n.postId {
+                selectedPostId = postId
                 showCommentSheet = true
             }
         }
@@ -112,19 +129,22 @@ struct NotificationsView: View {
     @ViewBuilder
     private func notificationText(_ n: NotificationItem) -> some View {
         let name = n.actorUsername ?? "Someone"
-        if n.type == "like" {
+        if n.type == "follow" {
+            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(" started following you.").foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
+                .font(VitisTheme.uiFont(size: 15))
+        } else if n.type == "like" {
             let tastingText = n.tastingTitle?.isEmpty == false ? " liked your tasting of \(n.tastingTitle!)." : " liked your tasting."
-            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(tastingText).foregroundStyle(.primary))
+            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(tastingText).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
                 .font(VitisTheme.uiFont(size: 15))
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 let commentLead = n.tastingTitle?.isEmpty == false ? " commented on your tasting of \(n.tastingTitle!): " : " commented: "
-                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.accent) + Text(commentLead).foregroundStyle(.primary))
+                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(commentLead).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
                     .font(VitisTheme.uiFont(size: 15))
                 if let prev = n.commentPreview {
                     Text(prev)
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                         .lineLimit(2)
                 }
             }
@@ -144,17 +164,17 @@ struct NotificationsView: View {
                 placeholder(name)
             }
         }
-        .frame(width: 40, height: 40)
+        .frame(width: 36, height: 36)
         .clipShape(Circle())
     }
 
     private func placeholder(_ name: String) -> some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(name.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
             )
     }
 

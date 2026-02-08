@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ProfileContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
     var viewModel: ProfileViewModel
     var isOwn: Bool
     var isFollowing: Bool
@@ -65,15 +66,15 @@ struct ProfileContentView: View {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 Text("Search wines to add")
                     .font(VitisTheme.uiFont(size: 16))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(white: 0.97))
+            .background(VitisTheme.secondaryElevated(for: colorScheme))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
@@ -86,7 +87,7 @@ struct ProfileContentView: View {
             HStack(spacing: 8) {
                 Text("@\(p.username)")
                     .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 if let h = p.instagramHandle?.trimmingCharacters(in: .whitespacesAndNewlines), !h.isEmpty {
                     InstagramIconButton(handle: h)
                 }
@@ -94,7 +95,7 @@ struct ProfileContentView: View {
             if let b = p.bioTrimmed, !b.isEmpty {
                 Text(b)
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
             }
@@ -104,6 +105,11 @@ struct ProfileContentView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(VitisTheme.profileSectionBackground(for: colorScheme))
+        )
     }
 
     private func avatar(_ p: Profile) -> some View {
@@ -125,11 +131,11 @@ struct ProfileContentView: View {
 
     private func avatarPlaceholder(_ p: Profile) -> some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(p.displayName.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 32, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -161,10 +167,10 @@ struct ProfileContentView: View {
         HStack(spacing: 4) {
             Text(value)
                 .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
             Text(label)
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
         }
     }
 
@@ -173,7 +179,7 @@ struct ProfileContentView: View {
             if isGuestProfile(p) {
                 Text("User not found")
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             } else {
                 VStack(spacing: 4) {
                     Button {
@@ -181,10 +187,10 @@ struct ProfileContentView: View {
                     } label: {
                         Text(isFollowing ? "Following" : "Follow")
                             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(isFollowing ? VitisTheme.secondaryText : .white)
+                            .foregroundStyle(isFollowing ? VitisTheme.secondaryText(for: colorScheme) : .white)
                             .padding(.horizontal, 28)
                             .padding(.vertical, 12)
-                            .background(isFollowing ? Color(white: 0.94) : VitisTheme.accent)
+                            .background(isFollowing ? VitisTheme.placeholderBackground(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .disabled(isTogglingFollow)
@@ -228,23 +234,23 @@ struct ProfileContentView: View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(VitisTheme.accent)
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
             Text(value)
                 .font(VitisTheme.uiFont(size: 13))
-                .foregroundStyle(.primary)
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
-        .background(Color(white: 0.98))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(VitisTheme.border, lineWidth: 1))
+        .background(VitisTheme.surfaceElevated(for: colorScheme))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(VitisTheme.divider(for: colorScheme), lineWidth: 1))
     }
 
     private func line(_ label: String, _ value: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Text(label)
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             Text(value)
                 .foregroundStyle(.primary)
         }
@@ -259,22 +265,16 @@ struct ProfileContentView: View {
                     }
                 } label: {
                     Text(tab.rawValue)
-                        .font(VitisTheme.uiFont(size: 15, weight: mainTab == tab ? .semibold : .regular))
-                        .foregroundStyle(mainTab == tab ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .font(VitisTheme.uiFont(size: 15, weight: .regular))
+                        .foregroundStyle(mainTab == tab ? (colorScheme == .dark ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textPrimary(for: colorScheme)) : (colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme)))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(
-                            mainTab == tab
-                                ? Color(white: 0.97)
-                                : Color.clear
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(4)
-        .background(Color(white: 0.985))
+        .background(VitisTheme.surface(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -296,19 +296,26 @@ struct ProfileContentView: View {
             if isOwn, let onSearch = onAddWishlistSearch {
                 wantToTrySearchBar(onTap: onSearch)
             }
-            if viewModel.wishlistPreview.isEmpty {
+            if !viewModel.wishlistVisible {
+                Text("Wishlist is visible to friends.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity)
+            } else if viewModel.wishlistPreview.isEmpty {
                 Text(isOwn
                     ? "No wines saved yet. Tap the bookmark on any feed post to add."
                     : "No wines in their list.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity)
             } else {
                 ForEach(Array(viewModel.wishlistPreview.prefix(5))) { item in
                     wantToTryRow(item, onRemove: isOwn ? { item in Task { await onRemoveWishlistItem?(item) } } : nil)
-                    Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
+                    Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 0)
                 }
                 if let onTap = onWantToTryTap {
                     Button {
@@ -316,7 +323,7 @@ struct ProfileContentView: View {
                     } label: {
                         Text("Open full list")
                             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                     }
@@ -331,15 +338,15 @@ struct ProfileContentView: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.wine.producer)
-                    .font(VitisTheme.producerSerifFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
+                    .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 Text(VitisTheme.displayWineName(item.wine.name))
-                    .font(VitisTheme.detailFont())
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: item.wine))
+                    .font(VitisTheme.wineNameFont(for: colorScheme))
+                    .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: item.wine))
                 if let r = item.wine.region, !r.isEmpty {
                     Text(r)
                         .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -348,14 +355,14 @@ struct ProfileContentView: View {
                     onMarkAsTasted?(item)
                 }
                 .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                .foregroundStyle(VitisTheme.accent)
+                .foregroundStyle(VitisTheme.accent(for: colorScheme))
             } else if let onToggle = onWantToTryToggle {
                 Button {
                     Task { await onToggle(item) }
                 } label: {
                     Image(systemName: viewModel.myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 18))
-                        .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .foregroundStyle(viewModel.myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
             }
@@ -375,16 +382,23 @@ struct ProfileContentView: View {
 
     private var recentActivityList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.recentTastingsTop5.isEmpty {
+            if !viewModel.activityVisible {
+                Text("Activity is visible to friends.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity)
+            } else if viewModel.recentTastingsTop5.isEmpty {
                 Text("No tastings yet.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .padding(.vertical, 24)
                     .frame(maxWidth: .infinity)
             } else {
                 ForEach(viewModel.recentTastingsTop5) { tasting in
                     tastingActivityRow(tasting)
-                    Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 0)
+                    Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 0)
                 }
             }
         }
@@ -400,39 +414,39 @@ struct ProfileContentView: View {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(tasting.wine.producer)
-                                .font(VitisTheme.producerSerifFont())
-                                .foregroundStyle(VitisTheme.secondaryText)
+                                .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
+                                .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                             Text(wine)
-                                .font(.system(size: 15, weight: .medium, design: .serif))
-                                .foregroundStyle(VitisTheme.accent)
+                                .font(VitisTheme.wineNameFont(for: colorScheme))
+                                .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
                         }
                         Spacer(minLength: 8)
                         Text(String(format: "%.1f", tasting.rating))
-                            .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                            .foregroundStyle(VitisTheme.accent)
+                            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 18, weight: .semibold))
+                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
                     }
                     
                     if let comment = tasting.comment, !comment.isEmpty {
                         Text(comment)
-                            .font(VitisTheme.uiFont(size: 13).italic())
-                            .foregroundStyle(VitisTheme.secondaryText)
-                            .lineLimit(3)
+                            .font(VitisTheme.uiFont(size: 12).italic())
+                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                            .lineLimit(2)
                     }
                     
                     HStack(spacing: 8) {
                         if cheersCount > 0 {
                             HStack(spacing: 4) {
                                 Text("\(cheersCount)")
-                                    .font(VitisTheme.uiFont(size: 12))
-                                    .foregroundStyle(VitisTheme.secondaryText)
+                                    .font(VitisTheme.uiFont(size: 11))
+                                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                                 Image(systemName: "wineglass.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(VitisTheme.secondaryText)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                             }
                         }
                         Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .font(VitisTheme.uiFont(size: 12))
+                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                     }
                 }
             }
@@ -448,13 +462,13 @@ struct ProfileContentView: View {
             avatarCircle(item)
             (Text(parts.before)
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(.primary)
+                .foregroundStyle(colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : .primary)
             + Text(parts.name)
-                .font(.system(size: 15, weight: .medium, design: .serif))
-                .foregroundStyle(VitisTheme.accent)
+                .font(VitisTheme.wineNameFont(for: colorScheme))
+                .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
             + Text(parts.after)
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(.primary))
+                .foregroundStyle(colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : .primary))
             .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -476,17 +490,17 @@ struct ProfileContentView: View {
                 cellarAvatarPlaceholder()
             }
         }
-        .frame(width: 36, height: 36)
+        .frame(width: 28, height: 28)
         .clipShape(Circle())
     }
 
     private func cellarAvatarPlaceholder() -> some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(viewModel.profile?.displayName.prefix(1) ?? "U").uppercased())
                     .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -515,11 +529,11 @@ struct ProfileContentView: View {
 
     private func circlePlaceholder(_ item: FeedItem) -> some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(item.username.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -535,13 +549,13 @@ struct ProfileContentView: View {
                     } label: {
                         Text(tab.rawValue)
                             .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                            .foregroundStyle(tasteSubTab == tab ? .white : VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(
-                                tasteSubTab == tab
-                                    ? VitisTheme.accent
-                                    : Color(white: 0.95)
+                            .background(VitisTheme.surfaceElevated(for: colorScheme))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(tasteSubTab == tab ? VitisTheme.accentWine(for: colorScheme) : Color.clear, lineWidth: 1)
                             )
                             .clipShape(Capsule())
                     }
@@ -564,7 +578,7 @@ struct ProfileContentView: View {
         if items.isEmpty {
             Text("No data yet. Rate wines to build your taste profile.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .padding(.vertical, 24)
                 .frame(maxWidth: .infinity)
         } else {
@@ -580,37 +594,31 @@ struct ProfileContentView: View {
                         tasteProfileRow(it)
                     }
                     .buttonStyle(.plain)
-                    Rectangle().fill(VitisTheme.border).frame(height: 1)
+                    Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1)
                 }
             }
         }
     }
 
     private func tasteProfileRow(_ it: TasteProfileItem) -> some View {
-        let wineColor = WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name)
+        let nameColor: Color = colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : (tasteSubTab == .grapes ? WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name) : Color.primary)
         return HStack {
-            if tasteSubTab == .grapes {
-                Text(it.name)
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(wineColor)
-            } else {
-                Text(it.name)
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(.primary)
-            }
+            Text(it.name)
+                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(nameColor)
             Spacer()
             HStack(spacing: 8) {
                 if let avgRating = it.averageRating {
                     Text(String(format: "%.1f", avgRating))
                         .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(wineColor)
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.ratingColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(category: nil, wineName: it.name, variety: it.name))
                     Text("·")
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                 }
                 Text("\(it.count) \(it.count == 1 ? "tasting" : "tastings")")
                     .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
             }
         }
         .padding(.vertical, 12)
@@ -620,6 +628,7 @@ struct ProfileContentView: View {
 // MARK: - Instagram icon button (app or Safari)
 
 private struct InstagramIconButton: View {
+    @Environment(\.colorScheme) private var colorScheme
     let handle: String
     @Environment(\.openURL) private var openURL
 
@@ -629,7 +638,7 @@ private struct InstagramIconButton: View {
         } label: {
             Image(systemName: "camera.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
         }
         .buttonStyle(.plain)
     }

@@ -23,6 +23,7 @@ private struct UserProfileDrillDownTarget: Identifiable, Hashable {
 }
 
 struct UserProfileView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let userId: UUID
     var onDismiss: () -> Void
     var onFollowChanged: (() -> Void)?
@@ -53,11 +54,11 @@ struct UserProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 if viewModel.isLoading {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent)
+                        .tint(VitisTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if viewModel.profile != nil {
                     ProfileContentView(
@@ -89,7 +90,7 @@ struct UserProfileView: View {
                             .foregroundStyle(.primary)
                         Text("This account may have been deleted.")
                             .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -104,7 +105,7 @@ struct UserProfileView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent)
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
             .sheet(item: $drillDownTarget) { target in
@@ -119,7 +120,7 @@ struct UserProfileView: View {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { drillDownTarget = nil }
                                 .font(VitisTheme.uiFont(size: 15))
-                                .foregroundStyle(VitisTheme.accent)
+                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
                         }
                     }
                 }
@@ -137,7 +138,8 @@ struct UserProfileView: View {
             .navigationDestination(isPresented: $showUserCellar) {
                 UserCellarView(
                     userId: userId,
-                    userName: viewModel.profile?.displayName ?? "User"
+                    userName: viewModel.profile?.displayName ?? "User",
+                    cellarLocked: !viewModel.cellarVisible
                 )
             }
             .sheet(isPresented: $showWantToTry) {
@@ -208,6 +210,7 @@ struct UserProfileView: View {
 // MARK: - UserProfileViewContent (for navigation push, no NavigationStack wrapper)
 
 struct UserProfileViewContent: View {
+    @Environment(\.colorScheme) private var colorScheme
     let userId: UUID
     var onFollowChanged: (() -> Void)?
 
@@ -232,11 +235,11 @@ struct UserProfileViewContent: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
             if viewModel.isLoading {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent)
+                    .tint(VitisTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.profile != nil {
                 ProfileContentView(
@@ -267,7 +270,7 @@ struct UserProfileViewContent: View {
                         .foregroundStyle(.primary)
                     Text("This account may have been deleted.")
                         .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -287,7 +290,7 @@ struct UserProfileViewContent: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { drillDownTarget = nil }
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                     }
                 }
             }

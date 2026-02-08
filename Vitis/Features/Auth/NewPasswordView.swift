@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NewPasswordView: View {
+    @Environment(\.colorScheme) private var colorScheme
     var onComplete: () -> Void
     enum Mode { case form, success }
     @State private var mode: Mode = .form
@@ -18,7 +19,7 @@ struct NewPasswordView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
             Group {
                 switch mode {
                 case .form:
@@ -42,7 +43,7 @@ struct NewPasswordView: View {
             SerifTitleText(title: "New password")
             Text("Choose a strong password: at least 8 characters, with letters, numbers, and a special character.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
 
             UnderlineTextField(
                 placeholder: "New password",
@@ -80,13 +81,13 @@ struct NewPasswordView: View {
             Spacer(minLength: 40)
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(VitisTheme.accent)
+                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
             Text("Password updated")
                 .font(.system(.title2, design: .serif, weight: .semibold))
                 .foregroundStyle(.primary)
             Text("You can now log in with your new password.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
             Spacer(minLength: 24)
             PrimaryButton("Go to Log in", enabled: true) {

@@ -7,7 +7,17 @@
 
 import SwiftUI
 
+private struct WineNavTarget: Identifiable, Hashable {
+    let id: UUID
+    let wine: Wine
+    let activityId: UUID
+    let currentUserId: UUID?
+    let sourceUserId: UUID
+    let sourceContext: String
+}
+
 struct FeedItemView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let item: FeedItem
     let parts: (before: String, name: String, after: String)
     let onCheers: () -> Void
@@ -21,7 +31,7 @@ struct FeedItemView: View {
     var hasAlsoRated: Bool = false
 
     @State private var showTrustHintPopover = false
-    @State private var navigateToWine = false
+    @State private var wineNavigationTarget: WineNavTarget?
     
     /// Construct Wine object from FeedItem for navigation.
     private var wine: Wine {
@@ -42,21 +52,26 @@ struct FeedItemView: View {
             if item.activityType == .hadWine {
                 headerRow
                 twoColumnLayout
-                    .padding(.top, 6)
+                    .padding(.top, 10)
                 actionsRow
-                    .padding(.top, 5)
+                    .padding(.top, 8)
             } else {
                 legacyContent
             }
         }
-        .padding(.vertical, 11)
-        .padding(.horizontal, 14)
+        .padding(.vertical, VitisTheme.cardPaddingVertical)
+        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(white: 0.985))
+            RoundedRectangle(cornerRadius: VitisTheme.cardCornerRadius)
+                .fill(VitisTheme.surface(for: colorScheme))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: VitisTheme.cardCornerRadius))
+        .shadow(
+            color: VitisTheme.shadowColor(for: colorScheme),
+            radius: colorScheme == .dark ? 0 : 6,
+            x: 0,
+            y: colorScheme == .dark ? 0 : 2
+        )
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             if canDelete, let onDelete = onDelete {
                 Button(role: .destructive) {
@@ -66,6 +81,9 @@ struct FeedItemView: View {
                 }
             }
         }
+        .navigationDestination(item: $wineNavigationTarget) { target in
+            WineCardView(wine: target.wine, activityId: target.activityId, currentUserId: target.currentUserId, sourceUserId: target.sourceUserId, sourceContext: target.sourceContext)
+        }
     }
     
     // MARK: - Header Row
@@ -74,9 +92,9 @@ struct FeedItemView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 avatar
-                (Text(item.username)
-                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent))
+                Text("@\(item.username)")
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                 Spacer()
             }
             if let hint = trustHint, !hint.isEmpty {
@@ -99,7 +117,7 @@ struct FeedItemView: View {
                 avatarPlaceholder
             }
         }
-        .frame(width: 30, height: 30)
+        .frame(width: 24, height: 24)
         .clipShape(Circle())
         .contentShape(Circle())
         .onTapGesture {
@@ -109,11 +127,11 @@ struct FeedItemView: View {
     
     private var avatarPlaceholder: some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(item.username.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -121,13 +139,13 @@ struct FeedItemView: View {
         HStack(spacing: 4) {
             Text("Often saved")
                 .font(VitisTheme.uiFont(size: 11, weight: .medium))
-                .foregroundStyle(VitisTheme.tertiaryText)
+                .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             Button {
                 showTrustHintPopover = true
             } label: {
                 Image(systemName: "info.circle")
                     .font(.system(size: 11))
-                    .foregroundStyle(VitisTheme.tertiaryText)
+                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showTrustHintPopover) {
@@ -147,12 +165,6 @@ struct FeedItemView: View {
     private var twoColumnLayout: some View {
         HStack(alignment: .top, spacing: 12) {
             // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes, timestamp)
-            NavigationLink(destination: WineCardView(wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed"), isActive: $navigateToWine) {
-                EmptyView()
-            }
-            .frame(width: 0, height: 0)
-            .hidden()
-            
             HStack(alignment: .top, spacing: 8) {
                 wineThumbnailSquare(
                     labelURL: item.wineLabelURL,
@@ -162,37 +174,37 @@ struct FeedItemView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.wineProducer)
                         .font(VitisTheme.uiFont(size: 11, weight: .regular))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Text(VitisTheme.displayWineName(item.wineName))
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
+                        .font(VitisTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
                         .lineLimit(2)
                         .minimumScaleFactor(0.9)
                     if let vintage = item.wineVintage {
                         Text(String(vintage))
                             .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                     if let comment = item.tastingComment, !comment.isEmpty {
                         Text(comment)
                             .font(VitisTheme.uiFont(size: 12).italic())
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                             .lineLimit(2)
                             .truncationMode(.tail)
                             .padding(.top, 2)
                     }
                     Text(VitisTheme.compactTimestamp(item.createdAt))
                         .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onTapGesture {
-                navigateToWine = true
+                wineNavigationTarget = WineNavTarget(id: item.id, wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed")
             }
             
             // RIGHT COLUMN: rating only (trailing)
@@ -200,12 +212,12 @@ struct FeedItemView: View {
                 if let rating = item.tastingRating {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text(String(format: "%.1f", rating))
-                            .font(VitisTheme.uiFont(size: 22, weight: .semibold))
-                            .foregroundStyle(VitisTheme.accent)
+                            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 22, weight: .semibold))
+                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
                         if hasAlsoRated {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 16))
-                                .foregroundStyle(VitisTheme.accent.opacity(0.7))
+                                .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
                         }
                     }
                 }
@@ -232,7 +244,7 @@ struct FeedItemView: View {
         let cornerRadius: CGFloat = 6
         return ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color(white: 0.97))
+                .fill(VitisTheme.secondaryElevated(for: colorScheme))
                 .frame(width: size, height: size)
             if let urlString = labelURL, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
@@ -242,14 +254,14 @@ struct FeedItemView: View {
                     default:
                         Image(systemName: "wineglass.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
+                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName, colorScheme: colorScheme).opacity(0.75))
                     }
                 }
                 .frame(width: size, height: size)
             } else {
                 Image(systemName: "wineglass.fill")
                     .font(.system(size: 12))
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName).opacity(0.75))
+                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName, colorScheme: colorScheme).opacity(0.75))
             }
         }
         .frame(width: size, height: size)
@@ -259,23 +271,23 @@ struct FeedItemView: View {
     // MARK: - Actions Row (icon-first, minimal)
 
     private var actionsRow: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             Button {
                 onCheers()
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: item.hasCheered ? "wineglass.fill" : "wineglass")
-                        .font(.system(size: 15))
-                        .foregroundStyle(item.hasCheered ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .font(.system(size: 13))
+                        .foregroundStyle(item.hasCheered ? VitisTheme.accent(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
                     if item.cheersCount > 0 {
                         Text("\(item.cheersCount)")
                             .font(VitisTheme.uiFont(size: 12))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                     }
                 }
                 .contentShape(Rectangle())
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Cheers\(item.cheersCount > 0 ? ", \(item.cheersCount)" : "")")
@@ -286,11 +298,11 @@ struct FeedItemView: View {
                     onWishlist()
                 } label: {
                     Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 15))
-                        .foregroundStyle(hasWishlisted ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .font(.system(size: 13))
+                        .foregroundStyle(hasWishlisted ? VitisTheme.accent(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
                         .contentShape(Rectangle())
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(hasWishlisted ? "In wishlist" : "Want to try")
@@ -310,7 +322,7 @@ struct FeedItemView: View {
                     .foregroundStyle(.primary)
                 + Text(parts.name)
                     .font(.system(size: 15, weight: .medium, design: .serif))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 + Text(parts.after)
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(.primary))

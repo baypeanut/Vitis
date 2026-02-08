@@ -37,10 +37,23 @@ private extension UInt32 {
     }
 }
 
+/// ISO codes for countries where Supabase/Twilio SMS is commonly supported.
+/// See https://www.twilio.com/docs/phone-numbers/supported-countries
+private let smsSupportedCountryCodes: Set<String> = [
+    "US", "CA", "GB", "AU", "DE", "FR", "NL", "BE", "ES", "IT", "AT", "CH",
+    "TR", "PL", "SE", "NO", "DK", "FI", "IE", "PT", "GR", "CZ", "RO", "HU",
+    "BR", "MX", "AR", "CL", "CO", "PE", "IN", "SG", "JP", "KR", "NZ", "ZA",
+    "AE", "SA", "IL", "HK", "TW", "MY", "TH", "PH", "ID", "VN"
+]
+
 final class CountriesStore {
     static let shared = CountriesStore()
 
     let countries: [Country]
+
+    static func isSmsSupported(isoCode: String) -> Bool {
+        smsSupportedCountryCodes.contains(isoCode.uppercased())
+    }
     let pinnedCountries: [Country]
     let defaultCountry: Country
 
