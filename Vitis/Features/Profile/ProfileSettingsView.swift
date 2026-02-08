@@ -2,7 +2,7 @@
 //  ProfileSettingsView.swift
 //  Vitis
 //
-//  Settings page with Edit Profile and Sign Out options.
+//  Premium Settings IA: Profile, Account, Privacy, Preferences, Danger zone.
 //
 
 import SwiftUI
@@ -13,46 +13,91 @@ struct ProfileSettingsView: View {
     var onSignOut: () -> Void
     var onProfileUpdated: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showEditProfile = false
     @State private var editVM = EditProfileViewModel()
+    @State private var showDeleteAccountConfirmation = false
     @State private var showDeleteAccount = false
     @State private var showChangeEmailSheet = false
     @State private var showChangePhoneSheet = false
+    @State private var showPrivacySettings = false
+    @State private var showNotificationsSettings = false
+    @State private var showAppearanceSettings = false
     @State private var authStore = AuthStore.shared
-    
+    @State private var notificationsStatusText = "-"
+    @State private var privacySettings: PrivacySettings = .default
+
+    private let subtitleOpacity: Double = 0.6
+
     var body: some View {
-        ZStack {
-            VitisTheme.background.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                settingsButton(
+        List {
+            Section {
+                settingsRow(
                     title: "Edit Profile",
                     icon: "pencil",
-                    action: {
-                        showEditProfile = true
-                    }
+                    action: { showEditProfile = true }
                 )
-                
-                Rectangle()
-                    .fill(VitisTheme.border)
-                    .frame(height: 1)
-                    .padding(.horizontal, 24)
+            } header: {
+                Text("Profile")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
 
-                phoneNumberRow
+            Section {
+                settingsRow(
+                    title: "Phone number",
+                    subtitle: authStore.userSnapshot?.phone ?? "Not set",
+                    icon: "phone",
+                    trailingAction: "Change",
+                    action: { showChangePhoneSheet = true }
+                )
+                settingsRow(
+                    title: "Email",
+                    subtitle: authStore.userSnapshot?.email ?? "Not linked",
+                    icon: "envelope",
+                    trailingAction: authStore.userSnapshot?.email != nil ? "Change" : "Add",
+                    action: { showChangeEmailSheet = true }
+                )
+            } header: {
+                Text("Account")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
 
-                Rectangle()
-                    .fill(VitisTheme.border)
-                    .frame(height: 1)
-                    .padding(.horizontal, 24)
+            Section {
+                settingsRow(
+                    title: "Privacy settings",
+                    subtitle: privacySubtitle,
+                    icon: "lock.shield",
+                    action: { showPrivacySettings = true }
+                )
+            } header: {
+                Text("Privacy")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
 
-                emailRow
-                
-                Rectangle()
-                    .fill(VitisTheme.border)
-                    .frame(height: 1)
-                    .padding(.horizontal, 24)
-                
-                settingsButton(
+            Section {
+                settingsRow(
+                    title: "Notifications",
+                    subtitle: notificationsSubtitle,
+                    icon: "bell",
+                    action: { showNotificationsSettings = true }
+                )
+                settingsRow(
+                    title: "Appearance",
+                    subtitle: appearanceSubtitle,
+                    icon: "paintbrush",
+                    action: { showAppearanceSettings = true }
+                )
+            } header: {
+                Text("Preferences")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
+
+            Section {
+                settingsRow(
                     title: "Sign Out",
                     icon: "rectangle.portrait.and.arrow.right",
                     isDestructive: true,
@@ -61,25 +106,20 @@ struct ProfileSettingsView: View {
                         onSignOut()
                     }
                 )
-                
-                Rectangle()
-                    .fill(VitisTheme.border)
-                    .frame(height: 1)
-                    .padding(.horizontal, 24)
-                
-                settingsButton(
+            }
+
+            Section {
+                settingsRow(
                     title: "Delete Account",
                     icon: "trash",
                     isDestructive: true,
-                    action: {
-                        showDeleteAccount = true
-                    }
+                    action: { showDeleteAccountConfirmation = true }
                 )
-                
-                Spacer()
             }
-            .padding(.top, 24)
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showEditProfile) {
@@ -96,11 +136,30 @@ struct ProfileSettingsView: View {
                 )
             }
         }
+        .navigationDestination(isPresented: $showPrivacySettings) {
+            PrivacySettingsView()
+        }
+        .navigationDestination(isPresented: $showNotificationsSettings) {
+            NotificationsSettingsView()
+        }
+        .navigationDestination(isPresented: $showAppearanceSettings) {
+            AppearanceSettingsView()
+        }
         .sheet(isPresented: $showChangeEmailSheet) {
             ChangeEmailView(isPresented: $showChangeEmailSheet)
         }
         .sheet(isPresented: $showChangePhoneSheet) {
             ChangePhoneNumberView(isPresented: $showChangePhoneSheet)
+        }
+        .confirmationDialog("Delete Account", isPresented: $showDeleteAccountConfirmation, titleVisibility: .visible) {
+            Button("Delete Account", role: .destructive) {
+                showDeleteAccount = true
+            }
+            Button("Cancel", role: .cancel) {
+                showDeleteAccountConfirmation = false
+            }
+        } message: {
+            Text("This will permanently delete your account and all data. This cannot be undone.")
         }
         .sheet(isPresented: $showDeleteAccount) {
             DeleteAccountView(isPresented: $showDeleteAccount) {
@@ -108,7 +167,13 @@ struct ProfileSettingsView: View {
                 onSignOut()
             }
         }
-        .task { await AuthStore.shared.refreshCurrentUserSnapshot() }
+        .task {
+            await AuthStore.shared.refreshCurrentUserSnapshot()
+            notificationsStatusText = await NotificationStatusHelper.fetchStatusText()
+            if let uid = userId {
+                privacySettings = (try? await ProfileService.fetchPrivacySettings(userId: uid)) ?? .default
+            }
+        }
         .onChange(of: showChangeEmailSheet) { _, isShown in
             if !isShown {
                 Task { await AuthStore.shared.refreshCurrentUserSnapshot() }
@@ -119,96 +184,64 @@ struct ProfileSettingsView: View {
                 Task { await AuthStore.shared.refreshCurrentUserSnapshot() }
             }
         }
-    }
-
-    private var emailRow: some View {
-        Button {
-            showChangeEmailSheet = true
-        } label: {
-            HStack(spacing: 16) {
-                Image(systemName: "envelope")
-                    .font(.system(size: 18))
-                    .foregroundStyle(VitisTheme.accent)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Email")
-                        .font(VitisTheme.uiFont(size: 16))
-                        .foregroundStyle(.primary)
-                    Text(authStore.userSnapshot?.email ?? "Not added")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.85))
-                        .lineLimit(1)
+        .onChange(of: showPrivacySettings) { _, isShown in
+            if !isShown, let uid = userId {
+                Task {
+                    privacySettings = (try? await ProfileService.fetchPrivacySettings(userId: uid)) ?? .default
                 }
-                Spacer()
-                Text("Change email")
-                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
-    private var phoneNumberRow: some View {
-        Button {
-            showChangePhoneSheet = true
-        } label: {
-            HStack(spacing: 16) {
-                Image(systemName: "phone")
-                    .font(.system(size: 18))
-                    .foregroundStyle(VitisTheme.accent)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Phone number")
-                        .font(VitisTheme.uiFont(size: 16))
-                        .foregroundStyle(.primary)
-                    Text(authStore.userSnapshot?.phone ?? "Not set")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.85))
-                        .lineLimit(1)
-                }
-                Spacer()
-                Text("Change phone number")
-                    .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+    private var privacySubtitle: String {
+        "Cellar: \(privacySettings.cellarVisibility.displayName), Wishlist: \(privacySettings.wishlistVisibility.displayName), Activity: \(privacySettings.activityVisibility.displayName)"
     }
 
-    private func settingsButton(title: String, detail: String? = nil, icon: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+    private var notificationsSubtitle: String {
+        notificationsStatusText
+    }
+
+    private var appearanceSubtitle: String {
+        AppearanceStorage.currentDisplayName
+    }
+
+    private func settingsRow(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        trailingAction: String? = nil,
+        isDestructive: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundStyle(isDestructive ? .red : VitisTheme.accent)
+                    .foregroundStyle(isDestructive ? VitisTheme.dangerMuted(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                     .frame(width: 24)
-
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(VitisTheme.uiFont(size: 16))
-                        .foregroundStyle(isDestructive ? .red : .primary)
-                    if let detail {
-                        Text(detail)
+                        .foregroundStyle(isDestructive ? VitisTheme.dangerMuted(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : Color.primary))
+                    if let subtitle {
+                        Text(subtitle)
                             .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
                             .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
-                
                 Spacer()
-                
+                if let actionText = trailingAction, !isDestructive {
+                    Text(actionText)
+                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                }
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
