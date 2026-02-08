@@ -228,4 +228,68 @@ enum ProfileService {
         }
         return counts.max(by: { $0.value < $1.value })?.key
     }
+
+    // MARK: - Privacy
+
+    /// Fetch privacy visibility settings for a user.
+    static func fetchPrivacySettings(userId: UUID) async throws -> PrivacySettings {
+        struct Row: Decodable {
+            let cellar_visibility: String?
+            let wishlist_visibility: String?
+            let activity_visibility: String?
+        }
+        let rows: [Row] = try await supabase
+            .from("profiles")
+            .select("cellar_visibility, wishlist_visibility, activity_visibility")
+            .eq("id", value: userId)
+            .limit(1)
+            .execute()
+            .value
+        guard let r = rows.first else { return .default }
+        return PrivacySettings(
+            cellarVisibility: PrivacyVisibility(rawValue: r.cellar_visibility ?? "everyone") ?? .everyone,
+            wishlistVisibility: PrivacyVisibility(rawValue: r.wishlist_visibility ?? "everyone") ?? .everyone,
+            activityVisibility: PrivacyVisibility(rawValue: r.activity_visibility ?? "everyone") ?? .everyone
+        )
+    }
+
+    /// Update privacy visibility. Owner-only via RLS.
+    static func updatePrivacySettings(
+        userId: UUID,
+        cellarVisibility: PrivacyVisibility? = nil,
+        wishlistVisibility: PrivacyVisibility? = nil,
+        activityVisibility: PrivacyVisibility? = nil
+    ) async throws {
+        var payload: [String: String] = [:]
+        if let v = cellarVisibility { payload["cellar_visibility"] = v.rawValue }
+        if let v = wishlistVisibility { payload["wishlist_visibility"] = v.rawValue }
+        if let v = activityVisibility { payload["activity_visibility"] = v.rawValue }
+        guard !payload.isEmpty else { return }
+        try await supabase
+            .from("profiles")
+            .update(payload)
+            .eq("id", value: userId)
+            .execute()
+    }
+
+    /// True if viewer and owner follow each other.
+    static func isMutualFriend(viewerId: UUID, ownerId: UUID) async -> Bool {
+        guard viewerId != ownerId else { return true }
+        do {
+            let params: [String: String] = [
+                "p_viewer_id": viewerId.uuidString,
+                "p_owner_id": ownerId.uuidString
+            ]
+            let result: Bool = try await supabase
+                .rpc("is_mutual_friend", params: params)
+                .execute()
+                .value
+            return result
+        } catch {
+            #if DEBUG
+            print("[ProfileService] isMutualFriend failed: \(error)")
+            #endif
+            return false
+        }
+    }
 }

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CodeEntryView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let phoneDisplay: String
 
     @State private var code: String = ""
@@ -27,7 +28,7 @@ struct CodeEntryView: View {
                         Text("Back")
                     }
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -38,7 +39,7 @@ struct CodeEntryView: View {
                     .foregroundStyle(.primary)
                 Text("We sent a 6-digit code to \(phoneDisplay)")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 16)
@@ -61,7 +62,7 @@ struct CodeEntryView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(canSubmit ? VitisTheme.accent : Color(white: 0.9))
+                        .background(canSubmit ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textDisabled(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .disabled(!canSubmit || isVerifying || AuthStore.shared.isProcessing)
@@ -77,16 +78,22 @@ struct CodeEntryView: View {
                     }
                 }
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(canResend ? VitisTheme.accent : VitisTheme.secondaryText)
+                .foregroundStyle(canResend ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme))
                 .disabled(!canResend || AuthStore.shared.isProcessing)
                 .buttonStyle(.plain)
+
+                Text("If you did not request this code, contact your carrier to secure your number.")
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
             }
 
             Spacer()
         }
         .padding(.horizontal, 28)
         .padding(.top, 60)
-        .background(VitisTheme.background.ignoresSafeArea())
+        .background(VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
         .onAppear {
             AuthStore.shared.lastError = nil
             startCountdown()
@@ -104,7 +111,7 @@ struct CodeEntryView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("6-digit code")
                 .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
             TextField("••••••", text: $code)
                 .font(VitisTheme.uiFont(size: 20, weight: .semibold))
                 .keyboardType(.numberPad)
@@ -112,7 +119,7 @@ struct CodeEntryView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
-                .background(Color(white: 0.97))
+                .background(VitisTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
@@ -142,9 +149,9 @@ struct CodeEntryView: View {
     private func startCountdown() {
         resendTask?.cancel()
         canResend = false
-        remainingSeconds = 30
+        remainingSeconds = 60
         resendTask = Task<Void, Never> {
-            var seconds = 30
+            var seconds = 60
             while seconds > 0 {
                 try? await Task.sleep(for: .seconds(1))
                 if Task.isCancelled { return }

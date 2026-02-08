@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ChangeEmailView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     @State private var authStore = AuthStore.shared
 
@@ -18,14 +19,14 @@ struct ChangeEmailView: View {
     @State private var canResend = false
     @State private var timerRemaining = 30
     @State private var resendTask: Task<Void, Never>?
-    private let subduedAccent = VitisTheme.accent.opacity(0.7)
+    private var subduedAccent: Color { VitisTheme.accent(for: colorScheme).opacity(0.7) }
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
 
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Change email")
@@ -33,7 +34,7 @@ struct ChangeEmailView: View {
                             .foregroundStyle(.primary)
                         Text("We will send you a link to confirm your new email.")
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
 
                     if didSendLink {
@@ -82,7 +83,7 @@ struct ChangeEmailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Email address")
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 TextField("you@example.com", text: $email)
                     .font(VitisTheme.uiFont(size: 16))
                     .foregroundStyle(.primary)
@@ -94,7 +95,7 @@ struct ChangeEmailView: View {
                     .accentColor(subduedAccent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(Color(white: 0.97))
+                    .background(VitisTheme.placeholderBackground(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
@@ -118,7 +119,7 @@ struct ChangeEmailView: View {
                     .foregroundStyle(subduedAccent)
                 Text("Open the link to confirm and finish updating your email.")
                     .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
 
             if let err = errorMessage {
@@ -137,7 +138,7 @@ struct ChangeEmailView: View {
                 }
             }
             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-            .foregroundStyle(canResend ? subduedAccent : VitisTheme.secondaryText)
+            .foregroundStyle(canResend ? subduedAccent : VitisTheme.secondaryText(for: colorScheme))
             .disabled(!canResend || isLoading)
             .buttonStyle(.plain)
 
@@ -145,7 +146,7 @@ struct ChangeEmailView: View {
                 resetToInput()
             }
             .font(VitisTheme.uiFont(size: 14))
-            .foregroundStyle(VitisTheme.secondaryText)
+            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             .buttonStyle(.plain)
         }
     }

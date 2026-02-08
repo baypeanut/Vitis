@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PhoneEntryView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var phoneInput = PhoneNumberInputModel()
     @State private var showEmailSheet = false
 
@@ -22,7 +23,7 @@ struct PhoneEntryView: View {
                     .foregroundStyle(.primary)
                 Text("Log wines. Discover friends. Build your palate.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 24)
@@ -39,7 +40,7 @@ struct PhoneEntryView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("No account found. Create an account with your phone number.")
                             .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                 } else if let err = localError ?? AuthStore.shared.lastError {
                     Text(err)
@@ -57,12 +58,18 @@ struct PhoneEntryView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(VitisTheme.accent)
+                            .background(VitisTheme.accent(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(AuthStore.shared.isProcessing)
                     .buttonStyle(.plain)
                 } else {
+                if isCountryUnsupported {
+                    Text("SMS verification may not be available in this region. Try a supported country.")
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 VStack(spacing: 12) {
                     Button {
                         Task { await sendCode(intent: .loginExisting) }
@@ -72,7 +79,7 @@ struct PhoneEntryView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(canSubmit ? VitisTheme.accent : Color(white: 0.9))
+                            .background(canSubmit ? VitisTheme.accent(for: colorScheme) : VitisTheme.textDisabled(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(!canSubmit || AuthStore.shared.isProcessing)
@@ -83,13 +90,13 @@ struct PhoneEntryView: View {
                     } label: {
                         Text("Log in with email instead")
                             .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                     .buttonStyle(.plain)
 
                     Text("No password. We will email you a sign in link.")
                         .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                 }
                 }
@@ -98,7 +105,7 @@ struct PhoneEntryView: View {
         }
         .padding(.horizontal, 28)
         .padding(.top, 60)
-        .background(VitisTheme.background.ignoresSafeArea())
+        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
         .onAppear {
             AuthStore.shared.lastError = nil
         }
@@ -108,7 +115,13 @@ struct PhoneEntryView: View {
     }
 
     private var canSubmit: Bool {
-        !(phoneInput.nationalNumber.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty)
+        let hasNumber = !(phoneInput.nationalNumber.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty)
+        let supported = CountriesStore.isSmsSupported(isoCode: phoneInput.selectedCountry.isoCode)
+        return hasNumber && supported
+    }
+
+    private var isCountryUnsupported: Bool {
+        !CountriesStore.isSmsSupported(isoCode: phoneInput.selectedCountry.isoCode)
     }
 
     private func sendCode(intent: AuthService.AuthIntent) async {

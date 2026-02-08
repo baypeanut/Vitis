@@ -13,6 +13,7 @@ enum TastingFlowStep {
 }
 
 struct AddWineSheet: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     var initialWine: Wine? = nil
     var wineIdToRemoveFromWishlist: UUID? = nil
@@ -254,18 +255,18 @@ struct AddWineSheet: View {
                 thumbnail(wine.labelImageURL)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(wine.producer)
-                        .font(VitisTheme.producerSerifFont())
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                     Text(wine.name)
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: wine))
+                        .font(VitisTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: wine))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let state {
                     Text(state)
                         .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
             }
             .padding(.horizontal, 24)
@@ -305,11 +306,11 @@ struct AddWineSheet: View {
                 thumbnail(p.imageUrl)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(p.brands ?? "Unknown")
-                        .font(VitisTheme.producerSerifFont())
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                     Text(p.productName ?? "Unknown")
-                        .font(VitisTheme.wineNameFont())
-                        .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
+                        .font(VitisTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct PhoneStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var vm: OnboardingViewModel
 
     var body: some View {
@@ -13,7 +14,7 @@ struct PhoneStepView: View {
             SerifTitleText(title: "First, what's your phone number?")
             Text("Used for account recovery and trust.")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
 
             HStack(alignment: .bottom, spacing: 12) {
                 Menu {
@@ -32,7 +33,7 @@ struct PhoneStepView: View {
                     .foregroundStyle(.primary)
                     .padding(.vertical, 12)
                     .overlay(alignment: .bottom) {
-                        Rectangle().fill(VitisTheme.border).frame(height: 1)
+                        Rectangle().fill(VitisTheme.divider(for: colorScheme)).frame(height: 1)
                     }
                 }
                 UnderlineTextField(

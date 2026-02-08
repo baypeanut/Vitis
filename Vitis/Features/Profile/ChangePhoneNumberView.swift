@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ChangePhoneNumberView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     @State private var authStore = AuthStore.shared
 
@@ -24,7 +25,7 @@ struct ChangePhoneNumberView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 if step == .enterPhone {
                     enterPhoneContent
                 } else {
@@ -46,7 +47,7 @@ struct ChangePhoneNumberView: View {
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -69,7 +70,7 @@ struct ChangePhoneNumberView: View {
                         .foregroundStyle(.primary)
                     Text("Enter your new phone number. We will send a verification code.")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
 
                 PhoneNumberField(
@@ -104,13 +105,13 @@ struct ChangePhoneNumberView: View {
                         .foregroundStyle(.primary)
                     Text("We sent a 6-digit code to \(authStore.pendingPhoneChangeDisplay ?? "your new number")")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("6-digit code")
                         .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     TextField("••••••", text: $code)
                         .font(VitisTheme.uiFont(size: 20, weight: .semibold))
                         .keyboardType(.numberPad)
@@ -118,7 +119,7 @@ struct ChangePhoneNumberView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 16)
-                        .background(Color(white: 0.97))
+                        .background(VitisTheme.placeholderBackground(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
@@ -142,7 +143,7 @@ struct ChangePhoneNumberView: View {
                     }
                 }
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(canResend ? VitisTheme.accent : VitisTheme.secondaryText)
+                .foregroundStyle(canResend ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 .disabled(!canResend || authStore.isProcessing)
                 .buttonStyle(.plain)
             }

@@ -28,6 +28,9 @@ enum WineColorResolver {
     /// Fallback when type unknown: muted burgundy, readable on white, never black.
     static let colorFallback = Color(red: 0x5C / 255, green: 0x2A / 255, blue: 0x2A / 255)   // #5C2A2A
 
+    // Dark mode: wine names use desaturated gold #B89B5C (one color, no variation)
+    static let colorWineNameDark = Color(red: 0xB8 / 255, green: 0x9B / 255, blue: 0x5C / 255)
+
     // MARK: - Synonym mappings (lowercased, normalized)
 
     private static let sparklingSynonyms = ["sparkling", "prosecco", "champagne", "cava", "spumante", "cremant", "crémant", "brut", "sec", "extra dry"]
@@ -38,21 +41,23 @@ enum WineColorResolver {
 
     // MARK: - Resolve
 
-    /// Returns display color for wine name/title. Never returns .primary/black.
+    /// Returns display color for wine name/title. Pass colorScheme for dark-mode muted palette.
     static func resolveWineDisplayColor(
         category: String?,
         wineName: String?,
         variety: String? = nil,
-        debugPostId: UUID? = nil
+        debugPostId: UUID? = nil,
+        colorScheme: ColorScheme? = nil
     ) -> Color {
-        if let type = normalizeWineType(category) {
-            return color(for: type)
+        let isDark = colorScheme == .dark
+        if isDark {
+            return colorWineNameDark
         }
-        if let type = inferFromName(wineName ?? "") {
-            return color(for: type)
-        }
-        if let type = inferFromName(variety ?? "") {
-            return color(for: type)
+        let type: NormalizedWineType? = normalizeWineType(category)
+            ?? inferFromName(wineName ?? "")
+            ?? inferFromName(variety ?? "")
+        if let t = type {
+            return color(for: t)
         }
         #if DEBUG
         print("[WineColorResolver] fallback - postId: \(debugPostId?.uuidString ?? "nil") wineName: \(wineName ?? "nil") category: \(category ?? "nil") variety: \(variety ?? "nil") branch: none_matched")
@@ -61,18 +66,18 @@ enum WineColorResolver {
     }
 
     /// Convenience for Wine model.
-    static func resolveWineDisplayColor(wine: Wine) -> Color {
-        resolveWineDisplayColor(category: wine.category, wineName: wine.name, variety: wine.variety)
+    static func resolveWineDisplayColor(wine: Wine, colorScheme: ColorScheme? = nil) -> Color {
+        resolveWineDisplayColor(category: wine.category, wineName: wine.name, variety: wine.variety, colorScheme: colorScheme)
     }
 
     /// Convenience for FeedItem (no variety in payload).
-    static func resolveWineDisplayColor(category: String?, wineName: String?, postId: UUID? = nil) -> Color {
-        resolveWineDisplayColor(category: category, wineName: wineName, variety: nil, debugPostId: postId)
+    static func resolveWineDisplayColor(category: String?, wineName: String?, postId: UUID? = nil, colorScheme: ColorScheme? = nil) -> Color {
+        resolveWineDisplayColor(category: category, wineName: wineName, variety: nil, debugPostId: postId, colorScheme: colorScheme)
     }
 
     /// Convenience when only wine name is available (e.g. OFF search result).
-    static func resolveWineDisplayColor(wineName: String?) -> Color {
-        resolveWineDisplayColor(category: nil, wineName: wineName, variety: nil)
+    static func resolveWineDisplayColor(wineName: String?, colorScheme: ColorScheme? = nil) -> Color {
+        resolveWineDisplayColor(category: nil, wineName: wineName, variety: nil, colorScheme: colorScheme)
     }
 
     /// Normalize raw API type string to enum. Handles casing, whitespace, diacritics.

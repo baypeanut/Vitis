@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ForgotPasswordView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     @State private var email = ""
     @State private var errorMessage: String?
@@ -19,17 +20,17 @@ struct ForgotPasswordView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     SerifTitleText(title: "Reset password")
                     Text("Enter your email and we'll send you a reset link.")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
 
                     if didSucceed {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(VitisTheme.accent)
+                                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
                             Text("Check your email")
                                 .font(VitisTheme.uiFont(size: 15))
                                 .foregroundStyle(.primary)
@@ -62,7 +63,7 @@ struct ForgotPasswordView: View {
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 24)
@@ -81,7 +82,7 @@ struct ForgotPasswordView: View {
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
                 }
             }
         }

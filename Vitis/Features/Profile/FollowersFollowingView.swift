@@ -9,6 +9,7 @@ import SwiftUI
 import os
 
 struct FollowersFollowingView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let userId: UUID
     var currentUserId: UUID?
     var initialTab: Tab = .followers
@@ -31,7 +32,7 @@ struct FollowersFollowingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(spacing: 0) {
                     if let err = errorMessage {
                         Text(err)
@@ -59,7 +60,7 @@ struct FollowersFollowingView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent)
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
             .fullScreenCover(item: Binding(
@@ -87,7 +88,7 @@ struct FollowersFollowingView: View {
                 } label: {
                     Text(t.rawValue)
                         .font(VitisTheme.uiFont(size: 15, weight: tab == t ? .semibold : .regular))
-                        .foregroundStyle(tab == t ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .foregroundStyle(tab == t ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
@@ -115,7 +116,7 @@ struct FollowersFollowingView: View {
         } else if users.isEmpty {
             Text(emptyMessage)
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
         } else {
@@ -188,6 +189,7 @@ private struct IdentifiableUUID: Identifiable {
 
 @MainActor
 private struct FollowListRowView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let user: SocialService.FollowListUser
     var currentUserId: UUID?
     var onFollowChanged: () -> Void
@@ -213,7 +215,7 @@ private struct FollowListRowView: View {
                     .foregroundStyle(.primary)
                 Text("@\(user.username)")
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if currentUserId != user.id {
@@ -221,7 +223,7 @@ private struct FollowListRowView: View {
             } else {
                 Text("You")
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
         .padding(.horizontal, 24)
@@ -249,11 +251,11 @@ private struct FollowListRowView: View {
 
     private var avatarPlaceholder: some View {
         Circle()
-            .fill(Color(white: 0.94))
+            .fill(VitisTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String((user.fullName ?? user.username).prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 18, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -263,10 +265,10 @@ private struct FollowListRowView: View {
         } label: {
             Text(isFollowing ? "Following" : "Follow")
                 .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                .foregroundStyle(isFollowing ? VitisTheme.secondaryText : .white)
+                .foregroundStyle(isFollowing ? VitisTheme.secondaryText(for: colorScheme) : .white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isFollowing ? Color(white: 0.94) : VitisTheme.accent)
+                .background(isFollowing ? VitisTheme.placeholderBackground(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
@@ -297,6 +299,7 @@ private struct FollowListRowView: View {
 // MARK: - FollowersFollowingViewContent (for navigation push, no NavigationStack wrapper)
 
 struct FollowersFollowingViewContent: View {
+    @Environment(\.colorScheme) private var colorScheme
     let userId: UUID
     var currentUserId: UUID?
     var initialTab: FollowersFollowingView.Tab = .followers
@@ -315,7 +318,7 @@ struct FollowersFollowingViewContent: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(spacing: 0) {
                 if let err = errorMessage {
                     Text(err)
@@ -363,7 +366,7 @@ struct FollowersFollowingViewContent: View {
                 } label: {
                     Text(t.rawValue)
                         .font(VitisTheme.uiFont(size: 15, weight: tab == t ? .semibold : .regular))
-                        .foregroundStyle(tab == t ? VitisTheme.accent : VitisTheme.secondaryText)
+                        .foregroundStyle(tab == t ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
@@ -391,7 +394,7 @@ struct FollowersFollowingViewContent: View {
         } else if users.isEmpty {
             Text(emptyMessage)
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
         } else {

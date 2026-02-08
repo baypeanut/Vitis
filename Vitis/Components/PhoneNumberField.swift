@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PhoneNumberField: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedCountry: Country
     @Binding var nationalNumber: String
 
@@ -22,7 +23,7 @@ struct PhoneNumberField: View {
             if let label {
                 Text(label)
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
 
             Button {
@@ -38,11 +39,11 @@ struct PhoneNumberField: View {
                     Spacer()
                     Image(systemName: "chevron.down")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(white: 0.97))
+                .background(VitisTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
@@ -56,13 +57,13 @@ struct PhoneNumberField: View {
                 .font(VitisTheme.uiFont(size: 16))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color(white: 0.97))
+                .background(VitisTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             if let helperText {
                 Text(helperText)
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
     }
@@ -78,6 +79,7 @@ struct PhoneNumberField: View {
 }
 
 private struct CountryPickerView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var selectedCountry: Country
     @Environment(\.dismiss) private var dismiss
 
@@ -133,11 +135,11 @@ private struct CountryPickerView: View {
                         .foregroundStyle(.primary)
                     Text(country.isoCode)
                         .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 }
                 Spacer()
                 Text(country.displayCallingCode)
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
         .buttonStyle(.plain)

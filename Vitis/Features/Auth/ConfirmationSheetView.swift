@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct ConfirmationSheetView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let event: AuthResultEvent
     let onDone: () -> Void
 
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 20) {
                     switch event {
                     case .emailLinked:
@@ -23,21 +24,21 @@ struct ConfirmationSheetView: View {
                             .foregroundStyle(.primary)
                         Text("Your email is now linked to your account.")
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                     case .phoneChanged:
                         Text("Phone number updated")
                             .font(VitisTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text("You can now sign in with your new number.")
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                     case .error(let title, let message):
                         Text(title)
                             .font(VitisTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text(message)
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                     }
                     Spacer()
                 }

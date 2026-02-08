@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CommentSheetView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let activityID: UUID
     var postOwnerId: UUID?
     var currentUserId: UUID?
@@ -24,7 +25,7 @@ struct CommentSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                VitisTheme.background(for: colorScheme).ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     if let err = errorMessage {
@@ -38,12 +39,12 @@ struct CommentSheetView: View {
                     if isLoading {
                         ProgressView()
                             .progressViewStyle(.circular)
-                            .tint(VitisTheme.accent)
+                            .tint(VitisTheme.accent(for: colorScheme))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if comments.isEmpty {
                         Text("No comments yet.")
                             .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding(.top, 48)
                     } else {
@@ -53,7 +54,7 @@ struct CommentSheetView: View {
                                     commentRow(c, index: idx)
                                     if idx < comments.count - 1 {
                                         Rectangle()
-                                            .fill(VitisTheme.border)
+                                            .fill(VitisTheme.border(for: colorScheme))
                                             .frame(height: 1)
                                             .padding(.leading, 24)
                                     }
@@ -65,7 +66,7 @@ struct CommentSheetView: View {
                     }
 
                     Divider()
-                        .background(VitisTheme.border)
+                        .background(VitisTheme.border(for: colorScheme))
 
                     HStack(spacing: 12) {
                         TextField("Add a comment…", text: $inputText)
@@ -73,7 +74,7 @@ struct CommentSheetView: View {
                             .textFieldStyle(.plain)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(Color(white: 0.97))
+                            .background(VitisTheme.secondaryElevated(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
 
                         Button {
@@ -84,7 +85,7 @@ struct CommentSheetView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 12)
-                                .background(canPost ? VitisTheme.accent : Color(white: 0.9))
+                                .background(canPost ? VitisTheme.accent(for: colorScheme) : Color(white: 0.9))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         .disabled(!canPost || isPosting)
@@ -101,7 +102,7 @@ struct CommentSheetView: View {
                         isPresented = false
                     }
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -131,14 +132,14 @@ struct CommentSheetView: View {
             commentAvatar(avatarURL(for: c), displayName: displayName(for: c))
             VStack(alignment: .leading, spacing: 6) {
                 Text(displayName(for: c))
-                    .font(VitisTheme.wineNameFont())
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(VitisTheme.uiFont(size: 15, weight: .semibold))
+                    .foregroundStyle(colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                 Text(VitisTheme.shortAbsoluteTimestamp(c.createdAt))
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(colorScheme == .dark ? VitisTheme.tertiaryText(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 Text(c.body)
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -180,7 +181,7 @@ struct CommentSheetView: View {
             .overlay(
                 Text(String(name.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
 

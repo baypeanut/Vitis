@@ -1,15 +1,14 @@
 //
-//  FeedFollowingParams.swift
+//  FeedGlobalParams.swift
 //  Vitis
 //
-//  RPC params for feed_following. Explicit Sendable + nonisolated encode
-//  so encoding works from non–MainActor contexts (Supabase default isolation).
+//  RPC params for feed_global. viewer_id can be nil for anonymous (shows only everyone-visible activity).
 //
 
 import Foundation
 
-struct FeedFollowingParams: Encodable, Sendable {
-    let pViewerId: UUID
+struct FeedGlobalParams: Encodable, Sendable {
+    let pViewerId: UUID?
     let pLimit: Int
     let pOffset: Int
 
@@ -21,7 +20,7 @@ struct FeedFollowingParams: Encodable, Sendable {
 
     nonisolated func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(pViewerId, forKey: .pViewerId)
+        try c.encodeIfPresent(pViewerId, forKey: .pViewerId)
         try c.encode(pLimit, forKey: .pLimit)
         try c.encode(pOffset, forKey: .pOffset)
     }

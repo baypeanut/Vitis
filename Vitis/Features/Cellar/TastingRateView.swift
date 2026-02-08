@@ -9,6 +9,7 @@ import SwiftUI
 import UIKit
 
 struct TastingRateView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let wine: Wine
     @Binding var rating: Double
     @Binding var selectedNotes: Set<String>
@@ -18,6 +19,10 @@ struct TastingRateView: View {
 
     private var wineTypeColor: Color {
         WineColorResolver.resolveWineDisplayColor(wine: wine)
+    }
+
+    private var ratingAccentColor: Color {
+        colorScheme == .dark ? VitisTheme.ratingColor(for: colorScheme) : wineTypeColor
     }
 
     private var availableNotes: [String] {
@@ -45,20 +50,20 @@ struct TastingRateView: View {
     private var wineInfo: some View {
         VStack(spacing: 8) {
             Text(wine.producer)
-                .font(VitisTheme.producerSerifFont())
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
+                .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
             Text(wine.name)
-                .font(VitisTheme.wineNameFont())
-                .foregroundStyle(WineColorResolver.resolveWineDisplayColor(wine: wine))
+                .font(VitisTheme.wineNameFont(for: colorScheme))
+                .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: wine))
             if let v = wine.vintage {
                 Text(String(v))
                     .font(VitisTheme.detailFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
             if let r = wine.region {
                 Text(r)
                     .font(VitisTheme.detailFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
         .multilineTextAlignment(.center)
@@ -69,26 +74,26 @@ struct TastingRateView: View {
             HStack {
                 Text("1.0")
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 Spacer()
                 Text("10.0")
                     .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(VitisTheme.border)
+                        .fill(VitisTheme.border(for: colorScheme))
                         .frame(height: 4)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
                     Rectangle()
-                        .fill(wineTypeColor)
+                        .fill(ratingAccentColor)
                         .frame(width: (CGFloat(rating - 1.0) / 9.0) * geo.size.width, height: 4)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
                     let position = max(0, min(geo.size.width - 20, (CGFloat(rating - 1.0) / 9.0) * geo.size.width))
                     Image(systemName: "wineglass.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(wineTypeColor)
+                        .foregroundStyle(ratingAccentColor)
                         .offset(x: position)
                         .gesture(
                             DragGesture(minimumDistance: 0)
@@ -110,8 +115,8 @@ struct TastingRateView: View {
 
     private var ratingValue: some View {
         Text(String(format: "%.1f", rating))
-            .font(VitisTheme.titleFont())
-            .foregroundStyle(wineTypeColor)
+            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.titleFont())
+            .foregroundStyle(ratingAccentColor)
     }
 
     private var notesSection: some View {
@@ -119,10 +124,10 @@ struct TastingRateView: View {
             HStack(spacing: 4) {
                 Text("Notes")
                     .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                 Text("(optional)")
                     .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 12) {
                 ForEach(availableNotes, id: \.self) { note in
@@ -139,13 +144,13 @@ struct TastingRateView: View {
                 if comment.isEmpty {
                     Text("What did you think? (optional)")
                         .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText.opacity(0.5))
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(0.5))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 12)
                 }
                 TextEditor(text: $comment)
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
                     .frame(minHeight: 100, maxHeight: 150)
                     .scrollContentBackground(.hidden)
                     .padding(4)
@@ -165,7 +170,7 @@ struct TastingRateView: View {
                 Spacer()
                 Text("\(comment.count)/500")
                     .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

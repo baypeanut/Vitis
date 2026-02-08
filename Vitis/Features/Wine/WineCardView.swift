@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WineCardView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let wine: Wine
     let activityId: UUID?
     let currentUserId: UUID?
@@ -61,17 +62,17 @@ struct WineCardView: View {
     }
     
     private var wineColor: Color {
-        WineColorResolver.resolveWineDisplayColor(wine: wine)
+        WineColorResolver.resolveWineDisplayColor(wine: wine, colorScheme: colorScheme)
     }
     
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            VitisTheme.background(for: colorScheme).ignoresSafeArea()
             
             if isLoading {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent)
+                    .tint(VitisTheme.accent(for: colorScheme))
             } else {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -171,11 +172,11 @@ struct WineCardView: View {
             VStack(spacing: 8) {
                 Text(wine.producer)
                     .font(VitisTheme.producerSerifFont())
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
                 
                 Text(wine.name)
-                    .font(VitisTheme.wineNameFont())
+                    .font(VitisTheme.wineNameFont(for: colorScheme))
                     .foregroundStyle(wineColor)
                     .multilineTextAlignment(.center)
                 
@@ -183,17 +184,17 @@ struct WineCardView: View {
                     if let vintage = wine.vintage {
                         Text(String(vintage))
                             .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                     if let region = wine.region {
                         Text(region)
                             .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                     if let variety = wine.variety {
                         Text(variety)
                             .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                     }
                 }
                 // Only show wishlist toggle if user hasn't tasted this wine
@@ -216,7 +217,7 @@ struct WineCardView: View {
                 Text(myWishlistWineIds.contains(wine.id) ? "Saved" : "Want to try")
                     .font(VitisTheme.uiFont(size: 14))
             }
-            .foregroundStyle(myWishlistWineIds.contains(wine.id) ? VitisTheme.accent : VitisTheme.secondaryText)
+            .foregroundStyle(myWishlistWineIds.contains(wine.id) ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
         }
         .buttonStyle(.plain)
         .padding(.top, 12)
@@ -273,7 +274,7 @@ struct WineCardView: View {
                                 Text("Edit")
                                     .font(VitisTheme.uiFont(size: 14))
                             }
-                            .foregroundStyle(VitisTheme.accent)
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
                         }
                         .buttonStyle(.plain)
                     } else {
@@ -314,16 +315,16 @@ struct WineCardView: View {
         VStack(spacing: 8) {
             Text(label)
                 .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             
             if let rating = rating {
                 Text(String(format: "%.1f", rating))
-                    .font(VitisTheme.uiFont(size: 28, weight: .semibold))
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 28, weight: .semibold))
+                    .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
             } else {
-                Text("—")
+                Text("-")
                     .font(VitisTheme.uiFont(size: 28, weight: .semibold))
-                    .foregroundStyle(VitisTheme.border)
+                    .foregroundStyle(VitisTheme.border(for: colorScheme))
             }
         }
         .frame(maxWidth: .infinity)
@@ -341,7 +342,7 @@ struct WineCardView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Notes")
                             .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         
                         FlowLayout(spacing: 8) {
                             ForEach(notes, id: \.self) { note in
@@ -356,7 +357,7 @@ struct WineCardView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Your thoughts")
                             .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         
                         Text(comment)
                             .font(VitisTheme.uiFont(size: 15).italic())
@@ -404,7 +405,7 @@ struct WineCardView: View {
                         commentRow(comment)
                         if idx < activityComments.count - 1 {
                             Rectangle()
-                                .fill(VitisTheme.border)
+                                .fill(VitisTheme.border(for: colorScheme))
                                 .frame(height: 1)
                                 .padding(.leading, 24)
                         }
@@ -422,10 +423,10 @@ struct WineCardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(comment.username)
                     .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 Text(VitisTheme.shortAbsoluteTimestamp(comment.createdAt))
                     .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.tertiaryText)
+                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
                 Text(comment.body)
                     .font(VitisTheme.uiFont(size: 14))
                     .foregroundStyle(.primary)
@@ -462,7 +463,7 @@ struct WineCardView: View {
             .overlay(
                 Text(String(name.prefix(1)).uppercased())
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
     }
     
@@ -483,7 +484,7 @@ struct WineCardView: View {
                         tastingRow(tasting)
                         if idx < friendsTastings.count - 1 {
                             Rectangle()
-                                .fill(VitisTheme.border)
+                                .fill(VitisTheme.border(for: colorScheme))
                                 .frame(height: 1)
                                 .padding(.leading, 24)
                         }
@@ -511,7 +512,7 @@ struct WineCardView: View {
                         tastingRow(tasting)
                         if idx < otherTastings.count - 1 {
                             Rectangle()
-                                .fill(VitisTheme.border)
+                                .fill(VitisTheme.border(for: colorScheme))
                                 .frame(height: 1)
                                 .padding(.leading, 24)
                         }
@@ -529,31 +530,31 @@ struct WineCardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .center, spacing: 8) {
                     Text(tasting.displayName)
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent)
+                        .font(VitisTheme.uiFont(size: 14, weight: colorScheme == .dark ? .semibold : .medium))
+                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : VitisTheme.accent(for: colorScheme))
                     Spacer(minLength: 0)
                     Text(String(format: "%.1f", tasting.rating))
-                        .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                        .foregroundStyle(VitisTheme.accent)
+                        .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 18, weight: .semibold))
+                        .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
                 }
                 
                 if let notes = tasting.notesDisplay {
                     Text(notes)
                         .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .lineLimit(2)
                 }
                 
                 if let comment = tasting.comment, !comment.isEmpty {
                     Text(comment)
                         .font(VitisTheme.uiFont(size: 13).italic())
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .lineLimit(3)
                 }
                 
                 Text(VitisTheme.compactTimestamp(tasting.createdAt))
                     .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.tertiaryText)
+                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -565,7 +566,7 @@ struct WineCardView: View {
     
     private var sectionDivider: some View {
         Rectangle()
-            .fill(VitisTheme.border)
+            .fill(VitisTheme.border(for: colorScheme))
             .frame(height: 1)
     }
     

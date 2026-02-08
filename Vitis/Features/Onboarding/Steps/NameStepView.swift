@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct NameStepView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var vm: OnboardingViewModel
 
     var body: some View {
@@ -13,7 +14,7 @@ struct NameStepView: View {
             SerifTitleText(title: "What's your name?")
             Text("This is how your friends will see you!")
                 .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             UnderlineTextField(
                 placeholder: "First name",
                 text: $vm.firstName,
