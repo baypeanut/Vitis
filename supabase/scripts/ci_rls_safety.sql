@@ -28,17 +28,21 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Check 2: No USING (true) policies (except allowlisted: profiles for basic read, follows for graph)
-  -- profiles_select: allows reading non-deleted profiles (we use deleted_at check, not true)
-  -- follows: "Users can view follows" USING (true) - required for is_mutual_friend
+  -- Check 2: No USING (true) policies (except allowlisted)
+  -- Allowlist: follows - "Users can view follows" required for is_mutual_friend
+  -- dev_accounts must NEVER have plain USING(true); only deny or app_env-guarded bypass
   FOR r IN
     SELECT schemaname, tablename, policyname, qual::text
     FROM pg_policies
     WHERE schemaname = 'public'
       AND qual::text LIKE '%true%'
   LOOP
-    -- Allowlist: follows needs public read for mutual check
     IF r.tablename = 'follows' AND r.policyname LIKE '%view%' THEN
+      CONTINUE;
+    END IF;
+    IF r.tablename = 'dev_accounts' THEN
+      RAISE WARNING 'dev_accounts must not have USING(true); use deny or app_env guard only: %.%', r.tablename, r.policyname;
+      v_fail := true;
       CONTINUE;
     END IF;
     RAISE WARNING 'Policy %.% has USING(true): %', r.tablename, r.policyname, r.qual;

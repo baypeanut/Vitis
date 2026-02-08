@@ -169,6 +169,9 @@ final class AuthStore {
             await refreshCurrentUserSnapshot()
             authResultEvent = .phoneChanged(newPhone: phone)
             pendingPhoneChangeE164 = nil
+            if let uid = currentUserId {
+                Task { await AuditService.log(userId: uid, eventType: "phone_changed", metadata: [:]) }
+            }
         } catch {
             lastError = AuthService.friendlyMessage(for: error)
         }
@@ -216,6 +219,7 @@ final class AuthStore {
                     pendingEmailLink = nil
                     await refreshCurrentUserSnapshot()
                     authResultEvent = .emailLinked(email: email)
+                    Task { await AuditService.log(userId: userId, eventType: "email_linked", metadata: [:]) }
                 } catch {
                     logger.error("email sync failed: \(error.localizedDescription)")
                     lastError = AuthService.friendlyMessage(for: error)

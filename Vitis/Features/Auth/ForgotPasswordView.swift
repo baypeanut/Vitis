@@ -51,7 +51,7 @@ struct ForgotPasswordView: View {
                         if let err = errorMessage {
                             Text(err)
                                 .font(VitisTheme.uiFont(size: 13))
-                                .foregroundStyle(Color.red.opacity(0.9))
+                                .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
                         }
 
                         PrimaryButton("Send reset link", enabled: canSubmit && !isLoading) {
