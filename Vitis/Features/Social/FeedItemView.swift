@@ -91,10 +91,16 @@ struct FeedItemView: View {
     private var headerRow: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
-                avatar
-                Text("@\(item.username)")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                HStack(spacing: 8) {
+                    avatar
+                    Text("@\(item.username)")
+                        .font(VitisTheme.uiFont(size: 13))
+                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onUsernameTap?()
+                }
                 Spacer()
             }
             if let hint = trustHint, !hint.isEmpty {
@@ -119,10 +125,6 @@ struct FeedItemView: View {
         }
         .frame(width: 24, height: 24)
         .clipShape(Circle())
-        .contentShape(Circle())
-        .onTapGesture {
-            onUsernameTap?()
-        }
     }
     
     private var avatarPlaceholder: some View {
