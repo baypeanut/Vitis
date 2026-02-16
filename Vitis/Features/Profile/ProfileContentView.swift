@@ -584,16 +584,15 @@ struct ProfileContentView: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { it in
-                    Button {
-                        if tasteSubTab == .regions {
-                            onRegionTap?(it.name)
-                        } else {
-                            onGrapeTap?(it.name)
+                    tasteProfileRow(it)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if tasteSubTab == .regions {
+                                onRegionTap?(it.name)
+                            } else {
+                                onGrapeTap?(it.name)
+                            }
                         }
-                    } label: {
-                        tasteProfileRow(it)
-                    }
-                    .buttonStyle(.plain)
                     Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1)
                 }
             }

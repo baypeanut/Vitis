@@ -107,23 +107,13 @@ struct ProfileView: View {
                     }
                 )
             }
-            .sheet(item: $drillDownTarget) { target in
-                NavigationStack {
-                    TasteProfileDrillDownView(
-                        title: target.title,
-                        filterType: target.filterType,
-                        tastings: viewModel?.allTastings ?? [],
-                        currentUserId: currentUserId
-                    )
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { drillDownTarget = nil }
-                                .font(VitisTheme.uiFont(size: 15))
-                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
-                        }
-                    }
-                }
-                .presentationDetents([.medium, .large])
+            .navigationDestination(item: $drillDownTarget) { target in
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel?.allTastings ?? [],
+                    currentUserId: currentUserId
+                )
             }
             .sheet(isPresented: $showWantToTry) {
                 if let uid = viewModel?.userId {

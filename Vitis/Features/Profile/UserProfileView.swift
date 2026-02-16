@@ -110,23 +110,13 @@ struct UserProfileView: View {
                         .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
             }
-            .sheet(item: $drillDownTarget) { target in
-                NavigationStack {
-                    TasteProfileDrillDownView(
-                        title: target.title,
-                        filterType: target.filterType,
-                        tastings: viewModel.allTastings,
-                        currentUserId: currentUserId
-                    )
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { drillDownTarget = nil }
-                                .font(VitisTheme.uiFont(size: 15))
-                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
-                        }
-                    }
-                }
-                .presentationDetents([.medium, .large])
+            .navigationDestination(item: $drillDownTarget) { target in
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel.allTastings,
+                    currentUserId: currentUserId
+                )
             }
             .navigationDestination(isPresented: $showFollowersFollowing) {
                 FollowersFollowingViewContent(
@@ -304,23 +294,13 @@ struct UserProfileViewContent: View {
         }
         .navigationTitle(viewModel.profile?.displayName ?? "Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $drillDownTarget) { target in
-            NavigationStack {
-                TasteProfileDrillDownView(
-                    title: target.title,
-                    filterType: target.filterType,
-                    tastings: viewModel.allTastings,
-                    currentUserId: currentUserId
-                )
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { drillDownTarget = nil }
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
-                    }
-                }
-            }
-            .presentationDetents([.medium, .large])
+        .navigationDestination(item: $drillDownTarget) { target in
+            TasteProfileDrillDownView(
+                title: target.title,
+                filterType: target.filterType,
+                tastings: viewModel.allTastings,
+                currentUserId: currentUserId
+            )
         }
         .navigationDestination(isPresented: $showFollowersFollowing) {
             FollowersFollowingViewContent(
