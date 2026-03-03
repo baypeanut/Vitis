@@ -21,11 +21,8 @@ struct UserDiscoveryView: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if showSuggestions {
                     suggestionsSection
-                }
-                if showSearchResults {
+                } else if showSearchResults {
                     searchResultsSection
-                } else if !showSuggestions {
-                    emptyState
                 }
             }
             .padding(.top, 16)
@@ -90,11 +87,6 @@ struct UserDiscoveryView: View {
                         .padding(.vertical, 8)
                 }
             }
-
-            if contactsMatches.isEmpty && twinSuggestions.isEmpty && !isLoadingSuggestions {
-                emptyState
-                    .padding(.horizontal, 16)
-            }
         }
         .padding(.bottom, 24)
         .animation(.spring(response: 0.4, dampingFraction: 0.9), value: contactsMatches.count + twinSuggestions.count)
@@ -123,7 +115,7 @@ struct UserDiscoveryView: View {
                         .padding(.vertical, 8)
                 }
             } else if !isSearching {
-                emptyState
+                searchEmptyState
                     .padding(.horizontal, 16)
             }
         }
@@ -137,6 +129,20 @@ struct UserDiscoveryView: View {
                 .font(VitisTheme.uiFont(size: 15, weight: .medium))
                 .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
             Text("Try a different name or keep building your cellar\nand we’ll suggest people who match your taste.")
+                .font(VitisTheme.uiFont(size: 14))
+                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+
+    private var searchEmptyState: some View {
+        VStack(alignment: .center, spacing: 8) {
+            Text("No connoisseurs found with this name.")
+                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+            Text("Try a different spelling or discover people from your suggestions.")
                 .font(VitisTheme.uiFont(size: 14))
                 .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -222,17 +228,25 @@ struct UserDiscoveryView: View {
         async let twinsTask = SocialDiscoveryService.fetchTasteTwinSuggestions()
 
         let (contacts, invites) = await contactsTask
-        contactsMatches = contacts
-        inviteContacts = invites
-        twinSuggestions = await twinsTask
+        let twins = await twinsTask
+
+        await MainActor.run {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                contactsMatches = contacts
+                inviteContacts = invites
+                twinSuggestions = twins
+            }
+        }
     }
 
     private func debouncedSearch(text: String) {
         searchTask?.cancel()
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            searchResults = []
-            isSearching = false
+            withAnimation(.easeInOut(duration: 0.2)) {
+                searchResults = []
+                isSearching = false
+            }
             return
         }
         isSearching = true
@@ -241,8 +255,10 @@ struct UserDiscoveryView: View {
             guard !Task.isCancelled else { return }
             let results = await SocialDiscoveryService.searchProfiles(query: trimmed)
             await MainActor.run {
-                self.searchResults = results
-                self.isSearching = false
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    self.searchResults = results
+                    self.isSearching = false
+                }
             }
         }
     }
