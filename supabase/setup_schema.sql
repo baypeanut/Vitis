@@ -399,6 +399,8 @@ CREATE TABLE IF NOT EXISTS public.tastings (
 
 -- Add comment column (2025-02-02)
 ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS comment text NULL;
+-- Per-tasting visibility: Public / Friends Only (app sends this on create)
+ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'everyone' CHECK (visibility IN ('everyone', 'friends'));
 
 CREATE INDEX IF NOT EXISTS idx_tastings_user_created ON public.tastings (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tastings_wine ON public.tastings (wine_id);
