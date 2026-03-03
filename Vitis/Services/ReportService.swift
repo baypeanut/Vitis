@@ -51,13 +51,20 @@ enum ReportService {
         reason: ReportReason
     ) async throws {
         guard let reporterId = await AuthService.currentUserId() else { return }
-        let payload: [String: AnyJSON] = [
-            "reporter_id": .string(reporterId.uuidString),
-            "content_type": .string(contentType.rawValue),
-            "content_id": .string(contentId.uuidString),
-            "reported_user_id": .string(reportedUserId.uuidString),
-            "reason": .string(reason.rawValue)
-        ]
+        struct Insert: Encodable {
+            let reporter_id: String
+            let content_type: String
+            let content_id: String
+            let reported_user_id: String
+            let reason: String
+        }
+        let payload = Insert(
+            reporter_id: reporterId.uuidString,
+            content_type: contentType.rawValue,
+            content_id: contentId.uuidString,
+            reported_user_id: reportedUserId.uuidString,
+            reason: reason.rawValue
+        )
         try await supabase
             .from("reports")
             .insert(payload)
