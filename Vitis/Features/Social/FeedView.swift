@@ -28,18 +28,6 @@ struct FeedView: View {
     var body: some View {
         mainContent
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink {
-                        UserDiscoveryView()
-                    } label: {
-                        Image(systemName: "person.fill.badge.plus")
-                            .font(.system(size: 17, weight: .regular))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
-                            .accessibilityLabel("Discover people")
-                    }
-                }
-            }
             .task {
                 viewModel.loadFromCache()
                 viewModel.subscribeRealtime()
@@ -94,12 +82,29 @@ struct FeedView: View {
 
     private var tabBar: some View {
         HStack(spacing: 0) {
-            tabButton(.global, label: "Global")
-            tabButton(.following, label: "Following")
+            HStack(spacing: 0) {
+                tabButton(.global, label: "Global")
+                tabButton(.following, label: "Following")
+            }
+            Spacer()
+            NavigationLink {
+                UserDiscoveryView()
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(VitisTheme.surfaceElevated(for: colorScheme))
+                        .shadow(color: .black.opacity(colorScheme == .dark ? 0 : 0.06), radius: 10, x: 0, y: 4)
+                    Image(systemName: "person.fill.badge.plus")
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                }
+                .frame(width: 34, height: 34)
+                .accessibilityLabel("Discover people")
+            }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 20)
-        .padding(.bottom, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
     }
 
     private func tabButton(_ tab: FeedViewModel.Tab, label: String) -> some View {
