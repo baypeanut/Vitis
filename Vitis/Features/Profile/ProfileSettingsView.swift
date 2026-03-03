@@ -24,6 +24,7 @@ struct ProfileSettingsView: View {
     @State private var showNotificationsSettings = false
     @State private var showAppearanceSettings = false
     @State private var showDrinkResponsibly = false
+    @State private var showContactSupport = false
     @State private var authStore = AuthStore.shared
     @Environment(\.openURL) private var openURL
     @State private var notificationsStatusText = "-"
@@ -99,6 +100,11 @@ struct ProfileSettingsView: View {
             }
 
             Section {
+                settingsRow(
+                    title: "Contact Concierge",
+                    icon: "envelope.badge",
+                    action: { showContactSupport = true }
+                )
                 settingsRow(
                     title: "Privacy Policy",
                     icon: "hand.raised.fill",
@@ -187,6 +193,9 @@ struct ProfileSettingsView: View {
         }
         .sheet(isPresented: $showDrinkResponsibly) {
             DrinkResponsiblyView { showDrinkResponsibly = false }
+        }
+        .sheet(isPresented: $showContactSupport) {
+            ContactSupportView()
         }
         .sheet(isPresented: $showDeleteAccount) {
             DeleteAccountView(isPresented: $showDeleteAccount) {

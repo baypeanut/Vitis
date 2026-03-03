@@ -75,6 +75,14 @@ struct RootView: View {
         .onChange(of: authStore.state) { _, newState in
             if case .authenticated = newState {
                 Task { await ProfileStore.shared.load() }
+                if ageVerified, case .authenticated(let uid) = newState {
+                    Task { try? await ProfileService.updateAgeVerified(userId: uid) }
+                }
+            }
+        }
+        .onChange(of: ageVerified) { _, newValue in
+            if newValue, case .authenticated(let uid) = authStore.state {
+                Task { try? await ProfileService.updateAgeVerified(userId: uid) }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .vitisSwitchToCellarTab)) { _ in

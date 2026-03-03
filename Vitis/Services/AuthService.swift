@@ -306,8 +306,9 @@ enum AuthService {
             let username: String
             let full_name: String
             let email: String?
+            let is_age_verified: Bool
         }
-        let row = Row(id: userId, username: username, full_name: fullName, email: email)
+        let row = Row(id: userId, username: username, full_name: fullName, email: email, is_age_verified: true)
         try await supabase
             .from("profiles")
             .upsert(row, onConflict: "id")

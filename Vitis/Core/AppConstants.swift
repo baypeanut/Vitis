@@ -13,6 +13,8 @@ enum AppConstants {
     enum URLs {
         static let privacyPolicy = URL(string: "https://vitis.app/privacy")!
         static let termsOfService = URL(string: "https://vitis.app/terms")!
+        /// Contact / Support (App Store Guideline 1.5). Opens mail client or support page.
+        static let supportContact = URL(string: "mailto:support@vitis.app")!
     }
 
     /// When false, skip login/signup; always show main app. Set true to require auth.

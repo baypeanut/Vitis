@@ -347,6 +347,15 @@ enum ProfileService {
         await AuditService.log(userId: userId, eventType: "privacy_setting_changed", metadata: payload)
     }
 
+    /// Set is_age_verified to true for the user (App Store age gate hardening; persisted in profiles).
+    static func updateAgeVerified(userId: UUID) async throws {
+        try await supabase
+            .from("profiles")
+            .update(["is_age_verified": true])
+            .eq("id", value: userId)
+            .execute()
+    }
+
     /// True if viewer and owner follow each other.
     static func isMutualFriend(viewerId: UUID, ownerId: UUID) async -> Bool {
         guard viewerId != ownerId else { return true }
