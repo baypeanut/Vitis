@@ -28,6 +28,18 @@ struct FeedView: View {
     var body: some View {
         mainContent
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink {
+                        UserDiscoveryView()
+                    } label: {
+                        Image(systemName: "person.fill.badge.plus")
+                            .font(.system(size: 17, weight: .regular))
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .accessibilityLabel("Discover people")
+                    }
+                }
+            }
             .task {
                 viewModel.loadFromCache()
                 viewModel.subscribeRealtime()
