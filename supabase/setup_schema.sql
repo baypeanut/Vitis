@@ -42,6 +42,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cellar_visibility text NOT 
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist_visibility text NOT NULL DEFAULT 'everyone' CHECK (wishlist_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS activity_visibility text NOT NULL DEFAULT 'everyone' CHECK (activity_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_age_verified boolean NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_key ON public.profiles (lower(trim(username)));
 
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
@@ -1170,3 +1171,23 @@ $$;
 GRANT EXECUTE ON FUNCTION public.delete_current_user() TO authenticated;
 
 COMMENT ON FUNCTION public.delete_current_user() IS 'Soft delete: sets profiles.deleted_at, logs audit. Hard delete from auth.users after cooldown via scheduled job.';
+
+-- -----------------------------------------------------------------------------
+-- Support tickets (Vitis Concierge — in-app contact, no third-party SDKs)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.support_tickets (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  email text NOT NULL,
+  subject text NOT NULL,
+  message text NOT NULL,
+  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved')),
+  created_at timestamptz NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON public.support_tickets (user_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_created ON public.support_tickets (created_at DESC);
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can insert their own support tickets" ON public.support_tickets;
+CREATE POLICY "Users can insert their own support tickets" ON public.support_tickets FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can read own support tickets" ON public.support_tickets;
+CREATE POLICY "Users can read own support tickets" ON public.support_tickets FOR SELECT USING (auth.uid() = user_id);

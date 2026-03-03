@@ -342,6 +342,10 @@ struct AddWineSheet: View {
             saveError = ErrorMessage.unauthorized
             return
         }
+        if !comment.isEmpty, ContentModeration.containsObjectionableContent(comment) {
+            saveError = ContentModeration.blockedMessage
+            return
+        }
         isSaving = true
         saveError = nil
         let countBefore = await TastingService.fetchTastingsCount(userId: userId)

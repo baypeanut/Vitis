@@ -12,6 +12,8 @@ struct DrinkResponsiblyView: View {
     @Environment(\.colorScheme) private var colorScheme
     var onContinue: () -> Void
 
+    private static let helpURL = URL(string: "https://www.responsibility.org/")!
+
     var body: some View {
         ZStack {
             VitisTheme.background(for: colorScheme).ignoresSafeArea()
@@ -30,6 +32,9 @@ struct DrinkResponsiblyView: View {
                         .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
+                    Link("Get help — responsibility.org", destination: Self.helpURL)
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
                 }
                 .padding(.horizontal, 8)
                 Button {

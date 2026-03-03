@@ -237,6 +237,10 @@ struct CommentSheetView: View {
     private func post() async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        if ContentModeration.containsObjectionableContent(text) {
+            errorMessage = ContentModeration.blockedMessage
+            return
+        }
         isPosting = true
         errorMessage = nil
         do {
