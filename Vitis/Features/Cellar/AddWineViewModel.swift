@@ -9,7 +9,7 @@
 import Foundation
 
 private let minQueryLengthForAPI = 2
-private let debounceMs: UInt64 = 100
+private let debounceMs: UInt64 = 400
 private let searchCacheCap = 300
 
 @MainActor
@@ -134,10 +134,20 @@ final class AddWineViewModel {
                 currentSearchPage = page
             }
         } catch {
-            errorMessage = ErrorMessage.userFacing(for: error)
-            if results.isEmpty && isFirstPage {
-                applyCacheFilter(term: term)
-                if !results.isEmpty { errorMessage = ErrorMessage.unknown }
+            let nsError = error as NSError
+            let isTimeout = (nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut)
+                || (error as? URLError)?.code == .timedOut
+            if isTimeout {
+                // Silent timeout: fall back to cache or empty state; no technical error text.
+                if results.isEmpty && isFirstPage {
+                    applyCacheFilter(term: term)
+                }
+            } else {
+                errorMessage = ErrorMessage.userFacing(for: error)
+                if results.isEmpty && isFirstPage {
+                    applyCacheFilter(term: term)
+                    if !results.isEmpty { errorMessage = ErrorMessage.unknown }
+                }
             }
         }
         isLoading = false
