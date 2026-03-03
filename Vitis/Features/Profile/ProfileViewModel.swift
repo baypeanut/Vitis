@@ -182,7 +182,7 @@ final class ProfileViewModel {
         }
     }
 
-    /// Toggle wishlist from profile (when viewing another user's Want to Try). Optimistic update; reverts on failure.
+    /// Toggle wishlist from profile (when viewing another user's Reserve List). Optimistic update; reverts on failure.
     func toggleWishlistFromProfile(_ item: CellarItem) async {
         guard let cur = await AuthService.currentUserId(), cur != userId else { return }
         let wineId = item.wineId

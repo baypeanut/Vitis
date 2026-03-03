@@ -41,6 +41,10 @@ struct UserProfileView: View {
     @State private var showUserCellar = false
     @State private var showWantToTry = false
     @State private var alreadyTastedToast = false
+    @State private var showReportSheet = false
+    @State private var showBlockConfirm = false
+    @State private var isBlocked = false
+    @State private var blockToast: String?
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -108,6 +112,49 @@ struct UserProfileView: View {
                     Button("Done") { onDismiss() }
                         .font(VitisTheme.uiFont(size: 15))
                         .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                }
+                if !viewModel.isOwn {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Button {
+                                showReportSheet = true
+                            } label: {
+                                Label("Report user", systemImage: "flag")
+                            }
+                            Button(role: .destructive) {
+                                showBlockConfirm = true
+                            } label: {
+                                Label(isBlocked ? "Unblock user" : "Block user", systemImage: "hand.raised")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 18))
+                                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showReportSheet) {
+                ReportSheetView(
+                    contentType: .user,
+                    contentId: userId,
+                    reportedUserId: userId,
+                    isPresented: $showReportSheet
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .confirmationDialog(
+                isBlocked ? "Unblock \(viewModel.profile?.displayName ?? "user")?" : "Block \(viewModel.profile?.displayName ?? "user")?",
+                isPresented: $showBlockConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(isBlocked ? "Unblock" : "Block", role: isBlocked ? .none : .destructive) {
+                    Task { await toggleBlock() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                if !isBlocked {
+                    Text("Blocked users cannot see your profile or interact with your posts.")
                 }
             }
             .navigationDestination(item: $drillDownTarget) { target in
@@ -194,7 +241,25 @@ struct UserProfileView: View {
     private func load() async {
         await viewModel.load()
         if !viewModel.isOwn {
-            isFollowing = await SocialService.isFollowing(targetID: userId)
+            async let following = SocialService.isFollowing(targetID: userId)
+            async let blocked = BlockService.isBlocking(userId: userId)
+            isFollowing = await following
+            isBlocked = await blocked
+        }
+    }
+
+    private func toggleBlock() async {
+        do {
+            if isBlocked {
+                try await BlockService.unblockUser(blockedId: userId)
+                isBlocked = false
+            } else {
+                try await BlockService.blockUser(blockedId: userId)
+                isBlocked = true
+                onDismiss()
+            }
+        } catch {
+            blockToast = "Could not update block status."
         }
     }
 

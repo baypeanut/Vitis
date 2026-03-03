@@ -15,6 +15,14 @@ enum AvatarStorageService {
     private static let filename = "avatar.jpg"
     private static let contentType = "image/jpeg"
 
+    /// Delete avatar folder for userId. Called on account deletion (GDPR cleanup).
+    static func deleteAvatar(userId: UUID) async {
+        let path = "\(userId.uuidString)/\(filename)"
+        _ = try? await supabase.storage
+            .from(bucket)
+            .remove(paths: [path])
+    }
+
     /// Upload JPEG data to avatars/{userId}/avatar.jpg. Returns public URL or throws.
     static func uploadAvatar(userId: UUID, jpegData: Data) async throws -> String {
         let path = "\(userId.uuidString)/\(filename)"

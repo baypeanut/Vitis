@@ -52,7 +52,7 @@ struct WantToTryView: View {
                 if let sub = navigationSubtitle {
                     ToolbarItem(placement: .principal) {
                         VStack(spacing: 2) {
-                            Text("Want to Try")
+                            Text("Reserve List")
                                 .font(VitisTheme.uiFont(size: 17, weight: .semibold))
                             Text(sub)
                                 .font(VitisTheme.uiFont(size: 12))
@@ -114,7 +114,7 @@ struct WantToTryView: View {
     }
 
     private var navigationTitle: String {
-        "Want to Try"
+        "Reserve List"
     }
 
     private var navigationSubtitle: String? {

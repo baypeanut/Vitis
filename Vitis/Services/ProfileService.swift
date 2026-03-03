@@ -20,6 +20,96 @@ struct TasteProfileItem: Identifiable, Sendable {
 enum ProfileService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
 
+    /// Canonical grape names and their synonyms (lowercased for matching).
+    /// Key = synonym, value = canonical display name.
+    static let grapeSynonymMap: [String: String] = {
+        var m: [String: String] = [:]
+        let entries: [(canonical: String, synonyms: [String])] = [
+            // Reds
+            ("Syrah",            ["syrah", "shiraz"]),
+            ("Malbec",           ["malbec", "côt", "cot", "auxerrois"]),
+            ("Cabernet Sauvignon", ["cabernet sauvignon", "cab sauv", "cabernet"]),
+            ("Cabernet Franc",   ["cabernet franc", "cab franc", "bouchet"]),
+            ("Merlot",           ["merlot"]),
+            ("Pinot Noir",       ["pinot noir", "spatburgunder", "spätburgunder", "blauburgunder"]),
+            ("Nebbiolo",         ["nebbiolo", "spanna", "chiavennasca"]),
+            ("Sangiovese",       ["sangiovese", "brunello", "morellino", "prugnolo"]),
+            ("Grenache",         ["grenache", "garnacha", "cannonau", "aragones"]),
+            ("Tempranillo",      ["tempranillo", "tinto fino", "tinto del pais", "ull de llebre", "cencibel"]),
+            ("Zinfandel",        ["zinfandel", "primitivo", "zin"]),
+            ("Barbera",          ["barbera"]),
+            ("Gamay",            ["gamay"]),
+            ("Mourvèdre",        ["mourvèdre", "mourvedre", "monastrell", "mataro"]),
+            ("Carignan",         ["carignan", "carignane", "cariñena", "mazuelo"]),
+            ("Carménère",        ["carménère", "carmenere"]),
+            ("Petit Verdot",     ["petit verdot"]),
+            ("Mencia",           ["mencía", "mencia"]),
+            ("Touriga Nacional", ["touriga nacional"]),
+            ("Corvina",          ["corvina"]),
+            ("Montepulciano",    ["montepulciano"]),
+            ("Aglianico",        ["aglianico"]),
+            ("Nero d'Avola",     ["nero d'avola", "nero davola"]),
+            ("Pinotage",         ["pinotage"]),
+            ("Blaufränkisch",    ["blaufränkisch", "blaufrankisch", "kékfrankos", "lemberger"]),
+            ("Zweigelt",         ["zweigelt"]),
+            ("Tannat",           ["tannat"]),
+            ("Baga",             ["baga"]),
+            ("Xinomavro",        ["xinomavro"]),
+            ("Agiorgitiko",      ["agiorgitiko", "st george"]),
+            // Whites
+            ("Chardonnay",       ["chardonnay"]),
+            ("Sauvignon Blanc",  ["sauvignon blanc", "sauvignon", "fume blanc"]),
+            ("Riesling",         ["riesling", "welschriesling"]),
+            ("Pinot Gris",       ["pinot gris", "pinot grigio", "ruländer"]),
+            ("Pinot Blanc",      ["pinot blanc", "weissburgunder"]),
+            ("Chenin Blanc",     ["chenin blanc", "chenin", "steen", "vouvray"]),
+            ("Viognier",         ["viognier"]),
+            ("Albariño",         ["albariño", "albarino", "alvarinho"]),
+            ("Grüner Veltliner", ["grüner veltliner", "gruner veltliner", "gruner", "grüner"]),
+            ("Gewürztraminer",   ["gewürztraminer", "gewurztraminer", "gewurtz", "traminer"]),
+            ("Moscato",          ["moscato", "muscat", "moscatel"]),
+            ("Vermentino",       ["vermentino", "rolle", "pigato"]),
+            ("Verdejo",          ["verdejo"]),
+            ("Torrontés",        ["torrontés", "torrontes"]),
+            ("Marsanne",         ["marsanne"]),
+            ("Roussanne",        ["roussanne"]),
+            ("Grenache Blanc",   ["grenache blanc"]),
+            ("Clairette",        ["clairette"]),
+            ("Furmint",          ["furmint"]),
+            ("Assyrtiko",        ["assyrtiko"]),
+            ("Moschofilero",     ["moschofilero"]),
+            ("Malagousia",       ["malagousia"]),
+            ("Fiano",            ["fiano"]),
+            ("Greco",            ["greco di tufo", "greco"]),
+            ("Verdicchio",       ["verdicchio"]),
+            ("Falanghina",       ["falanghina"]),
+            ("Arinto",           ["arinto"]),
+            ("Loureiro",         ["loureiro"]),
+            ("Colombard",        ["colombard"]),
+            ("Melon de Bourgogne", ["melon de bourgogne", "muscadet"]),
+            ("Petit Manseng",    ["petit manseng"]),
+            ("Gros Manseng",     ["gros manseng"]),
+            ("Aligoté",          ["aligoté", "aligote"]),
+            ("Godello",          ["godello", "verdello"]),
+        ]
+        for (canonical, synonyms) in entries {
+            for syn in synonyms { m[syn] = canonical }
+        }
+        return m
+    }()
+
+    /// Resolve raw grape string to canonical display name. Returns nil if unrecognized.
+    static func canonicalGrape(_ raw: String) -> String? {
+        let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .folding(options: .diacriticInsensitive, locale: .current)
+        for (syn, canonical) in grapeSynonymMap {
+            let normSyn = syn.lowercased().folding(options: .diacriticInsensitive, locale: .current)
+            if lower.contains(normSyn) { return canonical }
+        }
+        return nil
+    }
+
     /// Returns true if username is available (case-insensitive). Debounce in caller (e.g. 300ms).
     static func checkUsernameAvailable(_ username: String) async -> Bool {
         let u = username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -67,20 +157,13 @@ enum ProfileService {
         var styleCounts: [String: Int] = [:]
         var styleRatings: [String: [Double]] = [:]
 
-        let knownGrapes = ["Shiraz", "Syrah", "Malbec", "Cabernet", "Merlot", "Pinot Noir", "Nebbiolo", "Sangiovese", "Chardonnay", "Sauvignon", "Riesling", "Pinot Grigio", "Prosecco", "Grenache", "Tempranillo", "Zinfandel", "Viognier", "Barbera", "Gamay"]
-        
         for r in rows {
             guard let w = r.wines else { continue }
-            
-            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
+
+            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines))
+                .flatMap { $0.isEmpty ? nil : Self.canonicalGrape($0) ?? $0 }
             if grape == nil, let name = w.name?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines), !name.isEmpty {
-                let lower = name.lowercased()
-                for g in knownGrapes {
-                    if lower.contains(g.lowercased()) {
-                        grape = g
-                        break
-                    }
-                }
+                grape = Self.canonicalGrape(name)
             }
             if let variety = grape {
                 grapeCounts[variety, default: 0] += 1
@@ -134,22 +217,13 @@ enum ProfileService {
         var styleCounts: [String: Int] = [:]
         var styleRatings: [String: [Double]] = [:]
 
-        let knownGrapes = ["Shiraz", "Syrah", "Malbec", "Cabernet", "Merlot", "Pinot Noir", "Nebbiolo", "Sangiovese", "Chardonnay", "Sauvignon", "Riesling", "Pinot Grigio", "Prosecco", "Grenache", "Tempranillo", "Zinfandel", "Viognier", "Barbera", "Gamay"]
-
         for t in tastings {
             let w = t.wine
-            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 }
+            var grape: String? = (w.variety?.trimmingCharacters(in: .whitespacesAndNewlines))
+                .flatMap { $0.isEmpty ? nil : Self.canonicalGrape($0) ?? $0 }
             if grape == nil {
                 let name = w.name.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !name.isEmpty {
-                    let lower = name.lowercased()
-                    for g in knownGrapes {
-                        if lower.contains(g.lowercased()) {
-                            grape = g
-                            break
-                        }
-                    }
-                }
+                if !name.isEmpty { grape = Self.canonicalGrape(name) }
             }
             if let variety = grape {
                 grapeCounts[variety, default: 0] += 1

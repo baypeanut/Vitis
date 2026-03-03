@@ -21,6 +21,7 @@ struct CommentSheetView: View {
     @State private var isLoading = true
     @State private var isPosting = false
     @State private var errorMessage: String?
+    @State private var reportingComment: CommentWithProfile?
 
     var body: some View {
         NavigationStack {
@@ -68,27 +69,42 @@ struct CommentSheetView: View {
                     Divider()
                         .background(VitisTheme.border(for: colorScheme))
 
-                    HStack(spacing: 12) {
-                        TextField("Add a comment…", text: $inputText)
-                            .font(VitisTheme.uiFont(size: 15))
-                            .textFieldStyle(.plain)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(VitisTheme.secondaryElevated(for: colorScheme))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                        Button {
-                            Task { await post() }
-                        } label: {
-                            Text("Post")
-                                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 20)
+                    VStack(spacing: 4) {
+                        HStack(spacing: 12) {
+                            TextField("Add a comment…", text: $inputText)
+                                .font(VitisTheme.uiFont(size: 15))
+                                .textFieldStyle(.plain)
+                                .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
-                                .background(canPost ? VitisTheme.accent(for: colorScheme) : Color(white: 0.9))
+                                .background(VitisTheme.secondaryElevated(for: colorScheme))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .onChange(of: inputText) { _, new in
+                                    if new.count > maxCommentLength {
+                                        inputText = String(new.prefix(maxCommentLength))
+                                    }
+                                }
+
+                            Button {
+                                Task { await post() }
+                            } label: {
+                                Text("Post")
+                                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(canPost ? VitisTheme.accent(for: colorScheme) : Color(white: 0.9))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .disabled(!canPost || isPosting)
                         }
-                        .disabled(!canPost || isPosting)
+                        if inputText.count > 400 {
+                            HStack {
+                                Spacer()
+                                Text("\(inputText.count)/\(maxCommentLength)")
+                                    .font(VitisTheme.uiFont(size: 12))
+                                    .foregroundStyle(inputText.count >= maxCommentLength ? .red : VitisTheme.secondaryText(for: colorScheme))
+                            }
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.vertical, 16)
@@ -110,10 +126,25 @@ struct CommentSheetView: View {
         .onChange(of: isPresented) { _, presented in
             if presented { Task { await load() } }
         }
+        .sheet(item: $reportingComment) { c in
+            ReportSheetView(
+                contentType: .comment,
+                contentId: c.id,
+                reportedUserId: c.userId,
+                isPresented: Binding(
+                    get: { reportingComment != nil },
+                    set: { if !$0 { reportingComment = nil } }
+                )
+            )
+            .presentationDetents([.medium, .large])
+        }
     }
 
+    private let maxCommentLength = 500
+
     private var canPost: Bool {
-        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && inputText.count <= maxCommentLength
     }
 
     private func displayName(for c: CommentWithProfile) -> String {
@@ -154,6 +185,13 @@ struct CommentSheetView: View {
                 } label: {
                     Label("Delete", systemImage: "trash")
                 }
+            } else {
+                Button {
+                    reportingComment = c
+                } label: {
+                    Label("Report", systemImage: "flag")
+                }
+                .tint(.orange)
             }
         }
     }

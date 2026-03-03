@@ -63,5 +63,7 @@
 	<string>$(POSTHOG_API_KEY)</string>
 	<key>PostHogHost</key>
 	<string>$(POSTHOG_HOST)</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Vitis uses your photo library to let you set a profile picture.</string>
 </dict>
 </plist>

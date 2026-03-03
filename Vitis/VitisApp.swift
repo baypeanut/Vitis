@@ -12,6 +12,11 @@ struct VitisApp: App {
     init() {
         _ = SupabaseManager.shared
         AnalyticsService.setup()
+        URLCache.shared = URLCache(
+            memoryCapacity: 30 * 1024 * 1024,   // 30 MB in-memory
+            diskCapacity: 150 * 1024 * 1024,    // 150 MB on-disk
+            diskPath: "vitis_image_cache"
+        )
     }
 
     var body: some Scene {

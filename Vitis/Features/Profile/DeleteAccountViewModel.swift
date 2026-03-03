@@ -85,6 +85,11 @@ final class DeleteAccountViewModel {
         isDeleting = true
         errorMessage = nil
 
+        // GDPR: delete avatar from storage before removing auth user
+        if let userId = await AuthService.currentUserId() {
+            await AvatarStorageService.deleteAvatar(userId: userId)
+        }
+
         let result = await AuthService.deleteAccount()
         isDeleting = false
 

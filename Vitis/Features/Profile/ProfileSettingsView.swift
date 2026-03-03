@@ -23,7 +23,9 @@ struct ProfileSettingsView: View {
     @State private var showPrivacySettings = false
     @State private var showNotificationsSettings = false
     @State private var showAppearanceSettings = false
+    @State private var showDrinkResponsibly = false
     @State private var authStore = AuthStore.shared
+    @Environment(\.openURL) private var openURL
     @State private var notificationsStatusText = "-"
     @State private var privacySettings: PrivacySettings = .default
 
@@ -98,6 +100,28 @@ struct ProfileSettingsView: View {
 
             Section {
                 settingsRow(
+                    title: "Privacy Policy",
+                    icon: "hand.raised.fill",
+                    action: { openURL(AppConstants.URLs.privacyPolicy) }
+                )
+                settingsRow(
+                    title: "Terms of Service",
+                    icon: "doc.text",
+                    action: { openURL(AppConstants.URLs.termsOfService) }
+                )
+                settingsRow(
+                    title: "Drink Responsibly",
+                    icon: "heart",
+                    action: { showDrinkResponsibly = true }
+                )
+            } header: {
+                Text("Legal")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
+
+            Section {
+                settingsRow(
                     title: "Sign Out",
                     icon: "rectangle.portrait.and.arrow.right",
                     isDestructive: true,
@@ -160,6 +184,9 @@ struct ProfileSettingsView: View {
             }
         } message: {
             Text("This will permanently delete your account and all data. This cannot be undone.")
+        }
+        .sheet(isPresented: $showDrinkResponsibly) {
+            DrinkResponsiblyView { showDrinkResponsibly = false }
         }
         .sheet(isPresented: $showDeleteAccount) {
             DeleteAccountView(isPresented: $showDeleteAccount) {

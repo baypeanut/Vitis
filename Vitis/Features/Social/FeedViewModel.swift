@@ -28,7 +28,9 @@ final class FeedViewModel {
     var isRefreshing = false
     var errorMessage: String?
     private var realtimeTask: RealtimeChannelTask?
+    private var refreshTask: Task<Void, Never>?
     private(set) var currentUserId: UUID?
+    private var mutedUserIds: Set<UUID> = MuteService.mutedUserIds()
 
     var mode: FeedMode {
         switch tab {
@@ -43,6 +45,7 @@ final class FeedViewModel {
     }
 
     func refresh() async {
+        guard !isRefreshing else { return }
         loadFromCache()
         isRefreshing = true
         errorMessage = nil
@@ -74,7 +77,10 @@ final class FeedViewModel {
                 it.hasCheered = likedIDs.contains(id)
                 fetched[i] = it
             }
-            let filtered = fetched.filter { $0.username.trimmingCharacters(in: .whitespaces).lowercased() != "guest" }
+            let filtered = fetched.filter {
+                $0.username.trimmingCharacters(in: .whitespaces).lowercased() != "guest"
+                && !mutedUserIds.contains($0.userId)
+            }
             #if DEBUG
             if filtered.count != fetched.count {
                 print("[FeedViewModel] filtered out \(fetched.count - filtered.count) Guest feed items")
@@ -226,6 +232,14 @@ final class FeedViewModel {
             items[i].username = p.displayName
             items[i].avatarURL = p.avatarURL
         }
+        FeedService.shared.saveToCache(items, mode: mode)
+    }
+
+    /// Mute user: persist to MuteService and remove their posts from local state immediately.
+    func muteUser(_ item: FeedItem) {
+        MuteService.mute(item.userId)
+        mutedUserIds.insert(item.userId)
+        items.removeAll { $0.userId == item.userId }
         FeedService.shared.saveToCache(items, mode: mode)
     }
 

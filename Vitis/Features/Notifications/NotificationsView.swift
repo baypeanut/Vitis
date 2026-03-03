@@ -20,6 +20,10 @@ struct NotificationsView: View {
     @State private var showProfileSheet = false
     @State private var currentUserId: UUID?
 
+    @AppStorage("notify_likes") private var notifyLikes = true
+    @AppStorage("notify_comments") private var notifyComments = true
+    @AppStorage("notify_follows") private var notifyFollows = true
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -182,7 +186,15 @@ struct NotificationsView: View {
         isLoading = true
         errorMessage = nil
         do {
-            items = try await NotificationService.fetchNotifications()
+            let all = try await NotificationService.fetchNotifications()
+            items = all.filter { n in
+                switch n.type {
+                case "like": return notifyLikes
+                case "comment": return notifyComments
+                case "follow": return notifyFollows
+                default: return true
+                }
+            }
             unreadCount = await NotificationService.fetchUnreadCount()
         } catch {
             Logger(subsystem: "com.ahmet.vitis", category: "Notifications").error("fetchNotifications failed: \(error.localizedDescription)")

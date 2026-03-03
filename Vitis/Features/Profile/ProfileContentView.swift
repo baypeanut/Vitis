@@ -31,7 +31,7 @@ struct ProfileContentView: View {
     var onRemoveWishlistItem: ((CellarItem) async -> Void)?
     var onMarkAsTasted: ((CellarItem) -> Void)?
 
-    enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste"; case wantToTry = "Want to Try" }
+    enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste"; case wantToTry = "Reserve List" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
 
     @State private var mainTab: MainTab = .recentActivity
