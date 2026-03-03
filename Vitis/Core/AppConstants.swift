@@ -10,6 +10,11 @@ import Foundation
 enum AppConstants {
     static let bundleID = "com.ahmet.vitis"
 
+    enum URLs {
+        static let privacyPolicy = URL(string: "https://vitis.app/privacy")!
+        static let termsOfService = URL(string: "https://vitis.app/terms")!
+    }
+
     /// When false, skip login/signup; always show main app. Set true to require auth.
     static let authRequired = false
 

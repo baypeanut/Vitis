@@ -19,7 +19,7 @@ struct WantToTryChip: View {
                 Image(systemName: "bookmark")
                     .font(.system(size: 12))
                     .foregroundStyle(VitisTheme.accent)
-                Text("Want to Try")
+                Text("Reserve List")
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
                 Text("\(count)")
@@ -36,8 +36,8 @@ struct WantToTryChip: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Want to Try")
+        .accessibilityLabel("Reserve List")
         .accessibilityValue("\(count) wines")
-        .accessibilityHint("Opens the full Want to Try list")
+        .accessibilityHint("Opens the full Reserve List")
     }
 }

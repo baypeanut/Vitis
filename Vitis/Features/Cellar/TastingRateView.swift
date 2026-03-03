@@ -14,6 +14,7 @@ struct TastingRateView: View {
     @Binding var rating: Double
     @Binding var selectedNotes: Set<String>
     @Binding var comment: String
+    @Binding var visibility: TastingVisibility
     var onCheers: () -> Void
     var isEditMode: Bool = false
 
@@ -37,6 +38,7 @@ struct TastingRateView: View {
                 ratingValue
                 notesSection
                 commentSection
+                visibilityPicker
                 cheersButton
             }
             .padding(.horizontal, 24)
@@ -110,11 +112,22 @@ struct TastingRateView: View {
                 }
             }
             .frame(height: 44)
+            .accessibilityRepresentation {
+                Slider(value: $rating, in: 1.0...10.0, step: 0.1) {
+                    Text("Wine rating")
+                } minimumValueLabel: {
+                    Text("1")
+                } maximumValueLabel: {
+                    Text("10")
+                }
+                .accessibilityValue(String(format: "%.1f out of 10", rating))
+            }
         }
     }
 
     private var ratingValue: some View {
         Text(String(format: "%.1f", rating))
+            .accessibilityLabel("Current rating: \(String(format: "%.1f", rating))")
             .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.titleFont())
             .foregroundStyle(ratingAccentColor)
     }
@@ -200,6 +213,39 @@ struct TastingRateView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(isSelected ? "\(note), selected" : note)
+        .accessibilityHint(isSelected ? "Double tap to deselect" : "Double tap to select")
+    }
+
+    private var visibilityPicker: some View {
+        HStack(spacing: 0) {
+            ForEach(TastingVisibility.allCases, id: \.self) { option in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        visibility = option
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: option.icon)
+                            .font(.system(size: 13))
+                        Text(option.displayName)
+                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                    }
+                    .foregroundStyle(visibility == option ? wineTypeColor : VitisTheme.secondaryText(for: colorScheme))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(visibility == option ? wineTypeColor.opacity(0.1) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(visibility == option ? wineTypeColor : VitisTheme.border(for: colorScheme), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Post visibility")
     }
 
     private var cheersButton: some View {

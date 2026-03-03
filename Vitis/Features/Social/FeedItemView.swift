@@ -26,12 +26,24 @@ struct FeedItemView: View {
     var trustHint: String? = nil
     var onUsernameTap: (() -> Void)? = nil
     var onDelete: (() -> Void)? = nil
+    var onMute: (() -> Void)? = nil
     var canDelete: Bool = false
     var currentUserId: UUID? = nil
     var hasAlsoRated: Bool = false
 
     @State private var showTrustHintPopover = false
     @State private var wineNavigationTarget: WineNavTarget?
+    @State private var showReportSheet = false
+
+    private var feedShareText: String {
+        var text = "@\(item.username) tried \(item.wineName)"
+        if let v = item.wineVintage { text = "@\(item.username) tried \(v) \(item.wineName)" }
+        if let rating = item.tastingRating {
+            text += " — rated \(String(format: "%.1f", rating))/10"
+        }
+        text += " ✦ vitis.app"
+        return text
+    }
     
     /// Construct Wine object from FeedItem for navigation.
     private var wine: Wine {
@@ -81,6 +93,36 @@ struct FeedItemView: View {
                 }
             }
         }
+        .contextMenu {
+            ShareLink(item: feedShareText) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            if canDelete, let onDelete = onDelete {
+                Button(role: .destructive) { onDelete() } label: {
+                    Label("Delete post", systemImage: "trash")
+                }
+            } else {
+                Button {
+                    onMute?()
+                } label: {
+                    Label("Mute @\(item.username)", systemImage: "speaker.slash")
+                }
+                Button {
+                    showReportSheet = true
+                } label: {
+                    Label("Report post", systemImage: "flag")
+                }
+            }
+        }
+        .sheet(isPresented: $showReportSheet) {
+            ReportSheetView(
+                contentType: .post,
+                contentId: item.id,
+                reportedUserId: item.userId,
+                isPresented: $showReportSheet
+            )
+            .presentationDetents([.medium, .large])
+        }
         .navigationDestination(item: $wineNavigationTarget) { target in
             SocialWineDetailView(wine: target.wine, hostItem: item, activityId: target.activityId, currentUserId: target.currentUserId)
         }
@@ -125,6 +167,8 @@ struct FeedItemView: View {
         }
         .frame(width: 24, height: 24)
         .clipShape(Circle())
+        .accessibilityLabel("@\(item.username) profile photo")
+        .accessibilityHidden(true)
     }
     
     private var avatarPlaceholder: some View {

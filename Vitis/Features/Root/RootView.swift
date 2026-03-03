@@ -14,36 +14,55 @@ enum Tab {
 struct RootView: View {
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("appearance_preference") private var appearanceRaw = AppearanceOption.system.rawValue
+    @AppStorage("vitis_age_verified") private var ageVerified = false
+    @AppStorage("vitis_drink_responsibly_shown") private var drinkResponsiblyShown = false
     @State private var selectedTab: Tab = .cellar
     @State private var authStore = AuthStore.shared
     @State private var showAddWineFromCarousel = false
+    @State private var showDrinkResponsibly = false
     @ObservedObject private var recovery = AuthRecoveryState.shared
 
     var body: some View {
         Group {
-            switch authStore.state {
-            case .checking:
-                VitisTheme.background(for: colorScheme).overlay {
-                    ProgressView().tint(VitisTheme.accent(for: colorScheme))
+            if !ageVerified {
+                AgeGateView {
+                    ageVerified = true
+                    if !drinkResponsiblyShown {
+                        showDrinkResponsibly = true
+                    }
                 }
-                .ignoresSafeArea()
-            case .unauthenticated:
-                PhoneEntryView()
-            case .awaitingCode(let phone):
-                CodeEntryView(phoneDisplay: phone)
-            case .authenticated(let userId):
-                if authStore.needsProfileSetup {
-                    ProfileSetupView(userId: userId)
-                } else {
-                    mainTabs
-                        .fullScreenCover(isPresented: $showAddWineFromCarousel) {
-                            AddWineSheet(
-                                isPresented: $showAddWineFromCarousel,
-                                onWineAdded: { showAddWineFromCarousel = false }
-                            )
-                        }
+            } else {
+                switch authStore.state {
+                case .checking:
+                    VitisTheme.background(for: colorScheme).overlay {
+                        ProgressView().tint(VitisTheme.accent(for: colorScheme))
+                    }
+                    .ignoresSafeArea()
+                case .unauthenticated:
+                    PhoneEntryView()
+                case .awaitingCode(let phone):
+                    CodeEntryView(phoneDisplay: phone)
+                case .authenticated(let userId):
+                    if authStore.needsProfileSetup {
+                        ProfileSetupView(userId: userId)
+                    } else {
+                        mainTabs
+                            .fullScreenCover(isPresented: $showAddWineFromCarousel) {
+                                AddWineSheet(
+                                    isPresented: $showAddWineFromCarousel,
+                                    onWineAdded: { showAddWineFromCarousel = false }
+                                )
+                            }
+                    }
                 }
             }
+        }
+        .sheet(isPresented: $showDrinkResponsibly) {
+            DrinkResponsiblyView {
+                drinkResponsiblyShown = true
+                showDrinkResponsibly = false
+            }
+            .interactiveDismissDisabled(true)
         }
         .task {
             if !authStore.sessionRestored {

@@ -116,20 +116,29 @@ struct CellarView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Text("Your cellar is empty. Add wines you've tasted.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+        VStack(spacing: 20) {
+            Image(systemName: "wineglass")
+                .font(.system(size: 48))
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(0.35))
+                .padding(.top, 40)
+            VStack(spacing: 8) {
+                Text("Your cellar is empty")
+                    .font(VitisTheme.uiFont(size: 18, weight: .medium))
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                Text("Log wines you've tasted to build your collection.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
             Button {
                 showAddWine = true
             } label: {
-                Text("Add")
+                Text("Log a wine")
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 13)
                     .background(VitisTheme.accent(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }

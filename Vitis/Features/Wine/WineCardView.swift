@@ -26,6 +26,7 @@ struct WineCardView: View {
     @State private var editRating: Double = 5.0
     @State private var editSelectedNotes: Set<String> = []
     @State private var editComment: String = ""
+    @State private var editVisibility: TastingVisibility = .everyone
     @Environment(\.dismiss) private var dismiss
     
     private var friendsAverageRating: Double? {
@@ -127,6 +128,7 @@ struct WineCardView: View {
                     rating: $editRating,
                     selectedNotes: $editSelectedNotes,
                     comment: $editComment,
+                    visibility: $editVisibility,
                     onCheers: {
                         Task {
                             await saveEditedTasting()
@@ -577,6 +579,7 @@ struct WineCardView: View {
         editRating = tasting.rating
         editSelectedNotes = Set(tasting.noteTags ?? [])
         editComment = tasting.comment ?? ""
+        editVisibility = tasting.visibility
         showEditSheet = true
     }
     

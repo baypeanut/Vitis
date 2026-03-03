@@ -7,6 +7,26 @@
 
 import Foundation
 
+/// Per-tasting visibility: public (everyone) or friends-only (mutual follow).
+enum TastingVisibility: String, Codable, CaseIterable, Sendable {
+    case everyone = "everyone"
+    case friends = "friends"
+
+    var displayName: String {
+        switch self {
+        case .everyone: return "Public"
+        case .friends: return "Friends Only"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .everyone: return "globe"
+        case .friends: return "person.2"
+        }
+    }
+}
+
 struct Tasting: Identifiable, Sendable {
     let id: UUID
     let userId: UUID
@@ -16,6 +36,7 @@ struct Tasting: Identifiable, Sendable {
     let comment: String?
     let createdAt: Date
     let source: String?
+    let visibility: TastingVisibility
     let wine: Wine
 
     init(
@@ -27,6 +48,7 @@ struct Tasting: Identifiable, Sendable {
         comment: String? = nil,
         createdAt: Date,
         source: String? = nil,
+        visibility: TastingVisibility = .everyone,
         wine: Wine
     ) {
         self.id = id
@@ -37,6 +59,7 @@ struct Tasting: Identifiable, Sendable {
         self.comment = comment
         self.createdAt = createdAt
         self.source = source
+        self.visibility = visibility
         self.wine = wine
     }
 }

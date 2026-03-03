@@ -58,6 +58,20 @@ struct SocialWineDetailView: View {
         WineColorResolver.resolveWineDisplayColor(wine: wine, colorScheme: colorScheme)
     }
 
+    private var shareText: String {
+        var parts: [String] = []
+        if !wine.producer.isEmpty { parts.append(wine.producer) }
+        parts.append(wine.name)
+        if let v = wine.vintage, v > 0 { parts.append(String(v)) }
+        let wineTitle = parts.joined(separator: " ")
+        var text = "Just tried \(wineTitle) on Vitis"
+        if let rating = hostReview.rating > 0 ? hostReview.rating : nil {
+            text += " — rated \(String(format: "%.1f", rating))/10"
+        }
+        text += " ✦ vitis.app"
+        return text
+    }
+
     /// Wine title with optional vintage (e.g. "Sancerre 2022"). No placeholder if vintage nil/0.
     private var wineTitleWithVintage: String {
         if let v = wine.vintage, v > 0 {
@@ -96,6 +110,14 @@ struct SocialWineDetailView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                ShareLink(item: shareText) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16))
+                }
+            }
+        }
         .task { await loadData() }
         .onReceive(NotificationCenter.default.publisher(for: .vitisWishlistUpdated)) { _ in
             Task { await refreshWishlist() }
@@ -153,7 +175,7 @@ struct SocialWineDetailView: View {
             HStack(spacing: 6) {
                 Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
                     .font(.system(size: 14))
-                Text(hasWishlisted ? "Saved" : "Save to Want to Try")
+                Text(hasWishlisted ? "Saved" : "Save to Reserve List")
                     .font(VitisTheme.uiFont(size: 14))
             }
             .foregroundStyle(hasWishlisted ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
@@ -570,43 +592,4 @@ private struct CheersPressStyle: ButtonStyle {
     }
 }
 
-// MARK: - FlowLayout
-
-private struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(in: proposal.replacingUnspecifiedDimensions().width, subviews: subviews, spacing: spacing)
-        return result.size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing)
-        for (i, subview) in subviews.enumerated() {
-            subview.place(at: CGPoint(x: bounds.minX + result.frames[i].minX, y: bounds.minY + result.frames[i].minY), proposal: .unspecified)
-        }
-    }
-
-    struct FlowResult {
-        var frames: [CGRect] = []
-        var size: CGSize = .zero
-
-        init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
-            var x: CGFloat = 0
-            var y: CGFloat = 0
-            var lineHeight: CGFloat = 0
-            for subview in subviews {
-                let s = subview.sizeThatFits(.unspecified)
-                if x + s.width > maxWidth && x > 0 {
-                    x = 0
-                    y += lineHeight + spacing
-                    lineHeight = 0
-                }
-                frames.append(CGRect(x: x, y: y, width: s.width, height: s.height))
-                lineHeight = max(lineHeight, s.height)
-                x += s.width + spacing
-            }
-            size = CGSize(width: maxWidth, height: y + lineHeight)
-        }
-    }
-}
+// FlowLayout extracted to Vitis/Utilities/FlowLayout.swift

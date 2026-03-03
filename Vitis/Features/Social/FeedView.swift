@@ -117,9 +117,31 @@ struct FeedView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.tab == .following && viewModel.items.isEmpty {
             followingEmptyState
+        } else if viewModel.items.isEmpty {
+            globalEmptyState
         } else {
             feedList
         }
+    }
+
+    private var globalEmptyState: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Image(systemName: "wineglass")
+                    .font(.system(size: 44))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(0.4))
+                    .padding(.top, 60)
+                Text("Nothing here yet.")
+                    .font(VitisTheme.uiFont(size: 17, weight: .medium))
+                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                Text("Be the first to log a tasting.")
+                    .font(VitisTheme.uiFont(size: 15))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var followingEmptyState: some View {
@@ -212,6 +234,7 @@ struct FeedView: View {
                             profileSheetItem = ProfileSheetItem(userId: item.userId, username: item.username)
                         },
                         onDelete: { Task { await viewModel.deleteFeedItem(item) } },
+                        onMute: viewModel.currentUserId != item.userId ? { viewModel.muteUser(item) } : nil,
                         canDelete: viewModel.currentUserId == item.userId,
                         currentUserId: viewModel.currentUserId,
                         hasAlsoRated: viewModel.currentUserId != item.userId && viewModel.hasTasted(wineId: item.wineId)

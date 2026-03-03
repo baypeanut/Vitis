@@ -2,7 +2,7 @@
 //  NotificationsSettingsView.swift
 //  Vitis
 //
-//  Notifications: status + deep link to system settings.
+//  Notifications: system permission status + in-app notification type preferences.
 //
 
 import SwiftUI
@@ -11,6 +11,10 @@ import UserNotifications
 struct NotificationsSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var authStatusText = "-"
+
+    @AppStorage("notify_likes") private var notifyLikes = true
+    @AppStorage("notify_comments") private var notifyComments = true
+    @AppStorage("notify_follows") private var notifyFollows = true
 
     var body: some View {
         List {
@@ -43,6 +47,36 @@ struct NotificationsSettingsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+            } header: {
+                Text("System")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
+
+            Section {
+                Toggle(isOn: $notifyLikes) {
+                    Text("Likes")
+                        .font(VitisTheme.uiFont(size: 16))
+                }
+                .tint(VitisTheme.accent(for: colorScheme))
+                Toggle(isOn: $notifyComments) {
+                    Text("Comments")
+                        .font(VitisTheme.uiFont(size: 16))
+                }
+                .tint(VitisTheme.accent(for: colorScheme))
+                Toggle(isOn: $notifyFollows) {
+                    Text("New followers")
+                        .font(VitisTheme.uiFont(size: 16))
+                }
+                .tint(VitisTheme.accent(for: colorScheme))
+            } header: {
+                Text("Preferences")
+                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            } footer: {
+                Text("Choose which activity appears in your notifications tab.")
+                    .font(VitisTheme.uiFont(size: 12))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             }
         }
         .listStyle(.insetGrouped)
