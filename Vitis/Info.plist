@@ -65,5 +65,7 @@
 	<string>$(POSTHOG_HOST)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Vitis uses your photo library to let you set a profile picture.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Vitis uses your contacts privately to help you find friends who are already on Vitis. Phone numbers are hashed before matching.</string>
 </dict>
 </plist>

@@ -42,7 +42,11 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cellar_visibility text NOT 
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist_visibility text NOT NULL DEFAULT 'everyone' CHECK (wishlist_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS activity_visibility text NOT NULL DEFAULT 'everyone' CHECK (activity_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_hash text;
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_key ON public.profiles (lower(trim(username)));
+CREATE INDEX IF NOT EXISTS idx_profiles_phone_hash ON public.profiles (phone_hash);
+CREATE INDEX IF NOT EXISTS idx_profiles_search ON public.profiles
+  USING gin (to_tsvector('simple', coalesce(username, '') || ' ' || coalesce(full_name, '')));
 
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS off_code text;
