@@ -30,6 +30,7 @@ struct FeedItemView: View {
     var canDelete: Bool = false
     var currentUserId: UUID? = nil
     var hasAlsoRated: Bool = false
+    var isTasteTwin: Bool = false
 
     @State private var showTrustHintPopover = false
     @State private var wineNavigationTarget: WineNavTarget?
@@ -145,8 +146,13 @@ struct FeedItemView: View {
                 }
                 Spacer()
             }
-            if let hint = trustHint, !hint.isEmpty {
-                trustHintBadge(fullText: hint)
+            HStack(spacing: 6) {
+                if isTasteTwin {
+                    twinBadge
+                }
+                if let hint = trustHint, !hint.isEmpty {
+                    trustHintBadge(fullText: hint)
+                }
             }
         }
     }
@@ -179,6 +185,20 @@ struct FeedItemView: View {
                     .font(VitisTheme.uiFont(size: 13, weight: .medium))
                     .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
             )
+    }
+
+    private var twinBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 9))
+            Text("Taste Twin")
+                .font(VitisTheme.uiFont(size: 11, weight: .medium))
+        }
+        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(VitisTheme.accent(for: colorScheme).opacity(0.12))
+        .clipShape(Capsule())
     }
 
     private func trustHintBadge(fullText: String) -> some View {

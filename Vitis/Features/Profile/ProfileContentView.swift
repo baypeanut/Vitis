@@ -14,6 +14,8 @@ struct ProfileContentView: View {
     var isFollowing: Bool
     var isTogglingFollow: Bool = false
     var followError: String?
+    var tasteSimilarity: TasteSimilarity?
+    var tasteTwins: [TasteTwin] = []
     var onEdit: (() -> Void)?
     var onFollowToggle: (() -> Void)?
     var onSignOut: (() -> Void)?
@@ -30,6 +32,7 @@ struct ProfileContentView: View {
     var onWantToTryToggle: ((CellarItem) async -> Void)?
     var onRemoveWishlistItem: ((CellarItem) async -> Void)?
     var onMarkAsTasted: ((CellarItem) -> Void)?
+    var onTwinTap: ((UUID) -> Void)?
 
     enum MainTab: String, CaseIterable { case recentActivity = "Recently"; case tasteProfile = "Taste"; case wantToTry = "Reserve List" }
     enum TasteSubTab: String, CaseIterable { case regions = "Regions"; case grapes = "Grapes" }
@@ -51,6 +54,13 @@ struct ProfileContentView: View {
                 if let p = viewModel.profile {
                     header(p)
                     tasteSnapshotCard(p)
+                    if isOwn, !tasteTwins.isEmpty {
+                        WineTwinsView(
+                            userId: viewModel.userId,
+                            twins: tasteTwins,
+                            onTwinTap: onTwinTap
+                        )
+                    }
                     tabs
                     tabContent
                 }
@@ -102,6 +112,10 @@ struct ProfileContentView: View {
             statsRow
             if !isOwn {
                 primaryButton(p)
+                if let sim = tasteSimilarity {
+                    TasteTwinBadge(similarity: sim)
+                        .padding(.top, 4)
+                }
             }
         }
         .frame(maxWidth: .infinity)

@@ -27,6 +27,7 @@ struct SocialWineDetailView: View {
     @State private var isCheering = false
     @State private var isWishlisting = false
     @State private var alreadyTastedToast = false
+    @State private var twinsTasted: [TasteTwin] = []
 
     init(wine: Wine, hostItem: FeedItem, activityId: UUID, currentUserId: UUID?) {
         self.wine = wine
@@ -94,6 +95,9 @@ struct SocialWineDetailView: View {
                         ratingDashboardSection
                         hostReviewSection
                         userReviewSection
+                        if !twinsTasted.isEmpty {
+                            twinsTastedSection
+                        }
                         if !groupedMutual.isEmpty {
                             mutualSection
                         }
@@ -287,6 +291,46 @@ struct SocialWineDetailView: View {
         }
     }
 
+    // MARK: - Taste Twins Section
+
+    private var twinsTastedSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Rectangle()
+                .fill(VitisTheme.divider(for: colorScheme))
+                .frame(height: 1)
+            HStack(spacing: 5) {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                Text("Taste Twins also tried this")
+                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            }
+            .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(twinsTasted) { twin in
+                        HStack(spacing: 6) {
+                            reviewAvatar(url: twin.avatarURL, displayName: twin.displayName, size: 24)
+                            Text(twin.displayName)
+                                .font(VitisTheme.uiFont(size: 13))
+                                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            Text(twin.similarity.displayText)
+                                .font(VitisTheme.uiFont(size: 11, weight: .medium))
+                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(VitisTheme.accent(for: colorScheme).opacity(0.08))
+                        .clipShape(Capsule())
+                    }
+                }
+                .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            }
+        }
+        .padding(.bottom, 8)
+    }
+
     // MARK: - Mutual Section (grouped, with full cards vs compact quick ratings)
 
     private var mutualSection: some View {
@@ -463,6 +507,12 @@ struct SocialWineDetailView: View {
             }
         } catch {
             groupedMutual = []
+        }
+        // Fetch taste twins who also tasted this wine
+        if let uid = currentUserId {
+            let twins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 50)
+            let tasterIds = Set((try? await WineService.fetchTastingsForWine(wineId: wine.id, excludeUserId: uid, limit: 200))?.map(\.userId) ?? [])
+            twinsTasted = twins.filter { tasterIds.contains($0.id) }
         }
         await refreshWishlist()
         isLoading = false

@@ -237,7 +237,8 @@ struct FeedView: View {
                         onMute: viewModel.currentUserId != item.userId ? { viewModel.muteUser(item) } : nil,
                         canDelete: viewModel.currentUserId == item.userId,
                         currentUserId: viewModel.currentUserId,
-                        hasAlsoRated: viewModel.currentUserId != item.userId && viewModel.hasTasted(wineId: item.wineId)
+                        hasAlsoRated: viewModel.currentUserId != item.userId && viewModel.hasTasted(wineId: item.wineId),
+                        isTasteTwin: viewModel.isTwin(userId: item.userId)
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, index > 0 && index % 5 == 0 ? 0 : VitisTheme.cardSpacingVertical / 2)

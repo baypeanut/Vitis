@@ -45,6 +45,8 @@ struct UserProfileView: View {
     @State private var showBlockConfirm = false
     @State private var isBlocked = false
     @State private var blockToast: String?
+    @State private var tasteSimilarity: TasteSimilarity?
+    @State private var tasteTwins: [TasteTwin] = []
 
     init(userId: UUID, onDismiss: @escaping () -> Void, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -73,6 +75,8 @@ struct UserProfileView: View {
                         isFollowing: isFollowing,
                         isTogglingFollow: isTogglingFollow,
                         followError: followError,
+                        tasteSimilarity: tasteSimilarity,
+                        tasteTwins: tasteTwins,
                         onFollowToggle: { Task { await toggleFollow() } },
                         onActivityTap: { item in
                             commentActivityID = item.id
@@ -243,8 +247,13 @@ struct UserProfileView: View {
         if !viewModel.isOwn {
             async let following = SocialService.isFollowing(targetID: userId)
             async let blocked = BlockService.isBlocking(userId: userId)
+            async let sim = TasteSimilarityService.fetchSimilarity(targetUserId: userId)
             isFollowing = await following
             isBlocked = await blocked
+            tasteSimilarity = await sim
+        }
+        if let uid = currentUserId {
+            tasteTwins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 10)
         }
     }
 
@@ -307,6 +316,8 @@ struct UserProfileViewContent: View {
     @State private var drillDownTarget: UserProfileDrillDownTarget?
     @State private var showUserCellar = false
     @State private var showWantToTry = false
+    @State private var tasteSimilarity: TasteSimilarity?
+    @State private var tasteTwins: [TasteTwin] = []
 
     init(userId: UUID, onFollowChanged: (() -> Void)? = nil) {
         self.userId = userId
@@ -329,6 +340,8 @@ struct UserProfileViewContent: View {
                     isFollowing: isFollowing,
                     isTogglingFollow: isTogglingFollow,
                     followError: followError,
+                    tasteSimilarity: tasteSimilarity,
+                    tasteTwins: tasteTwins,
                     onFollowToggle: { Task { await toggleFollow() } },
                     onActivityTap: { item in
                         commentActivityID = item.id
@@ -411,7 +424,12 @@ struct UserProfileViewContent: View {
     private func load() async {
         await viewModel.load()
         guard let current = currentUserId, current != userId else { return }
-        isFollowing = await SocialService.isFollowing(targetID: userId)
+        async let following = SocialService.isFollowing(targetID: userId)
+        async let sim = TasteSimilarityService.fetchSimilarity(targetUserId: userId)
+        async let twins = TasteSimilarityService.fetchTasteTwins(userId: current, limit: 10)
+        isFollowing = await following
+        tasteSimilarity = await sim
+        tasteTwins = await twins
     }
 
     private func toggleFollow() async {
