@@ -159,12 +159,8 @@ struct AddWineSheet: View {
 
     @ViewBuilder
     private var searchResults: some View {
-        if let err = viewModel.errorMessage {
-            Text(err)
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(.red)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if viewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
+        let trimmed = viewModel.query.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty {
             // Show database wines when query is empty
             if viewModel.dbWines.isEmpty {
                 Text("No wines in database yet.")
@@ -184,17 +180,13 @@ struct AddWineSheet: View {
                 }
             }
         } else if viewModel.results.isEmpty {
-            if viewModel.isLoading {
-                Text("Searching…")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                Text("No wines found.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            Text("This label has not been added to our archive yet.")
+                .font(VitisTheme.producerSerifFont())
+                .foregroundStyle(VitisTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity)
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {

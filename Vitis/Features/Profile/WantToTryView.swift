@@ -165,55 +165,52 @@ struct WantToTryView: View {
 
     @ViewBuilder
     private var searchResultsContent: some View {
-        Group {
-            if searchViewModel.isLoading && searchViewModel.results.isEmpty {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent(for: colorScheme))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let err = searchViewModel.errorMessage, searchViewModel.results.isEmpty {
-                Text(err)
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if searchViewModel.results.isEmpty {
-                Text("No wines found.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(searchViewModel.results) { p in
-                            searchResultRow(p)
-                            Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 24)
-                        }
-                        if searchViewModel.hasMorePages {
-                            Button {
-                                searchViewModel.loadMoreSearchResults()
-                            } label: {
-                                HStack {
-                                    if searchViewModel.isLoadingMore {
-                                        ProgressView()
-                                            .progressViewStyle(.circular)
-                                            .scaleEffect(0.8)
-                                            .tint(VitisTheme.accent(for: colorScheme))
-                                    } else {
-                                        Text("Show more")
-                                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                                    }
-                                }
-                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(searchViewModel.isLoadingMore)
-                        }
+        if searchViewModel.query.trimmingCharacters(in: .whitespaces).isEmpty {
+            EmptyView()
+        } else if searchViewModel.isLoading {
+            Text("Locating...")
+                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if searchViewModel.results.isEmpty {
+            Text("This vintage is not currently in our archives. Check back as our cellar grows.")
+                .font(VitisTheme.uiFont(size: 15))
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(searchViewModel.results) { p in
+                        searchResultRow(p)
+                        Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 24)
                     }
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
+                    if searchViewModel.hasMorePages {
+                        Button {
+                            searchViewModel.loadMoreSearchResults()
+                        } label: {
+                            HStack {
+                                if searchViewModel.isLoadingMore {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .scaleEffect(0.8)
+                                        .tint(VitisTheme.accent(for: colorScheme))
+                                } else {
+                                    Text("Show more")
+                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                }
+                            }
+                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(searchViewModel.isLoadingMore)
+                    }
                 }
+                .padding(.top, 8)
+                .padding(.bottom, 32)
             }
         }
     }

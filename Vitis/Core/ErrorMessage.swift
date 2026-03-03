@@ -8,7 +8,7 @@
 import Foundation
 
 enum ErrorMessage {
-    static let networkTimeout = "Request timed out. Please try again."
+    static let networkTimeout = "Something went wrong. Please try again."
     static let noConnection = "No internet connection."
     static let unauthorized = "Please sign in to continue."
     static let unknown = "Something went wrong. Please try again."
