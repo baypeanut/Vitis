@@ -36,6 +36,7 @@ struct ProfileView: View {
     @State private var showAddWishlistSheet = false
     @State private var markAsTastedItem: CellarItem?
     @State private var showErrorAfterDelay = false
+    @State private var tasteTwins: [TasteTwin] = []
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,7 @@ struct ProfileView: View {
                         viewModel: vm,
                         isOwn: true,
                         isFollowing: false,
+                        tasteTwins: tasteTwins,
                         onSignOut: { Task { await signOut() } },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
@@ -188,6 +190,7 @@ struct ProfileView: View {
             viewModel = ProfileViewModel(userId: uid)
         }
         await viewModel?.load()
+        tasteTwins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 10)
     }
     
     private func handleLoadingStateChange() {

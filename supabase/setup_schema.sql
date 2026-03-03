@@ -42,7 +42,6 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cellar_visibility text NOT 
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wishlist_visibility text NOT NULL DEFAULT 'everyone' CHECK (wishlist_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS activity_visibility text NOT NULL DEFAULT 'everyone' CHECK (activity_visibility IN ('everyone', 'friends'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_age_verified boolean NOT NULL DEFAULT false;
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_key ON public.profiles (lower(trim(username)));
 
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
@@ -399,7 +398,7 @@ CREATE TABLE IF NOT EXISTS public.tastings (
 
 -- Add comment column (2025-02-02)
 ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS comment text NULL;
--- Per-tasting visibility: Public / Friends Only (app sends this on create)
+-- Per-tasting visibility (Public / Friends Only). App sends this on insert.
 ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'everyone' CHECK (visibility IN ('everyone', 'friends'));
 
 CREATE INDEX IF NOT EXISTS idx_tastings_user_created ON public.tastings (user_id, created_at DESC);
@@ -1175,7 +1174,145 @@ GRANT EXECUTE ON FUNCTION public.delete_current_user() TO authenticated;
 COMMENT ON FUNCTION public.delete_current_user() IS 'Soft delete: sets profiles.deleted_at, logs audit. Hard delete from auth.users after cooldown via scheduled job.';
 
 -- -----------------------------------------------------------------------------
--- Support tickets (Vitis Concierge — in-app contact, no third-party SDKs)
+-- 12. Taste Twin Engine: taste_similarity cache + RPCs
+-- (pulled from claude/interesting-poitras branch)
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.taste_similarity (
+  user_a uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_b uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  score  double precision NOT NULL DEFAULT 0,
+  shared_count int NOT NULL DEFAULT 0,
+  computed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_a, user_b),
+  CONSTRAINT taste_similarity_canonical CHECK (user_a < user_b)
+);
+
+CREATE INDEX IF NOT EXISTS idx_taste_similarity_user_a ON public.taste_similarity (user_a);
+CREATE INDEX IF NOT EXISTS idx_taste_similarity_user_b ON public.taste_similarity (user_b);
+
+ALTER TABLE public.taste_similarity ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "taste_similarity_select_auth" ON public.taste_similarity;
+CREATE POLICY "taste_similarity_select_auth" ON public.taste_similarity
+  FOR SELECT USING (auth.uid() = user_a OR auth.uid() = user_b);
+
+DROP FUNCTION IF EXISTS public.compute_taste_similarity(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.compute_taste_similarity(
+  p_user_a uuid,
+  p_user_b uuid
+)
+RETURNS TABLE (
+  user_a uuid,
+  user_b uuid,
+  score double precision,
+  shared_count int,
+  computed_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_a uuid;
+  v_b uuid;
+  v_score double precision;
+  v_shared int;
+  v_computed timestamptz;
+BEGIN
+  IF p_user_a < p_user_b THEN
+    v_a := p_user_a; v_b := p_user_b;
+  ELSE
+    v_a := p_user_b; v_b := p_user_a;
+  END IF;
+
+  SELECT ts.score, ts.shared_count, ts.computed_at
+  INTO v_score, v_shared, v_computed
+  FROM public.taste_similarity ts
+  WHERE ts.user_a = v_a AND ts.user_b = v_b
+    AND ts.computed_at > now() - interval '7 days';
+
+  IF FOUND THEN
+    RETURN QUERY SELECT v_a, v_b, v_score, v_shared, v_computed;
+    RETURN;
+  END IF;
+
+  SELECT
+    CASE WHEN COUNT(*) < 5 THEN NULL
+         WHEN STDDEV(ta_r) = 0 OR STDDEV(tb_r) = 0 THEN 0.0
+         ELSE CORR(ta_r, tb_r) * (COUNT(*)::double precision / (COUNT(*) + 10.0))
+    END,
+    COUNT(*)::int
+  INTO v_score, v_shared
+  FROM (
+    SELECT ta.rating AS ta_r, tb.rating AS tb_r
+    FROM public.tastings ta
+    JOIN public.tastings tb ON ta.wine_id = tb.wine_id
+    WHERE ta.user_id = v_a AND tb.user_id = v_b
+  ) shared;
+
+  IF v_score IS NULL OR v_shared < 5 THEN
+    DELETE FROM public.taste_similarity WHERE taste_similarity.user_a = v_a AND taste_similarity.user_b = v_b;
+    RETURN;
+  END IF;
+
+  v_score := GREATEST(0.0, LEAST(1.0, v_score));
+  v_computed := now();
+
+  INSERT INTO public.taste_similarity (user_a, user_b, score, shared_count, computed_at)
+  VALUES (v_a, v_b, v_score, v_shared, v_computed)
+  ON CONFLICT (user_a, user_b) DO UPDATE SET
+    score = EXCLUDED.score,
+    shared_count = EXCLUDED.shared_count,
+    computed_at = EXCLUDED.computed_at;
+
+  RETURN QUERY SELECT v_a, v_b, v_score, v_shared, v_computed;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.compute_taste_similarity(uuid, uuid) TO authenticated;
+
+DROP FUNCTION IF EXISTS public.get_taste_twins(uuid, int);
+CREATE OR REPLACE FUNCTION public.get_taste_twins(
+  p_user_id uuid,
+  p_limit int DEFAULT 20
+)
+RETURNS TABLE (
+  twin_id uuid,
+  username text,
+  full_name text,
+  avatar_url text,
+  score double precision,
+  shared_count int,
+  computed_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END AS twin_id,
+    p.username,
+    p.full_name,
+    p.avatar_url,
+    ts.score,
+    ts.shared_count,
+    ts.computed_at
+  FROM public.taste_similarity ts
+  JOIN public.profiles p
+    ON p.id = CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END
+  WHERE (ts.user_a = p_user_id OR ts.user_b = p_user_id)
+    AND ts.score >= 0.30
+    AND p.deleted_at IS NULL
+  ORDER BY ts.score DESC
+  LIMIT p_limit;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_taste_twins(uuid, int) TO authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 13. Support tickets (Vitis Concierge — in-app contact, no third-party SDKs)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.support_tickets (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -1193,3 +1330,157 @@ DROP POLICY IF EXISTS "Users can insert their own support tickets" ON public.sup
 CREATE POLICY "Users can insert their own support tickets" ON public.support_tickets FOR INSERT WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users can read own support tickets" ON public.support_tickets;
 CREATE POLICY "Users can read own support tickets" ON public.support_tickets FOR SELECT USING (auth.uid() = user_id);
+
+-- -----------------------------------------------------------------------------
+-- 12. Taste Twin Engine: taste_similarity cache + RPCs
+-- Bayesian-shrunk Pearson correlation on shared wine ratings.
+-- Formula: score = CORR(ra, rb) * (n / (n + 10.0))
+-- Minimum 5 shared wines to compute. Cache TTL = 7 days.
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS public.taste_similarity (
+  user_a uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_b uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  score  double precision NOT NULL DEFAULT 0,
+  shared_count int NOT NULL DEFAULT 0,
+  computed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_a, user_b),
+  CONSTRAINT taste_similarity_canonical CHECK (user_a < user_b)
+);
+
+CREATE INDEX IF NOT EXISTS idx_taste_similarity_user_a ON public.taste_similarity (user_a);
+CREATE INDEX IF NOT EXISTS idx_taste_similarity_user_b ON public.taste_similarity (user_b);
+
+ALTER TABLE public.taste_similarity ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "taste_similarity_select_auth" ON public.taste_similarity;
+CREATE POLICY "taste_similarity_select_auth" ON public.taste_similarity
+  FOR SELECT USING (auth.uid() = user_a OR auth.uid() = user_b);
+
+-- RPC: compute_taste_similarity
+-- Computes (or returns cached) Bayesian-shrunk Pearson correlation between two users.
+-- Cache TTL: 7 days. Minimum 5 shared wines to produce a result.
+-- Returns 0 rows if insufficient shared wines.
+DROP FUNCTION IF EXISTS public.compute_taste_similarity(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.compute_taste_similarity(
+  p_user_a uuid,
+  p_user_b uuid
+)
+RETURNS TABLE (
+  user_a uuid,
+  user_b uuid,
+  score double precision,
+  shared_count int,
+  computed_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_a uuid;
+  v_b uuid;
+  v_score double precision;
+  v_shared int;
+  v_computed timestamptz;
+BEGIN
+  -- Canonical ordering: smaller UUID first
+  IF p_user_a < p_user_b THEN
+    v_a := p_user_a; v_b := p_user_b;
+  ELSE
+    v_a := p_user_b; v_b := p_user_a;
+  END IF;
+
+  -- Check cache (7-day TTL)
+  SELECT ts.score, ts.shared_count, ts.computed_at
+  INTO v_score, v_shared, v_computed
+  FROM public.taste_similarity ts
+  WHERE ts.user_a = v_a AND ts.user_b = v_b
+    AND ts.computed_at > now() - interval '7 days';
+
+  IF FOUND THEN
+    RETURN QUERY SELECT v_a, v_b, v_score, v_shared, v_computed;
+    RETURN;
+  END IF;
+
+  -- Compute: Bayesian-shrunk Pearson on shared wine ratings
+  SELECT
+    CASE WHEN COUNT(*) < 5 THEN NULL
+         WHEN STDDEV(ta_r) = 0 OR STDDEV(tb_r) = 0 THEN 0.0
+         ELSE CORR(ta_r, tb_r) * (COUNT(*)::double precision / (COUNT(*) + 10.0))
+    END,
+    COUNT(*)::int
+  INTO v_score, v_shared
+  FROM (
+    SELECT ta.rating AS ta_r, tb.rating AS tb_r
+    FROM public.tastings ta
+    JOIN public.tastings tb ON ta.wine_id = tb.wine_id
+    WHERE ta.user_id = v_a AND tb.user_id = v_b
+  ) shared;
+
+  -- If fewer than 5 shared wines, return nothing
+  IF v_score IS NULL OR v_shared < 5 THEN
+    -- Delete stale cache entry if exists
+    DELETE FROM public.taste_similarity WHERE taste_similarity.user_a = v_a AND taste_similarity.user_b = v_b;
+    RETURN;
+  END IF;
+
+  -- Clamp to [0, 1]
+  v_score := GREATEST(0.0, LEAST(1.0, v_score));
+  v_computed := now();
+
+  -- Upsert cache
+  INSERT INTO public.taste_similarity (user_a, user_b, score, shared_count, computed_at)
+  VALUES (v_a, v_b, v_score, v_shared, v_computed)
+  ON CONFLICT (user_a, user_b) DO UPDATE SET
+    score = EXCLUDED.score,
+    shared_count = EXCLUDED.shared_count,
+    computed_at = EXCLUDED.computed_at;
+
+  RETURN QUERY SELECT v_a, v_b, v_score, v_shared, v_computed;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.compute_taste_similarity(uuid, uuid) TO authenticated;
+
+-- RPC: get_taste_twins
+-- Returns top N taste twins for a user (by score desc), joining profile data.
+-- Only returns cached similarities with score >= 0.30.
+DROP FUNCTION IF EXISTS public.get_taste_twins(uuid, int);
+CREATE OR REPLACE FUNCTION public.get_taste_twins(
+  p_user_id uuid,
+  p_limit int DEFAULT 20
+)
+RETURNS TABLE (
+  twin_id uuid,
+  username text,
+  full_name text,
+  avatar_url text,
+  score double precision,
+  shared_count int,
+  computed_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END AS twin_id,
+    p.username,
+    p.full_name,
+    p.avatar_url,
+    ts.score,
+    ts.shared_count,
+    ts.computed_at
+  FROM public.taste_similarity ts
+  JOIN public.profiles p
+    ON p.id = CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END
+  WHERE (ts.user_a = p_user_id OR ts.user_b = p_user_id)
+    AND ts.score >= 0.30
+    AND p.deleted_at IS NULL
+  ORDER BY ts.score DESC
+  LIMIT p_limit;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_taste_twins(uuid, int) TO authenticated;
