@@ -31,3 +31,5 @@ Vitis/Core/SupabaseConfig.swift
 .env
 .env.*
 Vitis/Config/Secrets.xcconfig
+# cursor ai workspace
+.claude/
