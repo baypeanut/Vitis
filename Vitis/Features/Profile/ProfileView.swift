@@ -174,6 +174,17 @@ struct ProfileView: View {
         .onReceive(NotificationCenter.default.publisher(for: .vitisSessionReady)) { _ in
             Task { await ensureAndLoad() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .vitisTastingCreated)) { _ in
+            Task {
+                await viewModel?.load()
+                if let uid = currentUserId {
+                    tasteTwins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 10)
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .vitisWishlistUpdated)) { _ in
+            Task { await viewModel?.load() }
+        }
         .refreshable { await ensureAndLoad() }
     }
 
