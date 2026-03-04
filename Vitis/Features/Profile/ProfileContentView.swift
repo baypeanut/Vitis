@@ -383,6 +383,25 @@ struct ProfileContentView: View {
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if isOwn, onMarkAsTasted != nil {
+                Button {
+                    onMarkAsTasted?(item)
+                } label: {
+                    Label("Tasted", systemImage: "checkmark.circle")
+                }
+                .tint(VitisTheme.accent(for: colorScheme))
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            if let onRemove = onRemove {
+                Button(role: .destructive) {
+                    onRemove(item)
+                } label: {
+                    Label("Remove", systemImage: "trash")
+                }
+            }
+        }
         .contextMenu {
             if let onRemove = onRemove {
                 Button(role: .destructive) {

@@ -38,8 +38,11 @@ enum AuthService {
         let sessionId = (try? await supabase.auth.session)?.user.id
         #if DEBUG
         if !AppConstants.authRequired {
-            // Prefer real session, then dev account, no hardcoded fallback
+            // In auth-bypass builds we still need a real session for RLS-protected writes (wishlist, tastings, etc).
             if let sid = sessionId { return sid }
+            if let anon = try? await supabase.auth.signInAnonymously() {
+                return anon.user.id
+            }
             return DevSignupService.currentDevUserId()
         }
         #endif
@@ -56,6 +59,8 @@ enum AuthService {
                 NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
                 return
             }
+            // Create an anonymous session so RLS allows writes in dev "auth bypass" mode.
+            _ = try? await supabase.auth.signInAnonymously()
             DevSignupService.ensureFallbackDevUserId()
             NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
             return

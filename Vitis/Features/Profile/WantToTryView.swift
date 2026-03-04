@@ -298,6 +298,16 @@ struct WantToTryView: View {
                     .listRowSeparator(.visible)
                     .listRowSeparatorTint(VitisTheme.border(for: colorScheme))
                     .listRowBackground(Color.clear)
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        if isOwnList {
+                            Button {
+                                showAddTasting = item
+                            } label: {
+                                Label("Tasted", systemImage: "checkmark.circle")
+                            }
+                            .tint(VitisTheme.accent(for: colorScheme))
+                        }
+                    }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         if isOwnList {
                             Button(role: .destructive) {
@@ -332,13 +342,7 @@ struct WantToTryView: View {
                     .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if isOwnList {
-                Button("Mark as Tasted") {
-                    showAddTasting = item
-                }
-                .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                .foregroundStyle(VitisTheme.accent(for: colorScheme))
-            } else if currentUserId != nil {
+            if !isOwnList, currentUserId != nil {
                 Button {
                     Task { await toggleWishlist(item, sourceUserId: userId) }
                 } label: {
@@ -408,6 +412,7 @@ struct WantToTryView: View {
         do {
             try await CellarService.removeFromWishlist(wineId: item.wineId)
             items.removeAll { $0.id == item.id }
+            NotificationCenter.default.post(name: .vitisWishlistUpdated, object: nil)
         } catch {
             errorMessage = error.localizedDescription
         }
