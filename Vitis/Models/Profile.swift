@@ -65,7 +65,7 @@ struct Profile: Identifiable, Sendable {
     }
 }
 
-// MARK: - Preview / Mock
+// Mark profile
 
 #if DEBUG
 extension Profile {

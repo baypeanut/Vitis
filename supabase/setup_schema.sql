@@ -48,6 +48,24 @@ CREATE INDEX IF NOT EXISTS idx_profiles_phone_hash ON public.profiles (phone_has
 CREATE INDEX IF NOT EXISTS idx_profiles_search ON public.profiles
   USING gin (to_tsvector('simple', coalesce(username, '') || ' ' || coalesce(full_name, '')));
 
+-- Harden wines access: enable RLS and expose as read-only catalog to clients.
+ALTER TABLE public.wines ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "wines_select_public" ON public.wines;
+CREATE POLICY "wines_select_public" ON public.wines
+  FOR SELECT USING (true);
+
+-- Allow authenticated users to insert/update wines via OFF upsert flow.
+DROP POLICY IF EXISTS "wines_write_auth" ON public.wines;
+CREATE POLICY "wines_write_auth" ON public.wines
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "wines_update_auth" ON public.wines;
+CREATE POLICY "wines_update_auth" ON public.wines
+  FOR UPDATE
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
+
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS off_code text;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_wines_off_code ON public.wines (off_code) WHERE off_code IS NOT NULL;
@@ -69,6 +87,12 @@ ON CONFLICT (id) DO NOTHING;
 -- A0: app_config for environment (local | staging | production)
 CREATE TABLE IF NOT EXISTS public.app_config (key text PRIMARY KEY, value text NOT NULL);
 INSERT INTO public.app_config (key, value) VALUES ('app_env', 'production') ON CONFLICT (key) DO NOTHING;
+
+-- app_config: RLS on, but read-only for clients (service role writes).
+ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "app_config_read_all" ON public.app_config;
+CREATE POLICY "app_config_read_all" ON public.app_config
+  FOR SELECT USING (true);
 
 -- A9: audit_log (server-only readable; insert via RPC)
 CREATE TABLE IF NOT EXISTS public.audit_log (
@@ -438,8 +462,16 @@ CREATE POLICY "tastings_insert_own" ON public.tastings FOR INSERT WITH CHECK (au
 -- Dev mock: allow when auth.uid() IS NULL and user_id matches debugMockUserId
 DROP POLICY IF EXISTS "dev_mock_tastings" ON public.tastings;
 CREATE POLICY "dev_mock_tastings" ON public.tastings FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 -- -----------------------------------------------------------------------------
 -- activity_feed.tasting_id for deterministic feed-tasting join (after tastings exists)
@@ -523,7 +555,9 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
             AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
       )
     )
-    WHERE a.activity_type = 'had_wine' AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+    WHERE a.activity_type = 'had_wine'
+      AND auth.uid() IS NOT NULL
+      AND public.can_view_activity(auth.uid(), a.user_id, p.activity_visibility)
     ORDER BY a.id, CASE WHEN t.id IS NULL THEN 1 ELSE 0 END, CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
       ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)))
   ) sub
@@ -554,7 +588,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
       t.note_tags, t.rating, t.comment
     FROM public.activity_feed a
     INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
-    INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = p_viewer_id
+    INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = auth.uid()
     LEFT JOIN public.wines w ON w.id = a.wine_id
     LEFT JOIN public.wines tw ON tw.id = a.target_wine_id
     LEFT JOIN public.tastings t ON (
@@ -564,7 +598,9 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
             AND t.created_at BETWEEN a.created_at - INTERVAL '10 seconds' AND a.created_at + INTERVAL '10 seconds')
       )
     )
-    WHERE a.activity_type = 'had_wine' AND public.can_view_activity(p_viewer_id, a.user_id, p.activity_visibility)
+    WHERE a.activity_type = 'had_wine'
+      AND auth.uid() IS NOT NULL
+      AND public.can_view_activity(auth.uid(), a.user_id, p.activity_visibility)
     ORDER BY a.id, CASE WHEN t.id IS NULL THEN 1 ELSE 0 END, CASE WHEN a.tasting_id IS NOT NULL THEN 0 ELSE 1 END,
       ABS(EXTRACT(EPOCH FROM (COALESCE(t.created_at, a.created_at) - a.created_at)))
   ) sub
@@ -631,43 +667,95 @@ CREATE POLICY "dev_mock_comparisons" ON public.comparisons
 DROP POLICY IF EXISTS "dev_mock_rankings" ON public.rankings;
 CREATE POLICY "dev_mock_rankings" ON public.rankings
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_activity_insert" ON public.activity_feed;
 CREATE POLICY "dev_mock_activity_insert" ON public.activity_feed
   FOR INSERT
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_comments_cheers" ON public.comments_cheers;
 CREATE POLICY "dev_mock_comments_cheers" ON public.comments_cheers
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_likes" ON public.likes;
 CREATE POLICY "dev_mock_likes" ON public.likes
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_comments" ON public.comments;
 CREATE POLICY "dev_mock_comments" ON public.comments
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_cellar_items" ON public.cellar_items;
 CREATE POLICY "dev_mock_cellar_items" ON public.cellar_items
   FOR ALL
-  USING (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND user_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 DROP POLICY IF EXISTS "dev_mock_follows" ON public.follows;
 CREATE POLICY "dev_mock_follows" ON public.follows
   FOR ALL
-  USING (auth.uid() IS NULL AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid)
-  WITH CHECK (auth.uid() IS NULL AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid);
+  USING (
+    auth.uid() IS NULL
+    AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  )
+  WITH CHECK (
+    auth.uid() IS NULL
+    AND follower_id = '1edd4da3-ecd2-4c30-9f2f-ac7573a8fcba'::uuid
+    AND EXISTS (SELECT 1 FROM public.app_config WHERE key = 'app_env' AND value IN ('local', 'staging'))
+  );
 
 -- -----------------------------------------------------------------------------
 -- 6. RPC: duel_next_pair (Elo proximity, info gain, cooldown, no repeats)
@@ -1224,6 +1312,11 @@ DECLARE
   v_shared int;
   v_computed timestamptz;
 BEGIN
+  -- Hardening: only allow caller to compute similarities that involve themselves.
+  IF auth.uid() IS NULL OR (auth.uid() <> p_user_a AND auth.uid() <> p_user_b) THEN
+    RAISE EXCEPTION 'Not allowed';
+  END IF;
+
   IF p_user_a < p_user_b THEN
     v_a := p_user_a; v_b := p_user_b;
   ELSE
@@ -1296,7 +1389,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
-    CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END AS twin_id,
+    CASE WHEN ts.user_a = auth.uid() THEN ts.user_b ELSE ts.user_a END AS twin_id,
     p.username,
     p.full_name,
     p.avatar_url,
@@ -1305,8 +1398,9 @@ AS $$
     ts.computed_at
   FROM public.taste_similarity ts
   JOIN public.profiles p
-    ON p.id = CASE WHEN ts.user_a = p_user_id THEN ts.user_b ELSE ts.user_a END
-  WHERE (ts.user_a = p_user_id OR ts.user_b = p_user_id)
+    ON p.id = CASE WHEN ts.user_a = auth.uid() THEN ts.user_b ELSE ts.user_a END
+  WHERE auth.uid() IS NOT NULL
+    AND (ts.user_a = auth.uid() OR ts.user_b = auth.uid())
     AND ts.score >= 0.30
     AND p.deleted_at IS NULL
   ORDER BY ts.score DESC

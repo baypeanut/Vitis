@@ -159,7 +159,6 @@ enum LocalWineCatalog {
         ("Prosecco", "Zonin"),
     ]
 
-    /// Terim name veya brand içinde geçen ürünleri döner. Ağ yok; anında.
     static func matching(_ term: String) -> [OFFProduct] {
         let t = term.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !t.isEmpty else { return [] }
