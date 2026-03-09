@@ -17,8 +17,8 @@ enum AppConstants {
         static let supportContact = URL(string: "mailto:support@vitis.app")!
     }
 
-    /// When false, skip login/signup; always show main app. Set true to require auth.
-    static let authRequired = false
+    /// When false, skip login/signup (dev/test). Set true for production / App Store.
+    static let authRequired = true
 
     enum Cache {
         /// v5 = bump to invalidate stale cache after vitisTastingCreated fix.
