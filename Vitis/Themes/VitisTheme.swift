@@ -21,24 +21,28 @@ enum VitisTheme {
     private static let lightAccentWineHover = Color(red: 0x5A / 255, green: 0x12 / 255, blue: 0x12 / 255)
     private static let lightAccentWineMuted = Color(red: 0x4A / 255, green: 0x0E / 255, blue: 0x0E / 255).opacity(0.5)
 
-    // Dark mode tokens (premium editorial: near-black charcoal, restrained accent)
-    // Background: #0E0F11 | Card: #16181C | Divider: #1F1F1F
-    private static let darkBackgroundPrimary = Color(red: 0x0E / 255, green: 0x0F / 255, blue: 0x11 / 255)
-    private static let darkBackgroundSecondary = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)
-    private static let darkCardSurface = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)
-    private static let darkSurface = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)
-    private static let darkSurfaceElevated = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)
-    private static let darkSurfaceSelected = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)
-    private static let darkDivider = Color(red: 0x1F / 255, green: 0x1F / 255, blue: 0x1F / 255)
-    private static let darkTextPrimary = Color(red: 0xED / 255, green: 0xED / 255, blue: 0xED / 255)
-    private static let darkTextSecondary = Color(red: 0x9A / 255, green: 0x9A / 255, blue: 0x9A / 255)
-    private static let darkTextTertiary = Color(red: 0x6F / 255, green: 0x6F / 255, blue: 0x6F / 255)
-    private static let darkTextDisabled = Color(red: 0x6F / 255, green: 0x6F / 255, blue: 0x6F / 255).opacity(0.6)
-    private static let darkAccentWine = Color(red: 0x7A / 255, green: 0x1E / 255, blue: 0x2D / 255)
-    private static let darkAccentWineSecondary = Color(red: 0xB8 / 255, green: 0x9B / 255, blue: 0x5C / 255)
-    private static let darkAccentWineMuted = Color(red: 0x9B / 255, green: 0x4A / 255, blue: 0x55 / 255)
-    private static let darkDangerMuted = Color(red: 0x8B / 255, green: 0x35 / 255, blue: 0x3D / 255)
-    private static let darkTabBarInactive = Color(red: 0x77 / 255, green: 0x77 / 255, blue: 0x77 / 255)
+    // Dark mode tokens — warm charcoal editorial palette
+    // 4-level surface hierarchy: canvas → fields → cards → modals/sheets
+    // Warm brown undertone throughout (not blue-gray) — premium, intentional.
+    // Background: #120F0E | Card: #221E1B | Elevated: #2A2521 | Divider: #2D2823
+    // Accent: #B84A58 (ruby — readable on dark, retains wine DNA) | Wine names: #EDE4D5 (parchment)
+    private static let darkBackgroundPrimary   = Color(red: 0x12/255, green: 0x0F/255, blue: 0x0E/255) // #120F0E — warm near-black canvas
+    private static let darkBackgroundSecondary = Color(red: 0x1C/255, green: 0x19/255, blue: 0x17/255) // #1C1917 — input fields, chip backgrounds
+    private static let darkCardSurface         = Color(red: 0x22/255, green: 0x1E/255, blue: 0x1B/255) // #221E1B — feed cards, list rows
+    private static let darkSurface             = Color(red: 0x22/255, green: 0x1E/255, blue: 0x1B/255) // alias: card level
+    private static let darkSurfaceElevated     = Color(red: 0x2A/255, green: 0x25/255, blue: 0x21/255) // #2A2521 — modals, sheets, tab bar
+    private static let darkSurfaceSelected     = Color(red: 0x30/255, green: 0x2A/255, blue: 0x25/255) // #302A25 — active chip, selected row
+    private static let darkDivider             = Color(red: 0x2D/255, green: 0x28/255, blue: 0x23/255) // #2D2823 — list separators, card borders
+    private static let darkBorderInput         = Color(red: 0x3C/255, green: 0x35/255, blue: 0x2E/255) // #3C352E — form input strokes
+    private static let darkTextPrimary         = Color(red: 0xF2/255, green: 0xEB/255, blue: 0xE2/255) // #F2EBE2 — warm white (not pure white)
+    private static let darkTextSecondary       = Color(red: 0x9E/255, green: 0x94/255, blue: 0x8C/255) // #9E948C — warm mid gray
+    private static let darkTextTertiary        = Color(red: 0x6A/255, green: 0x61/255, blue: 0x5A/255) // #6A615A — warm dim gray
+    private static let darkTextDisabled        = Color(red: 0x45/255, green: 0x3F/255, blue: 0x3A/255) // #453F3A — disabled
+    private static let darkAccentWine          = Color(red: 0xB8/255, green: 0x4A/255, blue: 0x58/255) // #B84A58 — ruby (readable CTA on dark bg)
+    private static let darkAccentWineSecondary = Color(red: 0xED/255, green: 0xE4/255, blue: 0xD5/255) // #EDE4D5 — warm parchment for wine names
+    private static let darkAccentWineMuted     = Color(red: 0x8A/255, green: 0x30/255, blue: 0x3E/255) // #8A303E — muted ruby for fills/tints
+    private static let darkDangerMuted         = Color(red: 0xA2/255, green: 0x38/255, blue: 0x42/255) // #A23842 — danger text, readable in dark
+    private static let darkTabBarInactive      = Color(red: 0x5A/255, green: 0x53/255, blue: 0x4E/255) // #5A534E — warm inactive tab icons
 
     // Emerald accent — Taste Twin badge, Reserve List bookmark.
     // Gold tones are already semantically occupied by white/sparkling wine category colors.
@@ -82,7 +86,7 @@ enum VitisTheme {
     }
 
     static func borderSubtle(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? darkDivider : lightBorderSubtle
+        scheme == .dark ? darkBorderInput : lightBorderSubtle
     }
 
     static func divider(for scheme: ColorScheme) -> Color {
@@ -132,9 +136,8 @@ enum VitisTheme {
         scheme == .dark ? darkAccentWineSecondary : lightAccentWine
     }
 
-    /// Ratings: primary accent, 85% opacity in dark.
     static func ratingColor(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? darkAccentWine.opacity(0.85) : lightAccentWine
+        scheme == .dark ? darkAccentWine : lightAccentWine
     }
 
     /// Tab bar inactive icon. Dark: #777.

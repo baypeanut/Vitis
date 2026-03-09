@@ -64,6 +64,31 @@ enum WineService {
         return nil
     }
 
+    /// Escape ILIKE special characters (%, _, \) so the query is treated as literal.
+    private static func escapeIlikePattern(_ s: String) -> String {
+        s.replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "%", with: "\\%")
+            .replacingOccurrences(of: "_", with: "\\_")
+    }
+
+    /// Full-text search across the wines catalog (name + producer). Used to surface X-Wines imports.
+    static func searchCatalog(query: String, limit: Int = 30) async throws -> [Wine] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return [] }
+        let pattern = "%\(escapeIlikePattern(q))%"
+        let rows: [WineRow] = try await supabase
+            .from("wines")
+            .select("id, name, producer, vintage, variety, region, label_image_url, category")
+            .or("name.ilike.\(pattern),producer.ilike.\(pattern)")
+            .limit(limit)
+            .execute()
+            .value
+        return rows.map { r in
+            Wine(id: r.id, name: r.name, producer: r.producer, vintage: r.vintage,
+                 variety: r.variety, region: r.region, labelImageURL: r.label_image_url, category: r.category)
+        }
+    }
+
     /// Fetch all wines from database, ordered by name.
     static func fetchAllWines(limit: Int = 100) async throws -> [Wine] {
         let rows: [WineRow] = try await supabase

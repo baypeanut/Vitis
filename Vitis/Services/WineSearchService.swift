@@ -40,7 +40,11 @@ enum WineSearchService {
         #endif
 
         func fetch() async throws -> Data {
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return data }
+            guard (200..<300).contains(http.statusCode) else {
+                throw NSError(domain: "WineSearchService", code: -1000, userInfo: [NSLocalizedDescriptionKey: ErrorMessage.unknown])
+            }
             return data
         }
 

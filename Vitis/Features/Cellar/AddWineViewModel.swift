@@ -2,13 +2,12 @@
 //  AddWineViewModel.swift
 //  Vitis
 //
-//  Debounced OFF search. Cache + substring match: "leb" → "leblebi" etc.
-//  Instant results from cache; API enriches. Retry on timeout.
+//  Search: Supabase wines catalog (X-Wines import). Debounced. Optional OFF cache kept for future.
 //
 
 import Foundation
 
-private let minQueryLengthForAPI = 2
+private let minQueryLengthForSearch = 2
 private let debounceMs: UInt64 = 400
 private let searchCacheCap = 300
 
@@ -16,7 +15,10 @@ private let searchCacheCap = 300
 @Observable
 final class AddWineViewModel {
     var query = ""
+    /// OFF-style results (used only if OFF search is re-enabled).
     var results: [OFFProduct] = []
+    /// Search results from Supabase (X-Wines / catalog). Primary source for Add Wine search.
+    var dbSearchResults: [Wine] = []
     var dbWines: [Wine] = []
     var isLoading = false
     var isLoadingMore = false
@@ -26,9 +28,22 @@ final class AddWineViewModel {
     private var currentSearchPage = 1
     private var lastSearchTerm = ""
 
+    /// True when we have finished searching for the current query (so empty results = genuinely no wines).
+    var searchCompletedForCurrentQuery: Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !q.isEmpty && q == lastSearchTerm && !isLoading
+    }
+
+    /// True when user has typed something but we're still debouncing or loading (don't show "No wines found").
+    var isSearchingOrPending: Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !q.isEmpty && (isLoading || q != lastSearchTerm)
+    }
+
     private var searchTask: Task<Void, Never>?
-    /// Tüm başarılı API sonuçlarından birikmiş cache. "leb" yazınca "leblebi" vs. substring ile anında gösterilir.
     private var searchCache: [OFFProduct] = []
+    /// Maps "vitis-catalog-{uuid}" → Wine for catalog wines (skip upsert when selected).
+    private var catalogWineById: [String: Wine] = [:]
 
     func loadDatabaseWines() async {
         do {
@@ -43,13 +58,13 @@ final class AddWineViewModel {
     func search() {
         searchTask?.cancel()
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else {
+        if q.isEmpty {
+            dbSearchResults = []
             results = []
+            lastSearchTerm = ""
             errorMessage = nil
             return
         }
-        // Her tuşta yerel + cache substring eşleşmesi; anında sonuç (~1 sn hedefi).
-        applyCacheFilter(term: q)
         searchTask = Task {
             try? await Task.sleep(nanoseconds: debounceMs * 1_000_000)
             guard !Task.isCancelled else { return }
@@ -99,56 +114,22 @@ final class AddWineViewModel {
 
     private func performSearch(term: String, page: Int = 1) async {
         errorMessage = nil
-        let hadCacheHits = !results.isEmpty
-        let isFirstPage = page == 1
-
-        if term.count < minQueryLengthForAPI {
-            if !hadCacheHits { results = [] }
+        if term.count < minQueryLengthForSearch {
+            dbSearchResults = []
             hasMorePages = false
             return
         }
 
-        if isFirstPage { isLoading = true } else { isLoadingMore = true }
+        isLoading = true
         do {
-            let raw = try await WineSearchService.search(query: term, page: page)
-            let api = filterAndRank(products: raw, query: term)
-            hasMorePages = api.count >= 20
-            if !api.isEmpty { mergeIntoCache(api) }
-            if isFirstPage {
-                let combined = allMatching(term)
-                if !combined.isEmpty {
-                    results = filterAndRank(products: combined, query: term)
-                } else if !api.isEmpty {
-                    results = api
-                } else if !hadCacheHits {
-                    results = []
-                }
-                lastSearchTerm = term
-                currentSearchPage = 1
-            } else {
-                var seen = Set(results.map(\.code))
-                for p in api where seen.insert(p.code).inserted {
-                    results.append(p)
-                }
-                results = filterAndRank(products: results, query: term)
-                currentSearchPage = page
-            }
+            let wines = try await WineService.searchCatalog(query: term, limit: 50)
+            dbSearchResults = wines
+            lastSearchTerm = term
+            currentSearchPage = 1
+            hasMorePages = false
         } catch {
-            let nsError = error as NSError
-            let isTimeout = (nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut)
-                || (error as? URLError)?.code == .timedOut
-            if isTimeout {
-                // Silent timeout: fall back to cache or empty state; no technical error text.
-                if results.isEmpty && isFirstPage {
-                    applyCacheFilter(term: term)
-                }
-            } else {
-                errorMessage = ErrorMessage.userFacing(for: error)
-                if results.isEmpty && isFirstPage {
-                    applyCacheFilter(term: term)
-                    if !results.isEmpty { errorMessage = ErrorMessage.unknown }
-                }
-            }
+            dbSearchResults = []
+            errorMessage = ErrorMessage.userFacing(for: error)
         }
         isLoading = false
         isLoadingMore = false
@@ -157,9 +138,12 @@ final class AddWineViewModel {
     func loadMoreSearchResults() {
         guard hasMorePages, !isLoadingMore, !lastSearchTerm.isEmpty else { return }
         let nextPage = currentSearchPage + 1
-        Task {
-            await performSearch(term: lastSearchTerm, page: nextPage)
-        }
+        Task { await performSearch(term: lastSearchTerm, page: nextPage) }
+    }
+
+    /// If this product is from the catalog (X-Wines), returns the Wine so caller can skip upsert.
+    func wineForProduct(_ p: OFFProduct) -> Wine? {
+        catalogWineById[p.code]
     }
 
     private func productsMatching(_ term: String) -> [OFFProduct] {
