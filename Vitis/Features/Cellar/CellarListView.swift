@@ -101,7 +101,7 @@ struct CellarListView: View {
                             .font(VitisTheme.wineNameFont(for: colorScheme))
                             .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(String(format: "%.1f", tasting.rating))
+                        Text(String(Int(tasting.rating.rounded())))
                             .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 20, weight: .medium))
                             .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
                     }

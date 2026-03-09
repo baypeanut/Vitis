@@ -40,7 +40,8 @@ enum TastingService {
         noteTags: [String]? = nil,
         comment: String? = nil,
         source: String? = nil,
-        visibility: TastingVisibility = .everyone
+        visibility: TastingVisibility = .everyone,
+        momentImageURL: String? = nil
     ) async throws -> Tasting {
         // Insert tasting
         struct Insert: Encodable {
@@ -51,6 +52,7 @@ enum TastingService {
             let comment: String?
             let source: String?
             let visibility: String?
+            let moment_image_url: String?
         }
         let payload = Insert(
             user_id: userId,
@@ -59,7 +61,8 @@ enum TastingService {
             note_tags: noteTags?.isEmpty == false ? noteTags : nil,
             comment: comment?.isEmpty == false ? comment : nil,
             source: source,
-            visibility: visibility.rawValue
+            visibility: visibility.rawValue,
+            moment_image_url: momentImageURL
         )
         let inserted: [TastingRow] = try await supabase
             .from("tastings")

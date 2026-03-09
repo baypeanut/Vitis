@@ -428,6 +428,8 @@ CREATE TABLE IF NOT EXISTS public.tastings (
 ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS comment text NULL;
 -- Per-tasting visibility (Public / Friends Only). App sends this on insert.
 ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'everyone' CHECK (visibility IN ('everyone', 'friends'));
+-- Optional "wine night" photo for feed only (not shown in cellar).
+ALTER TABLE public.tastings ADD COLUMN IF NOT EXISTS moment_image_url text NULL;
 
 CREATE INDEX IF NOT EXISTS idx_tastings_user_created ON public.tastings (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tastings_wine ON public.tastings (wine_id);
@@ -507,7 +509,8 @@ SELECT DISTINCT ON (a.id)
   tw.label_image_url AS target_wine_label_url,
   t.note_tags AS tasting_note_tags,
   t.rating AS tasting_rating,
-  t.comment AS tasting_comment
+  t.comment AS tasting_comment,
+  t.moment_image_url AS tasting_moment_image_url
 FROM public.activity_feed a
 INNER JOIN public.profiles p ON p.id = a.user_id
 LEFT JOIN public.wines w ON w.id = a.wine_id
@@ -534,7 +537,7 @@ RETURNS TABLE (
   username text, full_name text, avatar_url text,
   wine_name text, wine_producer text, wine_vintage int, wine_label_url text, wine_region text, wine_category text, wine_variety text,
   target_wine_name text, target_wine_producer text, target_wine_vintage int, target_wine_label_url text,
-  tasting_note_tags text[], tasting_rating double precision, tasting_comment text
+  tasting_note_tags text[], tasting_rating double precision, tasting_comment text, tasting_moment_image_url text
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT * FROM (
@@ -543,7 +546,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
       p.username, p.full_name, p.avatar_url,
       w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
       tw.name, tw.producer, tw.vintage, tw.label_image_url,
-      t.note_tags, t.rating, t.comment
+      t.note_tags, t.rating, t.comment, t.moment_image_url
     FROM public.activity_feed a
     INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
     LEFT JOIN public.wines w ON w.id = a.wine_id
@@ -576,7 +579,7 @@ RETURNS TABLE (
   username text, full_name text, avatar_url text,
   wine_name text, wine_producer text, wine_vintage int, wine_label_url text, wine_region text, wine_category text, wine_variety text,
   target_wine_name text, target_wine_producer text, target_wine_vintage int, target_wine_label_url text,
-  tasting_note_tags text[], tasting_rating double precision, tasting_comment text
+  tasting_note_tags text[], tasting_rating double precision, tasting_comment text, tasting_moment_image_url text
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT * FROM (
@@ -585,7 +588,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
       p.username, p.full_name, p.avatar_url,
       w.name, w.producer, w.vintage, w.label_image_url, w.region, w.category, w.variety,
       tw.name, tw.producer, tw.vintage, tw.label_image_url,
-      t.note_tags, t.rating, t.comment
+      t.note_tags, t.rating, t.comment, t.moment_image_url
     FROM public.activity_feed a
     INNER JOIN public.profiles p ON p.id = a.user_id AND p.deleted_at IS NULL
     INNER JOIN public.follows fo ON fo.followed_id = a.user_id AND fo.follower_id = auth.uid()
@@ -1028,6 +1031,28 @@ ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Moment images bucket (wine night photos, feed only)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'moment_images',
+  'moment_images',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/heic']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS "Moment images are publicly readable" ON storage.objects;
+CREATE POLICY "Moment images are publicly readable"
+  ON storage.objects FOR SELECT USING (bucket_id = 'moment_images');
+
+DROP POLICY IF EXISTS "Users can upload own moment images" ON storage.objects;
+CREATE POLICY "Users can upload own moment images"
+  ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'moment_images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 DROP POLICY IF EXISTS "Avatar images are publicly accessible" ON storage.objects;
 CREATE POLICY "Avatar images are publicly accessible"

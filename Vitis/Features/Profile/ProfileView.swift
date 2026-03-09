@@ -32,6 +32,8 @@ struct ProfileView: View {
     @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
     @State private var drillDownTarget: DrillDownTarget?
     @State private var showSettings = false
+    @State private var showEditProfile = false
+    @State private var editVM = EditProfileViewModel()
     @State private var showWantToTry = false
     @State private var showAddWishlistSheet = false
     @State private var markAsTastedItem: CellarItem?
@@ -55,6 +57,7 @@ struct ProfileView: View {
                         isOwn: true,
                         isFollowing: false,
                         tasteTwins: tasteTwins,
+                        onEdit: { showEditProfile = true },
                         onSignOut: { Task { await signOut() } },
                         onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
                         onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
@@ -120,6 +123,24 @@ struct ProfileView: View {
             .sheet(isPresented: $showWantToTry) {
                 if let uid = viewModel?.userId {
                     WantToTryView(userId: uid, onDismiss: { showWantToTry = false })
+                }
+            }
+            .sheet(isPresented: $showEditProfile) {
+                if let p = viewModel?.profile, let uid = currentUserId {
+                    EditProfileView(
+                        viewModel: editVM,
+                        profile: p,
+                        userId: uid,
+                        onSaved: {
+                            showEditProfile = false
+                            Task {
+                                await viewModel?.load()
+                                await ProfileStore.shared.load()
+                                NotificationCenter.default.post(name: .vitisProfileUpdated, object: nil)
+                            }
+                        },
+                        onCancel: { showEditProfile = false }
+                    )
                 }
             }
             .sheet(isPresented: $showAddWishlistSheet) {

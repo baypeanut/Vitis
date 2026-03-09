@@ -129,6 +129,7 @@ struct WineCardView: View {
                     selectedNotes: $editSelectedNotes,
                     comment: $editComment,
                     visibility: $editVisibility,
+                    momentImageData: .constant(nil),
                     onCheers: {
                         Task {
                             await saveEditedTasting()

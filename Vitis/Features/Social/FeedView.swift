@@ -108,15 +108,23 @@ struct FeedView: View {
     }
 
     private func tabButton(_ tab: FeedViewModel.Tab, label: String) -> some View {
-        Button {
+        let isActive = viewModel.tab == tab
+        return Button {
             viewModel.switchTab(to: tab)
         } label: {
-            Text(label)
-                .font(VitisTheme.uiFont(size: 15, weight: .regular))
-                .foregroundStyle(viewModel.tab == tab ? VitisTheme.accent(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme)))
+            VStack(spacing: 6) {
+                Text(label)
+                    .font(VitisTheme.uiFont(size: 15, weight: isActive ? .medium : .regular))
+                    .foregroundStyle(isActive ? VitisTheme.accent(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme)))
+                Rectangle()
+                    .fill(isActive ? VitisTheme.accentWine(for: colorScheme) : Color.clear)
+                    .frame(height: 2)
+                    .clipShape(Capsule())
+            }
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.15), value: isActive)
     }
 
     @ViewBuilder
@@ -143,17 +151,18 @@ struct FeedView: View {
 
     private var globalEmptyState: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 Image(systemName: "wineglass")
-                    .font(.system(size: 44))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(0.4))
-                    .padding(.top, 60)
-                Text("Nothing here yet.")
-                    .font(VitisTheme.uiFont(size: 17, weight: .medium))
+                    .font(.system(size: 40, weight: .ultraLight))
+                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme).opacity(0.25))
+                    .padding(.top, 64)
+                Text("The evening hasn't started yet.")
+                    .font(.system(.title3, design: .serif, weight: .regular))
                     .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
-                Text("Be the first to log a tasting.")
+                    .multilineTextAlignment(.center)
+                Text("Be the first to open a bottle.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 32)
@@ -164,11 +173,20 @@ struct FeedView: View {
     private var followingEmptyState: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("Follow people to see their tastings here.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                VStack(spacing: 6) {
+                    Text("The best conversations about wine")
+                        .font(.system(.body, design: .serif, weight: .regular))
+                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    Text("haven't started yet.")
+                        .font(.system(.body, design: .serif, weight: .regular))
+                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    Text("Follow someone with your taste.")
+                        .font(VitisTheme.uiFont(size: 14))
+                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .padding(.top, 4)
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
                 if !viewModel.suggestedUsers.isEmpty {
                     Text("People you might like")
                         .font(VitisTheme.uiFont(size: 13, weight: .semibold))

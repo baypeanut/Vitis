@@ -5,14 +5,14 @@ enum VitisTheme {
     // MARK: - Semantic Color Tokens (Light + Dark)
     // Dark mode is intentional, layered, premium - not a dimmed overlay.
 
-    // Light mode base
-    private static let lightBackgroundPrimary = Color(red: 1, green: 1, blue: 1)
-    private static let lightBackgroundSecondary = Color(red: 0xF6 / 255, green: 0xF6 / 255, blue: 0xF8 / 255)
-    private static let lightSurface = Color.white
+    // Light mode base — ivory "Old Money" palette
+    private static let lightBackgroundPrimary = Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255)  // #FAF8F5 ivory
+    private static let lightBackgroundSecondary = Color(red: 0xF0 / 255, green: 0xEB / 255, blue: 0xE3 / 255) // #F0EBE3 warm cream
+    private static let lightSurface = Color.white                          // white cards pop on ivory bg
     private static let lightSurfaceElevated = Color.white
-    private static let lightSurfaceSelected = Color(white: 0.96)
-    private static let lightBorderSubtle = Color(white: 0.9)
-    private static let lightDivider = Color(red: 0xE6 / 255, green: 0xE6 / 255, blue: 0xEA / 255)
+    private static let lightSurfaceSelected = Color(red: 0xF5 / 255, green: 0xF0 / 255, blue: 0xE8 / 255)
+    private static let lightBorderSubtle = Color(red: 0xDC / 255, green: 0xD4 / 255, blue: 0xC8 / 255)        // warm border
+    private static let lightDivider = Color(red: 0xE4 / 255, green: 0xDD / 255, blue: 0xD4 / 255)             // warm divider
     private static let lightTextPrimary = Color(red: 0x0B / 255, green: 0x0B / 255, blue: 0x0C / 255)
     private static let lightTextSecondary = Color(red: 0x3A / 255, green: 0x3A / 255, blue: 0x45 / 255)
     private static let lightTextTertiary = Color(red: 0x6B / 255, green: 0x6B / 255, blue: 0x75 / 255)
@@ -39,6 +39,12 @@ enum VitisTheme {
     private static let darkAccentWineMuted = Color(red: 0x9B / 255, green: 0x4A / 255, blue: 0x55 / 255)
     private static let darkDangerMuted = Color(red: 0x8B / 255, green: 0x35 / 255, blue: 0x3D / 255)
     private static let darkTabBarInactive = Color(red: 0x77 / 255, green: 0x77 / 255, blue: 0x77 / 255)
+
+    // Emerald accent — Taste Twin badge, Reserve List bookmark.
+    // Gold tones are already semantically occupied by white/sparkling wine category colors.
+    // Deep forest green reads as "premium social signal" (Harrods, heritage) without colliding.
+    private static let lightAccentEmerald = Color(red: 0x1E / 255, green: 0x5C / 255, blue: 0x3A / 255)  // #1E5C3A deep forest
+    private static let darkAccentEmerald  = Color(red: 0x5B / 255, green: 0xAF / 255, blue: 0x82 / 255)  // #5BAF82 mint emerald
 
     // Status tokens (shared)
     static let danger = Color(red: 1, green: 0x45 / 255, blue: 0x3A / 255)
@@ -136,6 +142,21 @@ enum VitisTheme {
         scheme == .dark ? darkTabBarInactive : lightTextTertiary
     }
 
+    /// Emerald: Taste Twin badge + Reserve List bookmark. Never use for wine type coloring.
+    static func accentEmerald(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? darkAccentEmerald : lightAccentEmerald
+    }
+
+    /// Rating color: standard wine accent. No special treatment for 9.0+ — the number speaks.
+    static func ratingColorAdaptive(rating: Double, for scheme: ColorScheme) -> Color {
+        ratingColor(for: scheme)
+    }
+
+    // Legacy alias kept for any callsites not yet updated.
+    static func accentGold(for scheme: ColorScheme) -> Color {
+        accentEmerald(for: scheme)
+    }
+
     /// Dark: no glow. Light: subtle shadow.
     static func shadowColor(for scheme: ColorScheme) -> Color {
         scheme == .dark ? .clear : Color.black.opacity(0.04)
@@ -178,7 +199,7 @@ enum VitisTheme {
     }
 
     static func profileSectionBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? darkBackgroundPrimary : Color(white: 0.98)
+        scheme == .dark ? darkBackgroundPrimary : lightSurface
     }
 
     static func placeholderBackground(for scheme: ColorScheme) -> Color {

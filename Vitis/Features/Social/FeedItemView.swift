@@ -40,7 +40,7 @@ struct FeedItemView: View {
         var text = "@\(item.username) tried \(item.wineName)"
         if let v = item.wineVintage { text = "@\(item.username) tried \(v) \(item.wineName)" }
         if let rating = item.tastingRating {
-            text += " — rated \(String(format: "%.1f", rating))/10"
+            text += " — rated \(Int(rating.rounded()))/10"
         }
         text += " ✦ vitis.app"
         return text
@@ -189,15 +189,18 @@ struct FeedItemView: View {
 
     private var twinBadge: some View {
         HStack(spacing: 3) {
-            Image(systemName: "person.2.fill")
+            Image(systemName: "sparkles")
                 .font(.system(size: 9))
             Text("Taste Twin")
                 .font(VitisTheme.uiFont(size: 11, weight: .medium))
         }
-        .foregroundStyle(VitisTheme.accent(for: colorScheme))
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(VitisTheme.accent(for: colorScheme).opacity(0.12))
+        .foregroundStyle(VitisTheme.accentEmerald(for: colorScheme))
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(VitisTheme.accentEmerald(for: colorScheme).opacity(0.10))
+        .overlay(
+            Capsule().stroke(VitisTheme.accentEmerald(for: colorScheme).opacity(0.35), lineWidth: 0.75)
+        )
         .clipShape(Capsule())
     }
 
@@ -226,69 +229,104 @@ struct FeedItemView: View {
         }
     }
     
-    // MARK: - Two Column Layout
-    
+    // MARK: - Editorial Card Layout
+
     private var twoColumnLayout: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // LEFT COLUMN: HStack = thumbnail + VStack(producer, wine name, notes, timestamp)
-            HStack(alignment: .top, spacing: 8) {
-                wineThumbnailSquare(
+        VStack(alignment: .leading, spacing: 10) {
+            // Row 1: Label image (portrait) + wine info side by side; optional moment photo top-right
+            HStack(alignment: .top, spacing: 12) {
+                // Label image — portrait, prominent
+                wineLabelPortrait(
                     labelURL: item.wineLabelURL,
                     category: item.wineCategory,
-                    wineName: item.wineName
+                    wineName: item.wineName,
+                    rating: item.tastingRating
                 )
-                VStack(alignment: .leading, spacing: 2) {
+
+                // Wine info + rating
+                VStack(alignment: .leading, spacing: 3) {
                     Text(item.wineProducer)
                         .font(VitisTheme.uiFont(size: 11, weight: .regular))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                         .lineLimit(1)
-                        .truncationMode(.tail)
+
                     Text(VitisTheme.displayWineName(item.wineName))
                         .font(VitisTheme.wineNameFont(for: colorScheme))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
+                        .foregroundStyle(colorScheme == .dark
+                                         ? VitisTheme.wineNameColor(for: colorScheme)
+                                         : WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
                         .lineLimit(2)
-                        .minimumScaleFactor(0.9)
+                        .minimumScaleFactor(0.88)
+
                     if let vintage = item.wineVintage {
                         Text(String(vintage))
                             .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
                     }
-                    if let comment = item.tastingComment, !comment.isEmpty {
-                        Text(comment)
-                            .font(VitisTheme.uiFont(size: 12).italic())
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-                            .lineLimit(2)
-                            .truncationMode(.tail)
-                            .padding(.top, 2)
+
+                    Spacer(minLength: 6)
+
+                    // Rating
+                    if let rating = item.tastingRating {
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text(String(Int(rating.rounded())))
+                                .font(colorScheme == .dark
+                                      ? VitisTheme.ratingFont()
+                                      : .system(size: 20, weight: .semibold))
+                                .foregroundStyle(VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
+                            Text("/ 10")
+                                .font(VitisTheme.uiFont(size: 11))
+                                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                            if hasAlsoRated {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
+                            }
+                        }
                     }
-                    Text(VitisTheme.compactTimestamp(item.createdAt))
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Moment photo (wine night) — small circle top-right of card row
+                if let urlString = item.momentImageURL, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let img):
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        case .failure, .empty:
+                            Circle()
+                                .fill(VitisTheme.placeholderBackground(for: colorScheme))
+                                .overlay(Image(systemName: "photo").font(.system(size: 14)).foregroundStyle(VitisTheme.textTertiary(for: colorScheme)))
+                        @unknown default:
+                            Circle()
+                                .fill(VitisTheme.placeholderBackground(for: colorScheme))
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(VitisTheme.divider(for: colorScheme), lineWidth: 1))
+                    .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.06), radius: 3, x: 0, y: 1)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onTapGesture {
                 wineNavigationTarget = WineNavTarget(id: item.id, wine: wine, activityId: item.id, currentUserId: currentUserId, sourceUserId: item.userId, sourceContext: "feed")
             }
-            
-            // RIGHT COLUMN: rating only (trailing)
-            VStack(alignment: .trailing, spacing: 4) {
-                if let rating = item.tastingRating {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(String(format: "%.1f", rating))
-                            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 22, weight: .semibold))
-                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
-                        if hasAlsoRated {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
-                        }
-                    }
-                }
+
+            // Row 2: Comment + timestamp (full width below image)
+            if let comment = item.tastingComment, !comment.isEmpty {
+                Text(comment)
+                    .font(VitisTheme.uiFont(size: 13).italic())
+                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .padding(.leading, 58 + 12) // align with wine info column
             }
-            .frame(width: 80, alignment: .trailing)
+
+            Text(VitisTheme.compactTimestamp(item.createdAt))
+                .font(VitisTheme.uiFont(size: 12))
+                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                .padding(.leading, 58 + 12)
         }
     }
     
@@ -304,33 +342,48 @@ struct FeedItemView: View {
         }
     }
     
-    /// Small thumbnail (32-36pt) for left column; label image or category icon.
-    private func wineThumbnailSquare(labelURL: String?, category: String?, wineName: String?) -> some View {
-        let size: CGFloat = 28
-        let cornerRadius: CGFloat = 6
+    /// Portrait label image — 54×72pt. The visual anchor of the card.
+    private func wineLabelPortrait(labelURL: String?, category: String?, wineName: String?, rating: Double?) -> some View {
+        let w: CGFloat = 58
+        let h: CGFloat = 76
+        let r: CGFloat = 6
         return ZStack {
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(VitisTheme.secondaryElevated(for: colorScheme))
-                .frame(width: size, height: size)
+            RoundedRectangle(cornerRadius: r)
+                .fill(VitisTheme.backgroundSecondary(for: colorScheme))
             if let urlString = labelURL, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let img):
-                        img.resizable().aspectRatio(contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        img.resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .clipShape(RoundedRectangle(cornerRadius: r))
                     default:
-                        Image(systemName: "wineglass.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName, colorScheme: colorScheme).opacity(0.75))
+                        ratingFallbackIcon(category: category, wineName: wineName, rating: rating, iconSize: 22)
                     }
                 }
-                .frame(width: size, height: size)
             } else {
-                Image(systemName: "wineglass.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName, colorScheme: colorScheme).opacity(0.75))
+                ratingFallbackIcon(category: category, wineName: wineName, rating: rating, iconSize: 22)
             }
         }
-        .frame(width: size, height: size)
+        .frame(width: w, height: h)
+        .clipShape(RoundedRectangle(cornerRadius: r))
+        .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.06), radius: 4, x: 0, y: 2)
+    }
+
+    /// Placeholder icon by mood: 7+ full glass, 4–6 neutral, <4 dim.
+    private func ratingFallbackIcon(category: String?, wineName: String?, rating: Double?, iconSize: CGFloat) -> some View {
+        let (iconName, opacity): (String, Double) = {
+            guard let r = rating else {
+                return ("wineglass.fill", 0.6)
+            }
+            if r >= 7 { return ("wineglass.fill", 0.85) }
+            if r >= 4 { return ("wineglass", 0.65) }
+            return ("wineglass", 0.4)
+        }()
+        let baseColor = WineColorResolver.resolveWineDisplayColor(category: category, wineName: wineName, colorScheme: colorScheme)
+        return Image(systemName: iconName)
+            .font(.system(size: iconSize))
+            .foregroundStyle(baseColor.opacity(opacity))
     }
     
     
@@ -365,7 +418,7 @@ struct FeedItemView: View {
                 } label: {
                     Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 13))
-                        .foregroundStyle(hasWishlisted ? VitisTheme.accent(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
+                        .foregroundStyle(hasWishlisted ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
                         .contentShape(Rectangle())
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)

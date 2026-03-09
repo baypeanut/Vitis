@@ -25,6 +25,8 @@ struct ProfileSettingsView: View {
     @State private var showAppearanceSettings = false
     @State private var showDrinkResponsibly = false
     @State private var showContactSupport = false
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfService = false
     @State private var authStore = AuthStore.shared
     @Environment(\.openURL) private var openURL
     @State private var notificationsStatusText = "-"
@@ -108,12 +110,12 @@ struct ProfileSettingsView: View {
                 settingsRow(
                     title: "Privacy Policy",
                     icon: "hand.raised.fill",
-                    action: { openURL(AppConstants.URLs.privacyPolicy) }
+                    action: { showPrivacyPolicy = true }
                 )
                 settingsRow(
                     title: "Terms of Service",
                     icon: "doc.text",
-                    action: { openURL(AppConstants.URLs.termsOfService) }
+                    action: { showTermsOfService = true }
                 )
                 settingsRow(
                     title: "Drink Responsibly",
@@ -174,6 +176,12 @@ struct ProfileSettingsView: View {
         }
         .navigationDestination(isPresented: $showAppearanceSettings) {
             AppearanceSettingsView()
+        }
+        .navigationDestination(isPresented: $showPrivacyPolicy) {
+            PrivacyPolicyView()
+        }
+        .navigationDestination(isPresented: $showTermsOfService) {
+            TermsOfServiceView()
         }
         .sheet(isPresented: $showChangeEmailSheet) {
             ChangeEmailView(isPresented: $showChangeEmailSheet)

@@ -28,6 +28,7 @@ struct FeedItem: Identifiable, Sendable {
     let contentText: String?
     let tastingRating: Double?
     let tastingComment: String?
+    let momentImageURL: String?
     let createdAt: Date
     var cheersCount: Int
     var hasCheered: Bool
@@ -53,6 +54,7 @@ struct FeedItem: Identifiable, Sendable {
         contentText: String? = nil,
         tastingRating: Double? = nil,
         tastingComment: String? = nil,
+        momentImageURL: String? = nil,
         createdAt: Date,
         cheersCount: Int = 0,
         hasCheered: Bool = false
@@ -77,6 +79,7 @@ struct FeedItem: Identifiable, Sendable {
         self.contentText = contentText
         self.tastingRating = tastingRating
         self.tastingComment = tastingComment
+        self.momentImageURL = momentImageURL
         self.createdAt = createdAt
         self.cheersCount = cheersCount
         self.hasCheered = hasCheered
@@ -104,6 +107,7 @@ extension FeedItem {
         targetWineLabelURL: nil,
         contentText: "Tuscany list",
         tastingRating: nil,
+        momentImageURL: nil,
         createdAt: Date(),
         cheersCount: 3,
         hasCheered: false
@@ -128,6 +132,7 @@ extension FeedItem {
         targetWineLabelURL: nil,
         contentText: nil,
         tastingRating: nil,
+        momentImageURL: nil,
         createdAt: Date().addingTimeInterval(-3600),
         cheersCount: 0,
         hasCheered: true
@@ -153,6 +158,7 @@ extension FeedItem {
         contentText: "Vanilla, Floral",
         tastingRating: 8.0,
         tastingComment: nil,
+        momentImageURL: nil,
         createdAt: Date(),
         cheersCount: 2,
         hasCheered: false
@@ -206,6 +212,7 @@ extension FeedItem {
             targetWineLabelURL: tw?.labelImageUrl,
             contentText: entry.contentText,
             tastingRating: nil,
+            momentImageURL: nil,
             createdAt: entry.createdAt,
             cheersCount: cheersCount,
             hasCheered: hasCheered
