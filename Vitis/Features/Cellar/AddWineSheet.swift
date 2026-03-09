@@ -89,10 +89,6 @@ struct AddWineSheet: View {
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
         .onAppear {
             if case .rating = flowStep { AnalyticsService.firstTastingStarted() }
-            if initialWine == nil {
-                viewModel.prefetchPopular()
-                Task { await viewModel.loadDatabaseWines() }
-            }
         }
     }
 
@@ -162,28 +158,34 @@ struct AddWineSheet: View {
     private var searchResults: some View {
         let trimmed = viewModel.query.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty {
-            // Show database wines when query is empty
-            if viewModel.dbWines.isEmpty {
-                Text("No wines in database yet.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(viewModel.dbWines) { wine in
-                            wineRow(wine)
-                            Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
-                        }
-                    }
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
-                }
+            // Empty state: invite to search — no list, old-money elegance
+            VStack(spacing: 12) {
+                Text("Search by name, producer, or region")
+                    .font(.system(.body, design: .serif, weight: .regular))
+                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .multilineTextAlignment(.center)
+                Text("Find your next bottle")
+                    .font(.system(.subheadline, design: .serif, weight: .regular))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
             }
-        } else if viewModel.results.isEmpty {
-            Text("This label has not been added to our archive yet.")
-                .font(VitisTheme.producerSerifFont())
-                .foregroundStyle(VitisTheme.secondaryText)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 40)
+        } else if viewModel.isSearchingOrPending {
+            // Still debouncing or request in flight — show searching, never "No wines found"
+            VStack(spacing: 12) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(0.9)
+                    .tint(VitisTheme.accent(for: colorScheme))
+                Text("Searching…")
+                    .font(.system(.subheadline, design: .serif, weight: .regular))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if viewModel.searchCompletedForCurrentQuery && viewModel.dbSearchResults.isEmpty {
+            Text("No wines found. Try another search or add the wine from our catalog.")
+                .font(VitisTheme.uiFont(size: 15))
+                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -191,31 +193,9 @@ struct AddWineSheet: View {
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(viewModel.results) { p in
-                        row(p)
+                    ForEach(viewModel.dbSearchResults) { wine in
+                        wineRow(wine)
                         Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
-                    }
-                    if viewModel.hasMorePages {
-                        Button {
-                            viewModel.loadMoreSearchResults()
-                        } label: {
-                            HStack {
-                                if viewModel.isLoadingMore {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .scaleEffect(0.8)
-                                        .tint(VitisTheme.accent)
-                                } else {
-                                    Text("Show more")
-                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                                }
-                            }
-                            .foregroundStyle(VitisTheme.accent)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(viewModel.isLoadingMore)
                     }
                 }
                 .padding(.top, 8)

@@ -33,3 +33,7 @@ Vitis/Core/SupabaseConfig.swift
 Vitis/Config/Secrets.xcconfig
 # cursor ai workspace
 .claude/
+
+# X-Wines dataset (large) and generated import CSV
+XWines_*.csv
+wines_import.csv

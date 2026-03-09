@@ -54,6 +54,28 @@ struct OFFProduct: Decodable, Identifiable {
         return nil
     }
 
+    /// Create an OFFProduct from a Supabase catalog wine (X-Wines import).
+    /// Code prefix "vitis-catalog-" signals AddWineViewModel to skip upsert (wine already in DB).
+    static func fromCatalogWine(_ wine: Wine) -> OFFProduct {
+        let categoryTag: [String]? = {
+            switch wine.category {
+            case "Red":       return ["en:red-wines"]
+            case "White":     return ["en:white-wines"]
+            case "Sparkling": return ["en:sparkling-wines"]
+            case "Rose":      return ["en:rose-wines"]
+            default:          return nil
+            }
+        }()
+        return OFFProduct(
+            code: "vitis-catalog-\(wine.id.uuidString)",
+            productName: wine.name,
+            brands: wine.producer,
+            imageUrl: wine.labelImageURL,
+            countriesTags: wine.region.map { [$0] },
+            categoriesTags: categoryTag
+        )
+    }
+
     /// Map to Wine. Uses OFF code for deterministic id when upserting. Region from first country tag (e.g. "en:italy" → "Italy").
     func toWine(id: UUID) -> Wine {
         let region = countriesTags?.first
