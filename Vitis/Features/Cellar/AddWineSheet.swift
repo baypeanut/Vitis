@@ -48,10 +48,11 @@ struct AddWineSheet: View {
     @State private var viewModel = AddWineViewModel()
     @State private var flowStep: TastingFlowStep
     @State private var selectedWine: Wine?
-    @State private var rating: Double = 7.5
+    @State private var rating: Double = 7.0
     @State private var selectedNotes: Set<String> = []
     @State private var comment: String = ""
     @State private var visibility: TastingVisibility = .everyone
+    @State private var momentImageData: Data? = nil
     @State private var isSaving = false
     @State private var saveError: String?
 
@@ -111,7 +112,7 @@ struct AddWineSheet: View {
         case .search:
             searchContent
         case .rating(let wine):
-            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes, comment: $comment, visibility: $visibility) {
+            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes, comment: $comment, visibility: $visibility, momentImageData: $momentImageData) {
                 Task {
                     let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
                     await saveTasting(wine: wine, rating: rating, notes: notesArray, comment: comment, visibility: visibility)
@@ -237,7 +238,7 @@ struct AddWineSheet: View {
                 Task { await handleWishlistSelect(wine: wine) }
             } else {
                 selectedWine = wine
-                rating = 5.0
+                rating = 7.0
                 selectedNotes = []
                 comment = ""
                 flowStep = .rating(wine)
@@ -284,7 +285,7 @@ struct AddWineSheet: View {
                         await handleWishlistSelect(wine: wine)
                     } else {
                         selectedWine = wine
-                        rating = 5.0
+                        rating = 7.0
                         selectedNotes = []
                         comment = ""
                         flowStep = .rating(wine)
@@ -348,6 +349,10 @@ struct AddWineSheet: View {
         }
         isSaving = true
         saveError = nil
+        var momentURL: String?
+        if let data = momentImageData {
+            momentURL = try? await MomentStorageService.uploadMoment(userId: userId, jpegData: data)
+        }
         let countBefore = await TastingService.fetchTastingsCount(userId: userId)
         do {
             _ = try await TastingService.createTasting(
@@ -357,7 +362,8 @@ struct AddWineSheet: View {
                 noteTags: notes,
                 comment: comment.isEmpty ? nil : comment,
                 source: "search",
-                visibility: visibility
+                visibility: visibility,
+                momentImageURL: momentURL
             )
             if let wid = wineIdToRemoveFromWishlist, wid == wine.id {
                 _ = try? await CellarService.removeFromWishlist(wineId: wid)
@@ -432,6 +438,7 @@ struct AddWineSheet: View {
         selectedNotes = []
         comment = ""
         visibility = .everyone
+        momentImageData = nil
         viewModel.query = ""
         viewModel.results = []
         saveError = nil

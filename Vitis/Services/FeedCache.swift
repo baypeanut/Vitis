@@ -83,6 +83,8 @@ private struct FeedItemCacheDTO: Codable {
     let targetWineLabelURL: String?
     let contentText: String?
     let tastingRating: Double?
+    let tastingComment: String?
+    let momentImageURL: String?
     let createdAt: Date
     let cheersCount: Int
     let hasCheered: Bool
@@ -93,7 +95,7 @@ private struct FeedItemCacheDTO: Codable {
         case wineId, wineName, wineProducer, wineVintage, wineLabelURL
         case wineRegion, wineCategory, wineVariety
         case targetWineName, targetWineProducer, targetWineVintage, targetWineLabelURL
-        case contentText, tastingRating, createdAt, cheersCount, hasCheered
+        case contentText, tastingRating, tastingComment, momentImageURL, createdAt, cheersCount, hasCheered
     }
 
     static func from(_ item: FeedItem) -> FeedItemCacheDTO {
@@ -117,6 +119,8 @@ private struct FeedItemCacheDTO: Codable {
             targetWineLabelURL: item.targetWineLabelURL,
             contentText: item.contentText,
             tastingRating: item.tastingRating,
+            tastingComment: item.tastingComment,
+            momentImageURL: item.momentImageURL,
             createdAt: item.createdAt,
             cheersCount: item.cheersCount,
             hasCheered: item.hasCheered
@@ -145,6 +149,8 @@ private struct FeedItemCacheDTO: Codable {
             targetWineLabelURL: targetWineLabelURL,
             contentText: contentText,
             tastingRating: tastingRating,
+            tastingComment: tastingComment,
+            momentImageURL: momentImageURL,
             createdAt: createdAt,
             cheersCount: cheersCount,
             hasCheered: hasCheered

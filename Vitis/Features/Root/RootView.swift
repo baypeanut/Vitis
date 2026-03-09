@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum Tab {
-    case cellar, social, notifications, profile
+    case social, cellar, notifications, profile
 }
 
 struct RootView: View {
@@ -16,7 +16,7 @@ struct RootView: View {
     @AppStorage("appearance_preference") private var appearanceRaw = AppearanceOption.system.rawValue
     @AppStorage("vitis_age_verified") private var ageVerified = false
     @AppStorage("vitis_drink_responsibly_shown") private var drinkResponsiblyShown = false
-    @State private var selectedTab: Tab = .cellar
+    @State private var selectedTab: Tab = .social
     @State private var authStore = AuthStore.shared
     @State private var showAddWineFromCarousel = false
     @State private var showDrinkResponsibly = false
@@ -109,17 +109,21 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
+            // 1. Feed — social activity stream is the heartbeat of the app
+            SocialView()
+                .tabItem { Image(systemName: "newspaper") }
+                .tag(Tab.social)
+            // 2. Cellar — personal collection
             NavigationStack {
                 CellarView()
             }
             .tabItem { Image(systemName: "wineglass") }
             .tag(Tab.cellar)
-            SocialView()
-                .tabItem { Image(systemName: "person.2") }
-                .tag(Tab.social)
+            // 3. Notifications
             NotificationsView()
                 .tabItem { Image(systemName: "bell") }
                 .tag(Tab.notifications)
+            // 4. Profile
             ProfileView(onSignOut: didSignOut)
                 .tabItem { Image(systemName: "person.crop.circle") }
                 .tag(Tab.profile)

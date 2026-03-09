@@ -118,23 +118,24 @@ struct CellarView: View {
     private var emptyState: some View {
         VStack(spacing: 20) {
             Image(systemName: "wineglass")
-                .font(.system(size: 48))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(0.35))
-                .padding(.top, 40)
+                .font(.system(size: 44, weight: .ultraLight))
+                .foregroundStyle(VitisTheme.accentWine(for: colorScheme).opacity(0.25))
+                .padding(.top, 48)
             VStack(spacing: 8) {
-                Text("Your cellar is empty")
-                    .font(VitisTheme.uiFont(size: 18, weight: .medium))
+                Text("Your cellar awaits its first bottle.")
+                    .font(.system(.title3, design: .serif, weight: .regular))
                     .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
-                Text("Log wines you've tasted to build your collection.")
+                    .multilineTextAlignment(.center)
+                Text("Every great collection begins with one glass.")
                     .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
             Button {
                 showAddWine = true
             } label: {
-                Text("Log a wine")
+                Text("Add a wine you've tasted")
                     .font(VitisTheme.uiFont(size: 15, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
