@@ -14,26 +14,33 @@ enum ErrorMessage {
     static let unknown = "Something went wrong. Please try again."
 
     /// Maps common errors to consistent user-facing strings. Does NOT leak PII.
+    /// Cross-checks NWPathMonitor before claiming "No internet connection" to avoid
+    /// false positives from transient iOS socket errors on app foreground / WiFi handoff.
     static func userFacing(for error: Error) -> String {
-        if (error as NSError).domain == NSURLErrorDomain {
-            switch (error as NSError).code {
+        let nsErr = error as NSError
+        if nsErr.domain == NSURLErrorDomain {
+            switch nsErr.code {
             case NSURLErrorTimedOut: return networkTimeout
-            case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost: return noConnection
+            case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
+                return NetworkMonitor.shared.isConnected ? unknown : noConnection
             default: break
             }
         }
         if let urlError = error as? URLError {
             switch urlError.code {
             case .timedOut: return networkTimeout
-            case .notConnectedToInternet, .networkConnectionLost: return noConnection
+            case .notConnectedToInternet, .networkConnectionLost:
+                return NetworkMonitor.shared.isConnected ? unknown : noConnection
             case .cancelled: return unknown
             default: break
             }
         }
-        let msg = (error as NSError).userInfo[NSLocalizedDescriptionKey] as? String ?? error.localizedDescription
+        let msg = nsErr.userInfo[NSLocalizedDescriptionKey] as? String ?? error.localizedDescription
         let lower = msg.lowercased()
         if lower.contains("timed out") || lower.contains("timeout") { return networkTimeout }
-        if lower.contains("internet") || lower.contains("network") || lower.contains("offline") { return noConnection }
+        if lower.contains("internet") || lower.contains("offline") {
+            return NetworkMonitor.shared.isConnected ? unknown : noConnection
+        }
         if lower.contains("unauthorized") || lower.contains("401") || lower.contains("session") { return unauthorized }
         return unknown
     }
