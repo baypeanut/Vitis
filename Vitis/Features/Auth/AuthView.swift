@@ -2,7 +2,7 @@
 //  AuthView.swift
 //  Vitis
 //
-//  Login / Sign up. Validated, connection check, loading. Quiet Luxury.
+//  Login / Sign up. Validated, connection check, loading.
 //
 
 import SwiftUI

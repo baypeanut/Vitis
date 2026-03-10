@@ -2,7 +2,7 @@
 //  ProfileSettingsView.swift
 //  Vitis
 //
-//  Premium Settings IA: Profile, Account, Privacy, Preferences, Danger zone.
+//  Settings: Profile, Account, Privacy, Preferences, Danger zone.
 //
 
 import SwiftUI

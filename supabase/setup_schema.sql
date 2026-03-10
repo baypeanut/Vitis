@@ -1607,3 +1607,58 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_taste_twins(uuid, int) TO authenticated;
+
+-- ────────────────────────────────────────────────
+-- RPC: upsert_wine_from_scan (label scan add-wine flow)
+-- Matches on case-insensitive name+producer. No off_code required.
+-- If found: enriches null fields (vintage, variety, region, category) from scan.
+-- If not found: inserts a new wine row.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.upsert_wine_from_scan(text, text, int, text, text, text);
+CREATE OR REPLACE FUNCTION public.upsert_wine_from_scan(
+  p_name text,
+  p_producer text,
+  p_vintage int DEFAULT NULL,
+  p_variety text DEFAULT NULL,
+  p_region text DEFAULT NULL,
+  p_category text DEFAULT NULL
+)
+RETURNS TABLE (id uuid, name text, producer text, vintage int, variety text,
+               region text, label_image_url text, category text)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_existing_id uuid;
+BEGIN
+  SELECT w.id INTO v_existing_id
+  FROM public.wines w
+  WHERE lower(trim(w.name)) = lower(trim(p_name))
+    AND lower(trim(w.producer)) = lower(trim(p_producer))
+  LIMIT 1;
+
+  IF v_existing_id IS NOT NULL THEN
+    UPDATE public.wines w SET
+      vintage  = COALESCE(w.vintage,  p_vintage),
+      variety  = COALESCE(w.variety,  NULLIF(trim(p_variety), '')),
+      region   = COALESCE(w.region,   NULLIF(trim(p_region), '')),
+      category = COALESCE(w.category, NULLIF(trim(p_category), ''))
+    WHERE w.id = v_existing_id;
+
+    RETURN QUERY
+    SELECT w.id, w.name, w.producer, w.vintage, w.variety,
+           w.region, w.label_image_url, w.category
+    FROM public.wines w WHERE w.id = v_existing_id;
+  ELSE
+    RETURN QUERY
+    INSERT INTO public.wines (name, producer, vintage, variety, region, category)
+    VALUES (trim(p_name), trim(p_producer), p_vintage,
+            NULLIF(trim(p_variety), ''), NULLIF(trim(p_region), ''),
+            NULLIF(trim(p_category), ''))
+    RETURNING wines.id, wines.name, wines.producer, wines.vintage,
+              wines.variety, wines.region, wines.label_image_url, wines.category;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.upsert_wine_from_scan(text, text, int, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.upsert_wine_from_scan(text, text, int, text, text, text) TO anon;

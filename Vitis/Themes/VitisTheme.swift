@@ -3,9 +3,9 @@ import Foundation
 
 enum VitisTheme {
     // MARK: - Semantic Color Tokens (Light + Dark)
-    // Dark mode is intentional, layered, premium - not a dimmed overlay.
+    // Dark mode is intentional, layered — not a dimmed overlay.
 
-    // Light mode base — ivory "Old Money" palette
+    // Light mode base — ivory palette
     private static let lightBackgroundPrimary = Color(red: 0xFA / 255, green: 0xF8 / 255, blue: 0xF5 / 255)  // #FAF8F5 ivory
     private static let lightBackgroundSecondary = Color(red: 0xF0 / 255, green: 0xEB / 255, blue: 0xE3 / 255) // #F0EBE3 warm cream
     private static let lightSurface = Color.white                          // white cards pop on ivory bg
@@ -23,7 +23,7 @@ enum VitisTheme {
 
     // Dark mode tokens — warm charcoal editorial palette
     // 4-level surface hierarchy: canvas → fields → cards → modals/sheets
-    // Warm brown undertone throughout (not blue-gray) — premium, intentional.
+    // Warm brown undertone throughout (not blue-gray).
     // Background: #120F0E | Card: #221E1B | Elevated: #2A2521 | Divider: #2D2823
     // Accent: #B84A58 (ruby — readable on dark, retains wine DNA) | Wine names: #EDE4D5 (parchment)
     private static let darkBackgroundPrimary   = Color(red: 0x12/255, green: 0x0F/255, blue: 0x0E/255) // #120F0E — warm near-black canvas
@@ -46,7 +46,7 @@ enum VitisTheme {
 
     // Emerald accent — Taste Twin badge, Reserve List bookmark.
     // Gold tones are already semantically occupied by white/sparkling wine category colors.
-    // Deep forest green reads as "premium social signal" (Harrods, heritage) without colliding.
+    // Deep forest green for badges/bookmarks; distinct from wine category colors.
     private static let lightAccentEmerald = Color(red: 0x1E / 255, green: 0x5C / 255, blue: 0x3A / 255)  // #1E5C3A deep forest
     private static let darkAccentEmerald  = Color(red: 0x5B / 255, green: 0xAF / 255, blue: 0x82 / 255)  // #5BAF82 mint emerald
 

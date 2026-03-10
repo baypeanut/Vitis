@@ -12,7 +12,7 @@ Bu doküman, **Vitis** iOS uygulamasının amacını, mimarisini ve şu ana kada
 - Bu tercihler **Elo benzeri bir puanlama sistemi** ile kişisel bir **sıralama listesi** oluşturur.
 - Sonuçlar **sosyal bir feed**’de paylaşılır; diğer kullanıcılar **Cheers** (beğeni) ve **yorum** yapabilir, birbirlerini **takip** edebilir.
 
-Yani hem **kişisel şarap listesi** (Beli / restoran sıralama uygulamalarına benzer), hem de **şarap odaklı bir sosyal feed** sunar. Tasarım dili **“Quiet Luxury”**: sade, burgundy (#4A0E0E) vurgulu, beyaz ağırlıklı, zero-clutter bir arayüz.
+Yani hem **kişisel şarap listesi** (Beli / restoran sıralama uygulamalarına benzer), hem de **şarap odaklı bir sosyal feed** sunar. Tasarım: sade, burgundy (#4A0E0E) vurgulu, beyaz ağırlıklı, zero-clutter bir arayüz.
 
 ---
 
@@ -73,7 +73,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 - Supabase **Project URL** ve **anon key** burada.
 - `isValid`: URL ve key’in dolu olduğunu kontrol eder (ağ testi yapmaz).
 
-### 4.3 `VitisTheme.swift` (“Quiet Luxury”)
+### 4.3 `VitisTheme.swift`
 
 - **Renkler:** `accent` (#4A0E0E burgundy), `background` (beyaz), `secondaryText`, `border`.
 - **Tipografi:**
@@ -343,4 +343,4 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 4. **Social:** Global veya Following feed’i; Cheers, yorum, kullanıcıya tıklayıp profil/takip.
 5. **Profile:** Kendi profil, Taste Analytics, Top 10. Edit → isim/avatar değiştir → Save. Çıkış.
 
-Tüm bu akışlar **Quiet Luxury** tema, **Supabase** backend ve **OFF** entegrasyonu ile uyumlu çalışacak şekilde kodlanmıştır.
+Tüm bu akışlar **Supabase** backend ve **OFF** entegrasyonu ile uyumlu çalışacak şekilde kodlanmıştır.

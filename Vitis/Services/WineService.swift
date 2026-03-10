@@ -89,6 +89,59 @@ enum WineService {
         }
     }
 
+    // MARK: - Label Scan Upsert
+
+    struct ScanUpsertParams: Encodable, Sendable {
+        let p_name: String
+        let p_producer: String
+        let p_vintage: Int?
+        let p_variety: String?
+        let p_region: String?
+        let p_category: String?
+
+        nonisolated func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(p_name, forKey: .p_name)
+            try c.encode(p_producer, forKey: .p_producer)
+            try c.encodeIfPresent(p_vintage, forKey: .p_vintage)
+            try c.encodeIfPresent(p_variety, forKey: .p_variety)
+            try c.encodeIfPresent(p_region, forKey: .p_region)
+            try c.encodeIfPresent(p_category, forKey: .p_category)
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case p_name, p_producer, p_vintage, p_variety, p_region, p_category
+        }
+    }
+
+    /// Upsert wine from label scan result. Matches on name+producer (case-insensitive).
+    /// Enriches existing rows with any new fields from the scan. Creates new wine if no match.
+    static func upsertFromScan(result: LabelScanResult) async throws -> Wine {
+        guard let name = result.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty,
+              let producer = result.producer?.trimmingCharacters(in: .whitespacesAndNewlines), !producer.isEmpty else {
+            throw NSError(domain: "WineService", code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "Wine name and producer are required from the label scan."])
+        }
+        let params = ScanUpsertParams(
+            p_name: name,
+            p_producer: producer,
+            p_vintage: result.vintage,
+            p_variety: result.variety?.trimmingCharacters(in: .whitespacesAndNewlines),
+            p_region: result.region?.trimmingCharacters(in: .whitespacesAndNewlines),
+            p_category: result.category?.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        let rows: [WineRow] = try await supabase
+            .rpc("upsert_wine_from_scan", params: params)
+            .execute()
+            .value
+        guard let r = rows.first else {
+            throw NSError(domain: "WineService", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Upsert returned no row"])
+        }
+        return Wine(id: r.id, name: r.name, producer: r.producer, vintage: r.vintage,
+                    variety: r.variety, region: r.region, labelImageURL: r.label_image_url, category: r.category)
+    }
+
     /// Fetch all wines from database, ordered by name.
     static func fetchAllWines(limit: Int = 100) async throws -> [Wine] {
         let rows: [WineRow] = try await supabase

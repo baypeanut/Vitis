@@ -11,7 +11,6 @@ struct FeedGlobalParams: Encodable, Sendable {
     let pViewerId: UUID?
     let pLimit: Int
     let pOffset: Int
-
     enum CodingKeys: String, CodingKey {
         case pViewerId = "p_viewer_id"
         case pLimit = "p_limit"

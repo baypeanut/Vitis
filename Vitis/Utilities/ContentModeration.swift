@@ -33,6 +33,6 @@ enum ContentModeration {
         return false
     }
 
-    /// User-facing message when content is blocked (Quiet Luxury tone).
-    static let blockedMessage = "We value refined conversation. Please adjust your note for clarity and tone."
+    /// User-facing message when content is blocked.
+    static let blockedMessage = "Please adjust your note for clarity and tone."
 }

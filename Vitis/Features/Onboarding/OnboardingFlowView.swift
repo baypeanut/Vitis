@@ -2,7 +2,7 @@
 //  OnboardingFlowView.swift
 //  Vitis
 //
-//  Container: back arrow, optional progress, step content, primary CTA. Quiet Luxury.
+//  Container: back arrow, optional progress, step content, primary CTA.
 //
 
 import SwiftUI

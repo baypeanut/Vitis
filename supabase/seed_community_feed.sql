@@ -2,7 +2,7 @@
 -- Run in Supabase SQL Editor.
 --
 -- Order:
--- 1. Run Sections 1–2 below (creates wines, profiles if needed; inserts 6 premium wines).
+-- 1. Run Sections 1–2 below (creates wines, profiles if needed; inserts 6 wines).
 -- 2. Run migrations/20250125000000_community_feed.sql (creates activity_feed, view, etc.).
 -- 3. Run Sections 3–4 below (seed user, profile, activity_feed rows).
 -- Or run this entire script after the migration if wines/profiles already exist.
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS label_image_url text;
 
 -- -----------------------------------------------------------------------------
--- 2. Premium wines (fixed UUIDs for deterministic activity_feed refs)
+-- 2. Wines (fixed UUIDs for deterministic activity_feed refs)
 -- -----------------------------------------------------------------------------
 INSERT INTO public.wines (id, name, producer, vintage, variety, region) VALUES
   ('a1000001-0000-0000-0000-000000000001', 'Sassicaia', 'Tenuta San Guido', 2019, 'Cabernet Sauvignon', 'Tuscany'),
