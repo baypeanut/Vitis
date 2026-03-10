@@ -2,15 +2,24 @@
 //  TastingNotes.swift
 //  Vitis
 //
-//  Category-based tasting notes (aromas/flavors). Curated sets for Red, White, Rose, Sparkling.
-//  TODO: Wine-specific notes when Wine API provides reliable fields (e.g. flavor_profile, aroma_tags).
-//  Threshold: use only when mappedNotes.count is 4-8; otherwise fallback to generic.
+//  Category-based tasting notes. Expertise-adaptive: novice sees 6 approachable
+//  notes, intermediate/expert sees full palette.
 //
 
 import Foundation
 
 enum TastingNotes {
-    static func notesForCategory(_ category: String?) -> [String] {
+    static func notesForCategory(_ category: String?, tier: ExpertiseTier = .intermediate) -> [String] {
+        let full = fullNotesForCategory(category)
+        switch tier {
+        case .novice:
+            return Array(full.prefix(6))
+        case .intermediate, .expert:
+            return full
+        }
+    }
+
+    private static func fullNotesForCategory(_ category: String?) -> [String] {
         guard let cat = category?.lowercased() else { return defaultNotes }
         if cat.contains("red") || cat.contains("rouge") {
             return redNotes

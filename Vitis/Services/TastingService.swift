@@ -107,6 +107,7 @@ enum TastingService {
             .execute()
 
         NotificationCenter.default.post(name: .vitisTastingCreated, object: nil)
+        await ProfileStore.shared.incrementTastingCount()
 
         // Remove from wishlist if present (user has now tried this wine)
         try? await CellarService.removeFromWishlist(wineId: wineId)

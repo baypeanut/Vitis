@@ -22,45 +22,13 @@ struct WineCardView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var myWishlistWineIds: Set<UUID> = []
+    @State private var twinRating: TwinWeightedRating?
     @State private var showEditSheet = false
     @State private var editRating: Double = 5.0
     @State private var editSelectedNotes: Set<String> = []
     @State private var editComment: String = ""
     @State private var editVisibility: TastingVisibility = .everyone
     @Environment(\.dismiss) private var dismiss
-    
-    private var friendsAverageRating: Double? {
-        guard !friendsTastings.isEmpty else { return nil }
-        let sum = friendsTastings.reduce(0.0) { $0 + $1.rating }
-        return sum / Double(friendsTastings.count)
-    }
-    
-    private var globalAverageRating: Double? {
-        var allRatings: [Double] = []
-        
-        // Include user's own rating if they have one
-        if let userRating = userTasting?.rating {
-            allRatings.append(userRating)
-        }
-        
-        // Add friends' ratings
-        allRatings.append(contentsOf: friendsTastings.map { $0.rating })
-        
-        // Add other users' ratings
-        allRatings.append(contentsOf: otherTastings.map { $0.rating })
-        
-        guard !allRatings.isEmpty else { return nil }
-        let sum = allRatings.reduce(0.0, +)
-        return sum / Double(allRatings.count)
-    }
-    
-    private var globalTastingsCount: Int {
-        var count = 0
-        if userTasting != nil { count += 1 }
-        count += friendsTastings.count
-        count += otherTastings.count
-        return count
-    }
     
     private var wineColor: Color {
         WineColorResolver.resolveWineDisplayColor(wine: wine, colorScheme: colorScheme)
@@ -287,26 +255,17 @@ struct WineCardView: View {
                 .frame(maxWidth: .infinity)
                 
                 HStack(spacing: 0) {
-                    // You
-                    if let tasting = userTasting {
-                        ratingColumn(label: "You", rating: tasting.rating)
-                    } else {
-                        ratingColumn(label: "You", rating: nil)
-                    }
-                    
-                    // Friends
-                    if let avgRating = friendsAverageRating {
-                        ratingColumn(label: "Friends", rating: avgRating)
-                    } else {
-                        ratingColumn(label: "Friends", rating: nil)
-                    }
-                    
-                    // Global
-                    if let avgRating = globalAverageRating {
-                        ratingColumn(label: "Global", rating: avgRating)
-                    } else {
-                        ratingColumn(label: "Global", rating: nil)
-                    }
+                    ratingColumn(label: "You", rating: userTasting?.rating)
+                    ratingColumn(
+                        label: "Twins",
+                        rating: twinRating?.twinWeightedAvg,
+                        subtitle: twinRating.map { $0.twinCount > 0 ? "\($0.twinCount)" : nil } ?? nil
+                    )
+                    ratingColumn(
+                        label: "Global",
+                        rating: twinRating?.communityAvg,
+                        subtitle: twinRating.map { $0.communityCount > 0 ? "\($0.communityCount)" : nil } ?? nil
+                    )
                 }
             }
             .padding(.horizontal, 24)
@@ -314,20 +273,26 @@ struct WineCardView: View {
         }
     }
     
-    private func ratingColumn(label: String, rating: Double?) -> some View {
-        VStack(spacing: 8) {
+    private func ratingColumn(label: String, rating: Double?, subtitle: String? = nil) -> some View {
+        VStack(spacing: 4) {
             Text(label)
                 .font(VitisTheme.uiFont(size: 15, weight: .medium))
                 .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-            
-            if let rating = rating {
+
+            if let rating {
                 Text(String(format: "%.1f", rating))
                     .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 28, weight: .semibold))
                     .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
             } else {
-                Text("-")
+                Text("\u{2014}")
                     .font(VitisTheme.uiFont(size: 28, weight: .semibold))
                     .foregroundStyle(VitisTheme.border(for: colorScheme))
+            }
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(VitisTheme.uiFont(size: 11))
+                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             }
         }
         .frame(maxWidth: .infinity)
@@ -674,6 +639,7 @@ struct WineCardView: View {
         friendsTastings = friendsTastingsResult
         otherTastings = otherTastingsResult
         activityComments = activityCommentsResult
+        twinRating = await TasteSimilarityService.fetchTwinWeightedRating(wineId: wine.id)
 
         if let uid = currentUserId {
             myWishlistWineIds = (try? await CellarService.fetchWishlistWineIds(userId: uid)) ?? []

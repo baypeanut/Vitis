@@ -29,8 +29,10 @@ struct TastingRateView: View {
         VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme)
     }
 
+    private var expertiseTier: ExpertiseTier { ProfileStore.shared.expertiseTier }
+
     private var availableNotes: [String] {
-        TastingNotes.notesForCategory(wine.category)
+        TastingNotes.notesForCategory(wine.category, tier: expertiseTier)
     }
 
     var body: some View {
@@ -109,6 +111,12 @@ struct TastingRateView: View {
                 .foregroundStyle(ratingAccentColor)
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.12), value: rating)
+
+            if expertiseTier == .novice {
+                Text("Tap the glasses to set your rating")
+                    .font(VitisTheme.uiFont(size: 13))
+                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+            }
         }
         .padding(.horizontal, 24)
     }
