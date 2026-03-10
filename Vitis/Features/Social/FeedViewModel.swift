@@ -13,6 +13,29 @@ private func isCancellation(_ error: Error) -> Bool {
     return error.localizedDescription.lowercased().contains("cancelled")
 }
 
+/// True for transient network errors that are worth retrying once.
+private func isTransientNetworkError(_ error: Error) -> Bool {
+    let ns = error as NSError
+    if ns.domain == NSURLErrorDomain {
+        switch ns.code {
+        case NSURLErrorNotConnectedToInternet,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorTimedOut,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorCannotFindHost: return true
+        default: break
+        }
+    }
+    if let u = error as? URLError {
+        switch u.code {
+        case .notConnectedToInternet, .networkConnectionLost,
+             .timedOut, .cannotConnectToHost, .cannotFindHost: return true
+        default: break
+        }
+    }
+    return false
+}
+
 @MainActor
 @Observable
 final class FeedViewModel {
@@ -51,57 +74,20 @@ final class FeedViewModel {
         isRefreshing = true
         errorMessage = nil
         do {
-            var fetched: [FeedItem]
-            switch mode {
-            case .global:
-                fetched = try await FeedService.shared.fetchGlobal()
-            case .following:
-                fetched = try await FeedService.shared.fetchFollowing()
-            }
-            let ids = fetched.map(\.id)
-            let likeCounts: [UUID: Int]
-            var likedIDs: Set<UUID> = []
-            let uid = await AuthService.currentUserId()
-            currentUserId = uid
-            if let uid = uid {
-                async let lc = SocialService.fetchLikeCounts(activityIDs: ids)
-                async let lid = SocialService.fetchLikedActivityIDs(userId: uid)
-                likeCounts = (try? await lc) ?? [:]
-                likedIDs = (try? await lid) ?? []
-            } else {
-                likeCounts = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
-            }
-            for i in fetched.indices {
-                var it = fetched[i]
-                let id = it.id
-                it.cheersCount = likeCounts[id] ?? 0
-                it.hasCheered = likedIDs.contains(id)
-                fetched[i] = it
-            }
-            let filtered = fetched.filter {
-                $0.username.trimmingCharacters(in: .whitespaces).lowercased() != "guest"
-                && !mutedUserIds.contains($0.userId)
-            }
-            #if DEBUG
-            if filtered.count != fetched.count {
-                print("[FeedViewModel] filtered out \(fetched.count - filtered.count) Guest feed items")
-            }
-            #endif
-            items = filtered
-            patchCurrentUserOverrides()
-            FeedService.shared.saveToCache(items, mode: mode)
-            if let uid = currentUserId {
-                do {
-                    wishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: uid)
-                } catch {
-                    if !isCancellation(error) { wishlistErrorToast = ErrorMessage.unknown }
-                }
-                tastedWineIds = (try? await TastingService.fetchTastedWineIds(userId: uid)) ?? []
-                wishlistSourceUserIds = (try? await CellarService.fetchWishlistSourceUserIdsInLastK(userId: uid, k: WishlistSourceStore.windowSize)) ?? []
-                twinIds = await TasteSimilarityService.fetchTwinIds(userId: uid)
-            }
+            try await fetchAndApply()
         } catch {
-            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+            guard !isCancellation(error) else { isRefreshing = false; return }
+            // Retry once after 1 s for transient network errors before surfacing to the user.
+            if isTransientNetworkError(error) {
+                try? await Task.sleep(for: .seconds(1))
+                do {
+                    try await fetchAndApply()
+                } catch {
+                    if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+                }
+            } else {
+                errorMessage = ErrorMessage.userFacing(for: error)
+            }
         }
         if tab == .following && items.isEmpty {
             suggestedUsers = await SocialService.fetchSuggestedUsersToFollow(limit: 5)
@@ -109,6 +95,59 @@ final class FeedViewModel {
             suggestedUsers = []
         }
         isRefreshing = false
+    }
+
+    /// Core fetch + enrich + apply pipeline. Extracted so retry can call it without duplication.
+    private func fetchAndApply() async throws {
+        var fetched: [FeedItem]
+        switch mode {
+        case .global:
+            fetched = try await FeedService.shared.fetchGlobal()
+        case .following:
+            fetched = try await FeedService.shared.fetchFollowing()
+        }
+        let ids = fetched.map(\.id)
+        let likeCounts: [UUID: Int]
+        var likedIDs: Set<UUID> = []
+        let uid = await AuthService.currentUserId()
+        currentUserId = uid
+        if let uid = uid {
+            async let lc = SocialService.fetchLikeCounts(activityIDs: ids)
+            async let lid = SocialService.fetchLikedActivityIDs(userId: uid)
+            likeCounts = (try? await lc) ?? [:]
+            likedIDs = (try? await lid) ?? []
+        } else {
+            likeCounts = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
+        }
+        for i in fetched.indices {
+            var it = fetched[i]
+            let id = it.id
+            it.cheersCount = likeCounts[id] ?? 0
+            it.hasCheered = likedIDs.contains(id)
+            fetched[i] = it
+        }
+        let filtered = fetched.filter {
+            $0.username.trimmingCharacters(in: .whitespaces).lowercased() != "guest"
+            && !mutedUserIds.contains($0.userId)
+        }
+        #if DEBUG
+        if filtered.count != fetched.count {
+            print("[FeedViewModel] filtered out \(fetched.count - filtered.count) Guest feed items")
+        }
+        #endif
+        items = filtered
+        patchCurrentUserOverrides()
+        FeedService.shared.saveToCache(items, mode: mode)
+        if let uid = currentUserId {
+            do {
+                wishlistWineIds = try await CellarService.fetchWishlistWineIds(userId: uid)
+            } catch {
+                if !isCancellation(error) { wishlistErrorToast = ErrorMessage.unknown }
+            }
+            tastedWineIds = (try? await TastingService.fetchTastedWineIds(userId: uid)) ?? []
+            wishlistSourceUserIds = (try? await CellarService.fetchWishlistSourceUserIdsInLastK(userId: uid, k: WishlistSourceStore.windowSize)) ?? []
+            twinIds = await TasteSimilarityService.fetchTwinIds(userId: uid)
+        }
     }
 
     func refreshWishlistIds() async {
