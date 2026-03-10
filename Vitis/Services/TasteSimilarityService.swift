@@ -31,6 +31,13 @@ private struct TwinRow: Decodable, Sendable {
 private struct TwinRatingsBatchParams: Encodable, Sendable {
     let p_user_id: String
     let p_wine_ids: [String]
+
+    private enum CodingKeys: String, CodingKey { case p_user_id, p_wine_ids }
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(p_user_id, forKey: .p_user_id)
+        try c.encode(p_wine_ids, forKey: .p_wine_ids)
+    }
 }
 
 enum TasteSimilarityService {
