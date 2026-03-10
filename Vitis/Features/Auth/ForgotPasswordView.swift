@@ -2,7 +2,7 @@
 //  ForgotPasswordView.swift
 //  Vitis
 //
-//  Reset password sheet: email → send reset link. Minimal, Quiet Luxury.
+//  Reset password sheet: email → send reset link.
 //
 
 import SwiftUI

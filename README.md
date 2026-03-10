@@ -28,7 +28,7 @@ Vitis is an iOS app for wine enthusiasts to:
 - **Social feed**: See what wines others have tasted, cheer (like) and comment on their posts
 - **Profile**: View your own and others' profiles with tasting history
 
-**Design philosophy**: Quiet Luxury - minimal, clean UI with white backgrounds, burgundy (#4A0E0E) accents, serif fonts for wine names, lots of whitespace.
+**Design**: Minimal, clean UI with white backgrounds, burgundy (#4A0E0E) accents, serif fonts for wine names, lots of whitespace.
 
 ---
 

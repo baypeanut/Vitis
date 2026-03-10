@@ -2,7 +2,7 @@
 //  SocialWineDetailView.swift
 //  Vitis
 //
-//  Social Wine Detail: Old Money aesthetic, rating dashboard, grouped reviews.
+//  Social Wine Detail: rating dashboard, grouped reviews.
 //
 
 import SwiftUI

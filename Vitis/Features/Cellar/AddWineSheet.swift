@@ -55,6 +55,7 @@ struct AddWineSheet: View {
     @State private var momentImageData: Data? = nil
     @State private var isSaving = false
     @State private var saveError: String?
+    @State private var showLabelScan = false
 
     var body: some View {
         NavigationStack {
@@ -84,6 +85,13 @@ struct AddWineSheet: View {
                     .font(VitisTheme.uiFont(size: 15))
                     .foregroundStyle(VitisTheme.accent)
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $showLabelScan) {
+            WineLabelScanView(isPresented: $showLabelScan) {
+                onWineAdded()
+                resetFlow()
+                isPresented = false
             }
         }
         .onChange(of: viewModel.query) { _, _ in viewModel.search() }
@@ -135,10 +143,22 @@ struct AddWineSheet: View {
                     .font(VitisTheme.uiFont(size: 16))
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showLabelScan = true
+                } label: {
+                    Text("V")
+                        .font(.system(size: 18, weight: .light, design: .serif))
+                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(white: 0.97))
+            .background(colorScheme == .dark
+                ? VitisTheme.surface(for: colorScheme)
+                : Color(white: 0.95))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
@@ -158,7 +178,7 @@ struct AddWineSheet: View {
     private var searchResults: some View {
         let trimmed = viewModel.query.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty {
-            // Empty state: invite to search — no list, old-money elegance
+            // Empty state: invite to search — no list
             VStack(spacing: 12) {
                 Text("Search by name, producer, or region")
                     .font(.system(.body, design: .serif, weight: .regular))

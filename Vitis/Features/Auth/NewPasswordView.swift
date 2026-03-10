@@ -2,7 +2,7 @@
 //  NewPasswordView.swift
 //  Vitis
 //
-//  Set new password after recovery link. Min 8 chars, letters + numbers + special. Quiet Luxury.
+//  Set new password after recovery link. Min 8 chars, letters + numbers + special.
 //
 
 import SwiftUI

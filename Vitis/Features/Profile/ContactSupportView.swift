@@ -2,7 +2,7 @@
 //  ContactSupportView.swift
 //  Vitis
 //
-//  Vitis Concierge: minimalist in-app support. Quiet Luxury — no loud colors or alerts.
+//  Vitis Concierge: minimalist in-app support.
 //
 
 import SwiftUI

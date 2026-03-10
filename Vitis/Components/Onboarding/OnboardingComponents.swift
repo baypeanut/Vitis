@@ -2,7 +2,7 @@
 //  OnboardingComponents.swift
 //  Vitis
 //
-//  Shared onboarding UI: SerifTitleText, UnderlineTextField, PrimaryButton. Quiet Luxury.
+//  Shared onboarding UI: SerifTitleText, UnderlineTextField, PrimaryButton.
 //
 
 import SwiftUI

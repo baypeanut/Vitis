@@ -2,7 +2,7 @@
 //  FeedItemView.swift
 //  Vitis
 //
-//  Two Column Classic feed item: quiet luxury, editorial layout.
+//  Two Column Classic feed item: editorial layout.
 //
 
 import SwiftUI

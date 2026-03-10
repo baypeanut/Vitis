@@ -63,8 +63,10 @@
 	<string>$(POSTHOG_API_KEY)</string>
 	<key>PostHogHost</key>
 	<string>$(POSTHOG_HOST)</string>
+	<key>CLAUDE_API_KEY</key>
+	<string>$(CLAUDE_API_KEY)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Vitis uses the camera to capture your moment with this wine. The photo appears only in your feed.</string>
+	<string>Vitis uses your camera to scan wine labels and capture moments with your wine.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Vitis uses your photo library to let you set a profile picture.</string>
 	<key>NSContactsUsageDescription</key>

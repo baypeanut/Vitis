@@ -2,7 +2,7 @@
 //  CommentSheetView.swift
 //  Vitis
 //
-//  Minimalist bottom sheet: list of comments (Profile + Text), single-line input, Post. Quiet Luxury.
+//  Minimalist bottom sheet: list of comments (Profile + Text), single-line input, Post.
 //
 
 import SwiftUI

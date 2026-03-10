@@ -3,7 +3,7 @@
 //  Vitis
 //
 //  Centralized wine display color: maps type/category to brand palette.
-//  Never returns black; fallback is a neutral "old money" burgundy.
+//  Never returns black; fallback is a neutral burgundy.
 //
 
 import SwiftUI
