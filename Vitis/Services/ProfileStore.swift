@@ -13,6 +13,9 @@ final class ProfileStore {
     static let shared = ProfileStore()
 
     var currentProfile: Profile?
+    var tastingCount: Int = 0
+
+    var expertiseTier: ExpertiseTier { ExpertiseTier(tastingCount: tastingCount) }
 
     private init() {}
 
@@ -24,22 +27,21 @@ final class ProfileStore {
         AnalyticsService.identify(userId: uid)
         #if DEBUG
         if !AppConstants.authRequired {
-            // Try dev account first (from dev_accounts table)
             if let dev = await DevSignupService.fetchDevAccount(userId: uid) {
                 currentProfile = dev
+                tastingCount = await TastingService.fetchTastingsCount(userId: uid)
                 return
             }
         }
         #endif
         do {
-            // Try real profile from profiles table
             currentProfile = try await AuthService.getProfile(userId: uid)
+            tastingCount = await TastingService.fetchTastingsCount(userId: uid)
         } catch {
             #if DEBUG
             if !AppConstants.authRequired {
-                // Fallback: create minimal profile if profile doesn't exist yet
-                // This allows dev mode to work even without a profile row
                 currentProfile = Profile(id: uid, username: "Dev", fullName: nil, avatarURL: nil, bio: nil)
+                tastingCount = await TastingService.fetchTastingsCount(userId: uid)
             } else {
                 currentProfile = nil
             }
@@ -49,9 +51,15 @@ final class ProfileStore {
         }
     }
 
+    /// Increment local tasting count (called after tasting creation to keep tier fresh).
+    func incrementTastingCount() {
+        tastingCount += 1
+    }
+
     /// Clear cached profile (e.g. on sign out in dev mode).
     func clearForSignOut() {
         currentProfile = nil
+        tastingCount = 0
         AnalyticsService.reset()
     }
 

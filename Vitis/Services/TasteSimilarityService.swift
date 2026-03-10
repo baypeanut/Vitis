@@ -3,12 +3,8 @@
 //  Vitis
 //
 //  Taste Twin Engine: computes and fetches pairwise taste similarity via Supabase RPCs.
-//  Uses Bayesian-shrunk Pearson correlation (k = 10) with minimum 5 shared wines.
-//
-//  ⚠️ MANUAL SUPABASE STEPS REQUIRED:
-//  1. Create `taste_similarity` table
-//  2. Create `compute_taste_similarity` and `get_taste_twins` RPCs
-//  See: supabase/setup_schema.sql (Section 12)
+//  Hybrid blend: α × Pearson collaborative + (1-α) × cosine content-based.
+//  Also provides twin-weighted ratings for wines (personalized scores).
 //
 
 import Foundation
@@ -30,6 +26,11 @@ private struct TwinRow: Decodable, Sendable {
     let score: Double
     let shared_count: Int
     let computed_at: Date
+}
+
+private struct TwinRatingsBatchParams: Encodable, Sendable {
+    let p_user_id: String
+    let p_wine_ids: [String]
 }
 
 enum TasteSimilarityService {
@@ -120,5 +121,80 @@ enum TasteSimilarityService {
     static func fetchTwinIds(userId: UUID) async -> Set<UUID> {
         let twins = await fetchTasteTwins(userId: userId, limit: 50)
         return Set(twins.map(\.id))
+    }
+
+    // MARK: - Twin-weighted ratings
+
+    private struct TwinRatingRow: Decodable, Sendable {
+        let twin_weighted_avg: Double?
+        let twin_count: Int
+        let community_avg: Double?
+        let community_count: Int
+    }
+
+    /// Twin-weighted + community rating for a single wine.
+    static func fetchTwinWeightedRating(wineId: UUID) async -> TwinWeightedRating? {
+        guard let userId = await AuthService.currentUserId() else { return nil }
+
+        do {
+            let rows: [TwinRatingRow] = try await supabase
+                .rpc("get_twin_weighted_rating", params: [
+                    "p_user_id": userId.uuidString,
+                    "p_wine_id": wineId.uuidString
+                ])
+                .execute()
+                .value
+
+            guard let row = rows.first else { return nil }
+            return TwinWeightedRating(
+                twinWeightedAvg: row.twin_weighted_avg,
+                twinCount: row.twin_count,
+                communityAvg: row.community_avg,
+                communityCount: row.community_count
+            )
+        } catch {
+            #if DEBUG
+            print("[TasteSimilarityService] fetchTwinWeightedRating error: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    private struct BatchTwinRatingRow: Decodable, Sendable {
+        let wine_id: UUID
+        let twin_weighted_avg: Double?
+        let twin_count: Int
+        let community_avg: Double?
+        let community_count: Int
+    }
+
+    /// Twin-weighted + community ratings for multiple wines (batch).
+    static func fetchTwinWeightedRatingsBatch(wineIds: [UUID]) async -> [UUID: TwinWeightedRating] {
+        guard let userId = await AuthService.currentUserId(), !wineIds.isEmpty else { return [:] }
+        do {
+            let rows: [BatchTwinRatingRow] = try await supabase
+                .rpc("get_twin_weighted_ratings_batch", params: TwinRatingsBatchParams(
+                    p_user_id: userId.uuidString,
+                    p_wine_ids: wineIds.map(\.uuidString)
+                ))
+                .execute()
+                .value
+
+            var result: [UUID: TwinWeightedRating] = [:]
+            for row in rows {
+                result[row.wine_id] = TwinWeightedRating(
+                    twinWeightedAvg: row.twin_weighted_avg,
+                    twinCount: row.twin_count,
+                    communityAvg: row.community_avg,
+                    communityCount: row.community_count
+                )
+            }
+            return result
+        } catch {
+            #if DEBUG
+            print("[TasteSimilarityService] fetchTwinWeightedRatingsBatch error: \(error)")
+            #endif
+            return [:]
+        }
     }
 }

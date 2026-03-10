@@ -1662,3 +1662,588 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.upsert_wine_from_scan(text, text, int, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_wine_from_scan(text, text, int, text, text, text) TO anon;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PHASE A: Predictive Palate Graph — pgvector Wine Embeddings + Hybrid Similarity
+-- ═══════════════════════════════════════════════════════════════════════════════
+--
+-- Adds 64-dim feature-hashed embeddings to wines, computes per-user taste
+-- profiles, and upgrades compute_taste_similarity to a hybrid blend:
+--   hybrid = α × pearson_collaborative + (1 - α) × cosine_content
+-- where α = shared_count / (shared_count + k), k = 10.
+-- Cold-start solved: content similarity works with 0 shared wines.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- 1. Enable pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. Add embedding column to wines
+ALTER TABLE public.wines ADD COLUMN IF NOT EXISTS embedding vector(64);
+
+-- ────────────────────────────────────────────────
+-- compute_wine_embedding
+-- Deterministic 64-dim feature vector from wine attributes using hashing trick.
+--   Dims  1- 5: Category one-hot (Red, White, Sparkling, Rose, Unknown)
+--   Dims  6-25: Variety signed random projection (md5 hash)
+--   Dims 26-45: Region signed random projection (md5 hash)
+--   Dims 46-64: Variety×Region cross-feature hash (interaction term)
+-- Normalized to unit length for cosine similarity.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.compute_wine_embedding(text, text, text);
+CREATE OR REPLACE FUNCTION public.compute_wine_embedding(
+  p_category text,
+  p_variety  text,
+  p_region   text
+)
+RETURNS vector(64)
+LANGUAGE plpgsql IMMUTABLE
+AS $$
+DECLARE
+  dims float8[] := array_fill(0.0, ARRAY[64]);
+  h bytea;
+  byte_val int;
+  i int;
+  norm float8 := 0.0;
+BEGIN
+  -- Dims 1-5: Category one-hot
+  CASE lower(trim(COALESCE(p_category, '')))
+    WHEN 'red'       THEN dims[1] := 1.0;
+    WHEN 'white'     THEN dims[2] := 1.0;
+    WHEN 'sparkling' THEN dims[3] := 1.0;
+    WHEN 'rose'      THEN dims[4] := 1.0;
+    WHEN 'rosé'      THEN dims[4] := 1.0;
+    ELSE                   dims[5] := 0.5;
+  END CASE;
+
+  -- Dims 6-25: Variety signed random projection
+  IF COALESCE(trim(p_variety), '') != '' THEN
+    h := decode(md5(lower(trim(p_variety))), 'hex');
+    FOR i IN 0..19 LOOP
+      byte_val := get_byte(h, i % 16);
+      dims[6 + i] := CASE WHEN (byte_val >> (i % 8)) & 1 = 1 THEN 1.0 ELSE -1.0 END;
+    END LOOP;
+  END IF;
+
+  -- Dims 26-45: Region signed random projection
+  IF COALESCE(trim(p_region), '') != '' THEN
+    h := decode(md5(lower(trim(p_region))), 'hex');
+    FOR i IN 0..19 LOOP
+      byte_val := get_byte(h, i % 16);
+      dims[26 + i] := CASE WHEN (byte_val >> (i % 8)) & 1 = 1 THEN 1.0 ELSE -1.0 END;
+    END LOOP;
+  END IF;
+
+  -- Dims 46-64: Variety×Region interaction hash
+  IF COALESCE(trim(p_variety), '') != '' AND COALESCE(trim(p_region), '') != '' THEN
+    h := decode(md5(lower(trim(p_variety)) || '|' || lower(trim(p_region))), 'hex');
+    FOR i IN 0..18 LOOP
+      byte_val := get_byte(h, i % 16);
+      dims[46 + i] := CASE WHEN (byte_val >> (i % 8)) & 1 = 1 THEN 0.7 ELSE -0.7 END;
+    END LOOP;
+  END IF;
+
+  -- L2 normalize to unit vector
+  FOR i IN 1..64 LOOP
+    norm := norm + dims[i] * dims[i];
+  END LOOP;
+  norm := sqrt(norm);
+  IF norm > 0 THEN
+    FOR i IN 1..64 LOOP
+      dims[i] := dims[i] / norm;
+    END LOOP;
+  END IF;
+
+  RETURN ('[' || array_to_string(dims, ',') || ']')::vector(64);
+END;
+$$;
+
+-- ────────────────────────────────────────────────
+-- Trigger: auto-compute embedding on wine INSERT / UPDATE
+-- ────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.wines_embedding_trigger()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.embedding := compute_wine_embedding(NEW.category, NEW.variety, NEW.region);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_wines_embedding ON public.wines;
+CREATE TRIGGER trg_wines_embedding
+  BEFORE INSERT OR UPDATE OF category, variety, region
+  ON public.wines
+  FOR EACH ROW
+  EXECUTE FUNCTION public.wines_embedding_trigger();
+
+-- ────────────────────────────────────────────────
+-- Backfill embeddings for existing wines
+-- ────────────────────────────────────────────────
+UPDATE public.wines
+SET embedding = compute_wine_embedding(category, variety, region)
+WHERE embedding IS NULL;
+
+-- ────────────────────────────────────────────────
+-- HNSW index for fast cosine similarity searches
+-- ────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_wines_embedding_hnsw
+  ON public.wines USING hnsw (embedding vector_cosine_ops);
+
+-- ────────────────────────────────────────────────
+-- compute_user_taste_profile
+-- Returns the user's 64-dim taste profile = rating-weighted average of wine embeddings.
+-- Rating weight: (rating - 5.5) / 4.5  →  maps 1→-1.0, 5.5→0, 10→+1.0
+-- Result normalized to unit vector. Returns NULL if user has no tastings with embeddings.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.compute_user_taste_profile(uuid);
+CREATE OR REPLACE FUNCTION public.compute_user_taste_profile(
+  p_user_id uuid
+)
+RETURNS vector(64)
+LANGUAGE plpgsql STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  profile float8[] := array_fill(0.0, ARRAY[64]);
+  emb_arr float8[];
+  v_weight float8;
+  v_rating float8;
+  v_count int := 0;
+  i int;
+  norm float8 := 0.0;
+  rec record;
+BEGIN
+  FOR rec IN
+    SELECT t.rating, w.embedding
+    FROM public.tastings t
+    JOIN public.wines w ON w.id = t.wine_id
+    WHERE t.user_id = p_user_id
+      AND w.embedding IS NOT NULL
+  LOOP
+    v_weight := (rec.rating - 5.5) / 4.5;
+    -- Convert vector to float array for arithmetic
+    emb_arr := rec.embedding::float8[];
+    FOR i IN 1..64 LOOP
+      profile[i] := profile[i] + v_weight * emb_arr[i];
+    END LOOP;
+    v_count := v_count + 1;
+  END LOOP;
+
+  IF v_count = 0 THEN
+    RETURN NULL;
+  END IF;
+
+  -- Average
+  FOR i IN 1..64 LOOP
+    profile[i] := profile[i] / v_count;
+  END LOOP;
+
+  -- L2 normalize
+  FOR i IN 1..64 LOOP
+    norm := norm + profile[i] * profile[i];
+  END LOOP;
+  norm := sqrt(norm);
+  IF norm > 0 THEN
+    FOR i IN 1..64 LOOP
+      profile[i] := profile[i] / norm;
+    END LOOP;
+  END IF;
+
+  RETURN ('[' || array_to_string(profile, ',') || ']')::vector(64);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.compute_user_taste_profile(uuid) TO authenticated;
+
+-- ════════════════════════════════════════════════════════════════
+-- UPGRADED: compute_taste_similarity  (v2 — hybrid blend)
+-- ════════════════════════════════════════════════════════════════
+-- Hybrid formula:
+--   α = shared_count / (shared_count + k),   k = 10
+--   hybrid_score = α × pearson_score + (1 - α) × cosine_content_score
+--
+-- When shared_count = 0  → pure content-based  (cold-start solved)
+-- When shared_count = 10 → 50/50 blend
+-- When shared_count = 50 → 83% collaborative   (data-rich)
+--
+-- Falls back to pure Pearson if either user has no taste profile embedding.
+-- Returns 0 rows only if both signals are unavailable.
+-- ════════════════════════════════════════════════════════════════
+DROP FUNCTION IF EXISTS public.compute_taste_similarity(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.compute_taste_similarity(
+  p_user_a uuid,
+  p_user_b uuid
+)
+RETURNS TABLE (
+  user_a uuid,
+  user_b uuid,
+  score double precision,
+  shared_count int,
+  computed_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_a uuid;
+  v_b uuid;
+  v_score double precision;
+  v_shared int;
+  v_computed timestamptz;
+  v_pearson double precision;
+  v_cosine double precision;
+  v_alpha double precision;
+  v_profile_a vector(64);
+  v_profile_b vector(64);
+  k_shrinkage constant double precision := 10.0;
+BEGIN
+  -- Canonical ordering: smaller UUID first
+  IF p_user_a < p_user_b THEN
+    v_a := p_user_a; v_b := p_user_b;
+  ELSE
+    v_a := p_user_b; v_b := p_user_a;
+  END IF;
+
+  -- Check cache (7-day TTL)
+  SELECT ts.score, ts.shared_count, ts.computed_at
+  INTO v_score, v_shared, v_computed
+  FROM public.taste_similarity ts
+  WHERE ts.user_a = v_a AND ts.user_b = v_b
+    AND ts.computed_at > now() - interval '7 days';
+
+  IF FOUND THEN
+    RETURN QUERY SELECT v_a, v_b, v_score, v_shared, v_computed;
+    RETURN;
+  END IF;
+
+  -- ── Signal 1: Collaborative (Bayesian-shrunk Pearson) ──
+  SELECT
+    CASE WHEN COUNT(*) < 2 THEN NULL
+         WHEN STDDEV(ta_r) = 0 OR STDDEV(tb_r) = 0 THEN 0.0
+         ELSE CORR(ta_r, tb_r) * (COUNT(*)::double precision / (COUNT(*) + k_shrinkage))
+    END,
+    COUNT(*)::int
+  INTO v_pearson, v_shared
+  FROM (
+    SELECT ta.rating AS ta_r, tb.rating AS tb_r
+    FROM public.tastings ta
+    JOIN public.tastings tb ON ta.wine_id = tb.wine_id
+    WHERE ta.user_id = v_a AND tb.user_id = v_b
+  ) shared;
+
+  -- ── Signal 2: Content-based (cosine of taste profiles) ──
+  v_profile_a := compute_user_taste_profile(v_a);
+  v_profile_b := compute_user_taste_profile(v_b);
+
+  IF v_profile_a IS NOT NULL AND v_profile_b IS NOT NULL THEN
+    -- pgvector cosine distance = 1 - cosine_similarity, so invert
+    v_cosine := 1.0 - (v_profile_a <=> v_profile_b);
+    -- Clamp negative cosine to 0
+    v_cosine := GREATEST(0.0, v_cosine);
+  ELSE
+    v_cosine := NULL;
+  END IF;
+
+  -- ── Blend ──
+  IF v_pearson IS NOT NULL AND v_cosine IS NOT NULL THEN
+    -- Both signals available: weighted blend
+    v_alpha := v_shared::double precision / (v_shared + k_shrinkage);
+    v_score := v_alpha * v_pearson + (1.0 - v_alpha) * v_cosine;
+  ELSIF v_cosine IS NOT NULL THEN
+    -- Content-only (cold-start): use cosine × dampening factor
+    v_score := v_cosine * 0.85;
+  ELSIF v_pearson IS NOT NULL THEN
+    -- Pearson-only (no embeddings): original behavior
+    v_score := v_pearson;
+  ELSE
+    -- Neither signal: clean up stale cache and return nothing
+    DELETE FROM public.taste_similarity
+    WHERE taste_similarity.user_a = v_a AND taste_similarity.user_b = v_b;
+    RETURN;
+  END IF;
+
+  -- Clamp to [0, 1]
+  v_score := GREATEST(0.0, LEAST(1.0, v_score));
+  v_computed := now();
+
+  -- Upsert cache
+  INSERT INTO public.taste_similarity (user_a, user_b, score, shared_count, computed_at)
+  VALUES (v_a, v_b, v_score, COALESCE(v_shared, 0), v_computed)
+  ON CONFLICT (user_a, user_b) DO UPDATE SET
+    score = EXCLUDED.score,
+    shared_count = EXCLUDED.shared_count,
+    computed_at = EXCLUDED.computed_at;
+
+  RETURN QUERY SELECT v_a, v_b, v_score, COALESCE(v_shared, 0), v_computed;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.compute_taste_similarity(uuid, uuid) TO authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TWIN-WEIGHTED RATINGS — The Vivino Kill Shot
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Instead of "4.2 average (12,847 ratings)", show:
+--   "8.4 among your Taste Twins (3 ratings) · 7.1 community average"
+-- Twin ratings weighted by similarity score for personalized relevance.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ────────────────────────────────────────────────
+-- get_twin_weighted_rating (single wine)
+-- Returns twin-weighted avg + community avg for one wine.
+-- Twin ratings weighted by taste_similarity score.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.get_twin_weighted_rating(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.get_twin_weighted_rating(
+  p_user_id uuid,
+  p_wine_id uuid
+)
+RETURNS TABLE (
+  twin_weighted_avg double precision,
+  twin_count int,
+  community_avg double precision,
+  community_count int
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_twin_sum double precision := 0;
+  v_weight_sum double precision := 0;
+  v_twin_count int := 0;
+  v_comm_avg double precision;
+  v_comm_count int;
+  rec record;
+BEGIN
+  FOR rec IN
+    SELECT t.rating, ts.score
+    FROM public.tastings t
+    JOIN public.taste_similarity ts ON (
+      (ts.user_a = p_user_id AND ts.user_b = t.user_id) OR
+      (ts.user_b = p_user_id AND ts.user_a = t.user_id)
+    )
+    WHERE t.wine_id = p_wine_id
+      AND t.user_id != p_user_id
+      AND ts.score >= 0.30
+  LOOP
+    v_twin_sum := v_twin_sum + rec.rating * rec.score;
+    v_weight_sum := v_weight_sum + rec.score;
+    v_twin_count := v_twin_count + 1;
+  END LOOP;
+
+  SELECT AVG(t.rating), COUNT(*)::int
+  INTO v_comm_avg, v_comm_count
+  FROM public.tastings t
+  WHERE t.wine_id = p_wine_id;
+
+  RETURN QUERY SELECT
+    CASE WHEN v_twin_count > 0 THEN v_twin_sum / v_weight_sum ELSE NULL END,
+    v_twin_count,
+    v_comm_avg,
+    COALESCE(v_comm_count, 0);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_twin_weighted_rating(uuid, uuid) TO authenticated;
+
+-- ────────────────────────────────────────────────
+-- get_twin_weighted_ratings_batch (multiple wines)
+-- Efficient batch query for feed/search: returns twin + community scores per wine.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.get_twin_weighted_ratings_batch(uuid, uuid[]);
+CREATE OR REPLACE FUNCTION public.get_twin_weighted_ratings_batch(
+  p_user_id uuid,
+  p_wine_ids uuid[]
+)
+RETURNS TABLE (
+  wine_id uuid,
+  twin_weighted_avg double precision,
+  twin_count int,
+  community_avg double precision,
+  community_count int
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  WITH twin_ratings AS (
+    SELECT
+      t.wine_id AS wid,
+      t.rating,
+      ts.score
+    FROM public.tastings t
+    JOIN public.taste_similarity ts ON (
+      (ts.user_a = p_user_id AND ts.user_b = t.user_id) OR
+      (ts.user_b = p_user_id AND ts.user_a = t.user_id)
+    )
+    WHERE t.wine_id = ANY(p_wine_ids)
+      AND t.user_id != p_user_id
+      AND ts.score >= 0.30
+  ),
+  twin_agg AS (
+    SELECT
+      tr.wid,
+      SUM(tr.rating * tr.score) / SUM(tr.score) AS tw_avg,
+      COUNT(*)::int AS tw_count
+    FROM twin_ratings tr
+    GROUP BY tr.wid
+  ),
+  community_agg AS (
+    SELECT
+      t.wine_id AS wid,
+      AVG(t.rating) AS c_avg,
+      COUNT(*)::int AS c_count
+    FROM public.tastings t
+    WHERE t.wine_id = ANY(p_wine_ids)
+    GROUP BY t.wine_id
+  )
+  SELECT
+    COALESCE(ta.wid, ca.wid),
+    ta.tw_avg,
+    COALESCE(ta.tw_count, 0),
+    ca.c_avg,
+    COALESCE(ca.c_count, 0)
+  FROM community_agg ca
+  FULL OUTER JOIN twin_agg ta ON ta.wid = ca.wid;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_twin_weighted_ratings_batch(uuid, uuid[]) TO authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PHASE 2: DATA INTEGRITY — pg_trgm Wine Deduplication
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Problem: "Chateau Margaux" vs "Ch. Margaux" vs "Château Margaux" = 3 duplicates.
+-- Uses trigram similarity to find and merge duplicate wines.
+-- merge_duplicate_wines: re-points all FKs to canonical wine, deletes duplicate.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Trigram index on wine name + producer for fast similarity queries
+CREATE INDEX IF NOT EXISTS idx_wines_name_trgm ON public.wines USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_wines_producer_trgm ON public.wines USING gin (producer gin_trgm_ops);
+
+-- ────────────────────────────────────────────────
+-- find_wine_duplicates
+-- Returns potential duplicate pairs above similarity threshold.
+-- Default: name_sim > 0.5 AND producer_sim > 0.4 (tuned for wine names).
+-- Limited to top 100 pairs per call to avoid runaway scans.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.find_wine_duplicates(double precision, double precision, int);
+CREATE OR REPLACE FUNCTION public.find_wine_duplicates(
+  p_name_threshold double precision DEFAULT 0.5,
+  p_producer_threshold double precision DEFAULT 0.4,
+  p_limit int DEFAULT 100
+)
+RETURNS TABLE (
+  wine_a_id uuid,
+  wine_a_name text,
+  wine_a_producer text,
+  wine_a_vintage int,
+  wine_b_id uuid,
+  wine_b_name text,
+  wine_b_producer text,
+  wine_b_vintage int,
+  name_similarity double precision,
+  producer_similarity double precision
+)
+LANGUAGE sql STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    a.id, a.name, a.producer, a.vintage,
+    b.id, b.name, b.producer, b.vintage,
+    similarity(a.name, b.name)::double precision,
+    similarity(a.producer, b.producer)::double precision
+  FROM public.wines a
+  JOIN public.wines b ON a.id < b.id
+  WHERE similarity(a.name, b.name) > p_name_threshold
+    AND similarity(a.producer, b.producer) > p_producer_threshold
+  ORDER BY similarity(a.name, b.name) + similarity(a.producer, b.producer) DESC
+  LIMIT p_limit;
+$$;
+
+-- ────────────────────────────────────────────────
+-- merge_duplicate_wines
+-- Merges duplicate_id INTO canonical_id:
+--   1. Re-point tastings, cellar_items, activity_feed FKs
+--   2. Enrich canonical with any non-null fields from duplicate
+--   3. Delete duplicate wine row
+-- Returns the canonical wine row after merge.
+-- ────────────────────────────────────────────────
+DROP FUNCTION IF EXISTS public.merge_duplicate_wines(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.merge_duplicate_wines(
+  p_canonical_id uuid,
+  p_duplicate_id uuid
+)
+RETURNS TABLE (
+  id uuid, name text, producer text, vintage int,
+  variety text, region text, label_image_url text, category text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_canonical_id = p_duplicate_id THEN
+    RAISE EXCEPTION 'Cannot merge a wine with itself';
+  END IF;
+
+  -- Verify both wines exist
+  IF NOT EXISTS (SELECT 1 FROM public.wines WHERE wines.id = p_canonical_id) THEN
+    RAISE EXCEPTION 'Canonical wine % not found', p_canonical_id;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.wines WHERE wines.id = p_duplicate_id) THEN
+    RAISE EXCEPTION 'Duplicate wine % not found', p_duplicate_id;
+  END IF;
+
+  -- 1. Re-point tastings (handle unique constraint: same user may have tasted both)
+  -- Delete tastings for duplicate wine where user already tasted canonical wine
+  DELETE FROM public.tastings t1
+  USING public.tastings t2
+  WHERE t1.wine_id = p_duplicate_id
+    AND t2.wine_id = p_canonical_id
+    AND t1.user_id = t2.user_id;
+
+  -- Move remaining tastings to canonical
+  UPDATE public.tastings SET wine_id = p_canonical_id WHERE wine_id = p_duplicate_id;
+
+  -- 2. Re-point cellar_items (same unique constraint handling)
+  DELETE FROM public.cellar_items c1
+  USING public.cellar_items c2
+  WHERE c1.wine_id = p_duplicate_id
+    AND c2.wine_id = p_canonical_id
+    AND c1.user_id = c2.user_id;
+
+  UPDATE public.cellar_items SET wine_id = p_canonical_id WHERE wine_id = p_duplicate_id;
+
+  -- 3. Re-point activity_feed
+  UPDATE public.activity_feed SET wine_id = p_canonical_id WHERE wine_id = p_duplicate_id;
+
+  -- 4. Enrich canonical with non-null fields from duplicate
+  UPDATE public.wines c SET
+    vintage         = COALESCE(c.vintage,         d.vintage),
+    variety         = COALESCE(c.variety,          d.variety),
+    region          = COALESCE(c.region,           d.region),
+    label_image_url = COALESCE(c.label_image_url,  d.label_image_url),
+    category        = COALESCE(c.category,         d.category)
+  FROM public.wines d
+  WHERE c.id = p_canonical_id AND d.id = p_duplicate_id;
+
+  -- 5. Delete duplicate
+  DELETE FROM public.wines WHERE wines.id = p_duplicate_id;
+
+  -- Return merged canonical
+  RETURN QUERY
+  SELECT w.id, w.name, w.producer, w.vintage, w.variety, w.region, w.label_image_url, w.category
+  FROM public.wines w WHERE w.id = p_canonical_id;
+END;
+$$;

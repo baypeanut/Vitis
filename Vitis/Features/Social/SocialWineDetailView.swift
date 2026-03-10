@@ -17,8 +17,7 @@ struct SocialWineDetailView: View {
     @State private var hostReview: SocialReview
     @State private var userRating: Double?
     @State private var userTasting: Tasting?
-    @State private var friendsAverage: Double?
-    @State private var globalAverage: Double?
+    @State private var twinRating: TwinWeightedRating?
     @State private var groupedMutual: [GroupedFriendReview] = []
     @State private var isLoading = true
     @State private var hasCheered: Bool
@@ -194,22 +193,27 @@ struct SocialWineDetailView: View {
                 .frame(height: 1)
             HStack(spacing: 0) {
                 ratingColumn(label: "You", value: userRating)
-                ratingColumn(label: "Friends", value: friendsAverage)
-                ratingColumn(label: "Global", value: globalAverage)
+                ratingColumn(label: "Twins", value: twinRating?.twinWeightedAvg, count: twinRating?.twinCount)
+                ratingColumn(label: "Global", value: twinRating?.communityAvg, count: twinRating?.communityCount)
             }
         }
         .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
         .padding(.vertical, 12)
     }
 
-    private func ratingColumn(label: String, value: Double?) -> some View {
-        VStack(spacing: 6) {
+    private func ratingColumn(label: String, value: Double?, count: Int? = nil) -> some View {
+        VStack(spacing: 4) {
             Text(label)
                 .font(VitisTheme.uiFont(size: 13, weight: .medium))
                 .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
             Text(value != nil ? String(format: "%.1f", value!) : "\u{2014}")
                 .font(VitisTheme.ratingFont())
                 .foregroundStyle(value != nil ? VitisTheme.ratingColor(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
+            if let count, count > 0 {
+                Text("\(count)")
+                    .font(VitisTheme.uiFont(size: 11))
+                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+            }
         }
         .frame(maxWidth: .infinity)
     }
@@ -434,7 +438,7 @@ struct SocialWineDetailView: View {
 
     // MARK: - Data & Grouping
 
-        private func loadData() async {
+    private func loadData() async {
         isLoading = true
         let hostId = hostItem.userId
         do {
@@ -448,10 +452,7 @@ struct SocialWineDetailView: View {
             mutual.sort { $0.createdAt > $1.createdAt }
 
             groupedMutual = Self.groupByUser(mutual)
-
-            let friendRatings = mutual.map(\.rating)
-            friendsAverage = friendRatings.isEmpty ? nil : friendRatings.reduce(0, +) / Double(friendRatings.count)
-            globalAverage = allTastings.isEmpty ? nil : allTastings.map(\.rating).reduce(0, +) / Double(allTastings.count)
+            twinRating = await TasteSimilarityService.fetchTwinWeightedRating(wineId: wine.id)
 
             if let uid = currentUserId {
                 let t = try? await TastingService.fetchUserTastingForWine(userId: uid, wineId: wine.id)
