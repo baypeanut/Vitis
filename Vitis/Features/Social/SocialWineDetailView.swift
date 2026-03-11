@@ -1,6 +1,6 @@
 //
 //  SocialWineDetailView.swift
-//  Vitis
+//  Pari
 //
 //  Social Wine Detail: rating dashboard, grouped reviews.
 //
@@ -63,7 +63,7 @@ struct SocialWineDetailView: View {
         parts.append(wine.name)
         if let v = wine.vintage, v > 0 { parts.append(String(v)) }
         let wineTitle = parts.joined(separator: " ")
-        var text = "Just tried \(wineTitle) on Vitis"
+        var text = "Just tried \(wineTitle) on Pari"
         if let rating = hostReview.rating > 0 ? hostReview.rating : nil {
             text += " — rated \(String(format: "%.1f", rating))/10"
         }
@@ -74,18 +74,18 @@ struct SocialWineDetailView: View {
     /// Wine title with optional vintage (e.g. "Sancerre 2022"). No placeholder if vintage nil/0.
     private var wineTitleWithVintage: String {
         if let v = wine.vintage, v > 0 {
-            return "\(VitisTheme.displayWineName(wine.name)) \(v)"
+            return "\(PariTheme.displayWineName(wine.name)) \(v)"
         }
-        return VitisTheme.displayWineName(wine.name)
+        return PariTheme.displayWineName(wine.name)
     }
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             if isLoading {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent(for: colorScheme))
+                    .tint(PariTheme.accent(for: colorScheme))
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -124,11 +124,11 @@ struct SocialWineDetailView: View {
         .overlay(alignment: .center) {
             if alreadyTastedToast {
                 Text("You've already tasted this wine")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(VitisTheme.secondaryElevated(for: colorScheme))
+                    .background(PariTheme.secondaryElevated(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
                     .transition(.opacity)
@@ -143,18 +143,18 @@ struct SocialWineDetailView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(wineTitleWithVintage)
-                .font(VitisTheme.wineNameFont(for: colorScheme))
+                .font(PariTheme.wineNameFont(for: colorScheme))
                 .foregroundStyle(wineColor)
             HStack(spacing: 8) {
                 if !wine.producer.isEmpty {
                     Text(wine.producer)
-                        .font(VitisTheme.producerSerifFont())
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.producerSerifFont())
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
                 if let region = wine.region, !region.isEmpty {
                     Text(region)
-                        .font(VitisTheme.detailFont())
-                        .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                        .font(PariTheme.detailFont())
+                        .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
                 }
             }
             if currentUserId != nil {
@@ -162,7 +162,7 @@ struct SocialWineDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .padding(.top, 24)
         .padding(.bottom, 8)
     }
@@ -175,9 +175,9 @@ struct SocialWineDetailView: View {
                 Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
                     .font(.system(size: 14))
                 Text(hasWishlisted ? "Saved" : "Save to Reserve List")
-                    .font(VitisTheme.uiFont(size: 14))
+                    .font(PariTheme.uiFont(size: 14))
             }
-            .foregroundStyle(hasWishlisted ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+            .foregroundStyle(hasWishlisted ? PariTheme.accent(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
         }
         .buttonStyle(.plain)
         .disabled(isWishlisting)
@@ -189,7 +189,7 @@ struct SocialWineDetailView: View {
     private var ratingDashboardSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Rectangle()
-                .fill(VitisTheme.divider(for: colorScheme))
+                .fill(PariTheme.divider(for: colorScheme))
                 .frame(height: 1)
             HStack(spacing: 0) {
                 ratingColumn(label: "You", value: userRating)
@@ -197,22 +197,22 @@ struct SocialWineDetailView: View {
                 ratingColumn(label: "Global", value: twinRating?.communityAvg, count: twinRating?.communityCount)
             }
         }
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .padding(.vertical, 12)
     }
 
     private func ratingColumn(label: String, value: Double?, count: Int? = nil) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             Text(value != nil ? String(format: "%.1f", value!) : "\u{2014}")
-                .font(VitisTheme.ratingFont())
-                .foregroundStyle(value != nil ? VitisTheme.ratingColor(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
+                .font(PariTheme.ratingFont())
+                .foregroundStyle(value != nil ? PariTheme.ratingColor(for: colorScheme) : PariTheme.textTertiary(for: colorScheme))
             if let count, count > 0 {
                 Text("\(count)")
-                    .font(VitisTheme.uiFont(size: 11))
-                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 11))
+                    .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             }
         }
         .frame(maxWidth: .infinity)
@@ -223,23 +223,23 @@ struct SocialWineDetailView: View {
     private var hostReviewSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Rectangle()
-                .fill(VitisTheme.divider(for: colorScheme))
+                .fill(PariTheme.divider(for: colorScheme))
                 .frame(height: 1)
             HStack(alignment: .top, spacing: 12) {
                 reviewAvatar(url: hostReview.avatarURL, displayName: hostReview.displayName, size: 44)
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .center, spacing: 8) {
                         Text(hostReview.displayName)
-                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14, weight: .medium))
+                            .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         Text(String(format: "%.1f", hostReview.rating))
-                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14, weight: .medium))
+                            .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     }
                     if let comment = hostReview.comment, !comment.isEmpty {
                         Text(comment)
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if !hostReview.tasteTags.isEmpty {
@@ -249,7 +249,7 @@ struct SocialWineDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .padding(.vertical, 14)
     }
 
@@ -260,23 +260,23 @@ struct SocialWineDetailView: View {
         if let t = userTasting, currentUserId != hostItem.userId {
             VStack(alignment: .leading, spacing: 12) {
                 Rectangle()
-                    .fill(VitisTheme.divider(for: colorScheme))
+                    .fill(PariTheme.divider(for: colorScheme))
                     .frame(height: 1)
                 HStack(alignment: .top, spacing: 12) {
                     reviewAvatar(url: nil, displayName: "You", size: 44)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(alignment: .center, spacing: 8) {
                             Text("You")
-                                .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 14, weight: .medium))
+                                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                             Text(String(format: "%.1f", t.rating))
-                                .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                                .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 14, weight: .medium))
+                                .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                         }
                         if let comment = t.comment, !comment.isEmpty {
                             Text(comment)
-                                .font(VitisTheme.uiFont(size: 14))
-                                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 14))
+                                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         if let tags = t.noteTags, !tags.isEmpty {
@@ -286,7 +286,7 @@ struct SocialWineDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            .padding(.horizontal, PariTheme.cardPaddingHorizontal)
             .padding(.vertical, 14)
         }
     }
@@ -298,12 +298,12 @@ struct SocialWineDetailView: View {
         let quickOnly = groupedMutual.filter { !$0.hasComment }
         return VStack(alignment: .leading, spacing: 12) {
             Rectangle()
-                .fill(VitisTheme.divider(for: colorScheme))
+                .fill(PariTheme.divider(for: colorScheme))
                 .frame(height: 1)
             Text("Also tasted by")
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
-                .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                .padding(.horizontal, PariTheme.cardPaddingHorizontal)
             if !quickOnly.isEmpty {
                 quickRatingsRow(quickOnly)
             }
@@ -323,16 +323,16 @@ struct SocialWineDetailView: View {
                     HStack(spacing: 6) {
                         reviewAvatar(url: g.avatarURL, displayName: g.displayName, size: 28)
                         Text(String(format: "%.1f", g.primaryReview.rating))
-                            .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 13, weight: .medium))
+                            .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(VitisTheme.placeholderBackground(for: colorScheme))
+                    .background(PariTheme.placeholderBackground(for: colorScheme))
                     .clipShape(Capsule())
                 }
             }
-            .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         }
         .padding(.vertical, 8)
     }
@@ -344,25 +344,25 @@ struct SocialWineDetailView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .center, spacing: 6) {
                     Text(grouped.displayName)
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14, weight: .medium))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     if grouped.additionalCount > 0 {
                         Text("+\(grouped.additionalCount) more")
-                            .font(VitisTheme.uiFont(size: 11))
-                            .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 11))
+                            .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
                     }
                     Spacer(minLength: 4)
                     Text(String(format: "%.1f", r.rating))
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14, weight: .medium))
+                        .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     Text(relativeTime(r.createdAt))
-                        .font(VitisTheme.uiFont(size: 11))
-                        .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 11))
+                        .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
                 }
                 if let comment = r.comment, !comment.isEmpty {
                     Text(comment)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                         .lineLimit(2)
                         .truncationMode(.tail)
                 }
@@ -372,7 +372,7 @@ struct SocialWineDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .padding(.vertical, 10)
     }
 
@@ -384,9 +384,9 @@ struct SocialWineDetailView: View {
             colorScheme: colorScheme,
             onTap: { Task { await toggleCheers() } }
         )
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .padding(.vertical, 12)
-        .background(VitisTheme.background(for: colorScheme).opacity(0.95))
+        .background(PariTheme.background(for: colorScheme).opacity(0.95))
     }
 
     private func reviewAvatar(url: String?, displayName: String, size: CGFloat) -> some View {
@@ -410,11 +410,11 @@ struct SocialWineDetailView: View {
         let initial = name.isEmpty ? "?" : String(name.prefix(1)).uppercased()
         let fontSize = max(11, min(size * 0.45, 18))
         return Circle()
-            .fill(VitisTheme.placeholderBackground(for: colorScheme))
+            .fill(PariTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(initial)
-                    .font(VitisTheme.uiFont(size: fontSize, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: fontSize, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -422,7 +422,7 @@ struct SocialWineDetailView: View {
         FlowLayout(spacing: 6) {
             ForEach(tags, id: \.self) { tag in
                 Text(tag)
-                    .font(VitisTheme.uiFont(size: 11))
+                    .font(PariTheme.uiFont(size: 11))
                     .foregroundStyle(wineColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -433,7 +433,7 @@ struct SocialWineDetailView: View {
     }
 
     private func relativeTime(_ date: Date) -> String {
-        VitisTheme.compactTimestamp(date)
+        PariTheme.compactTimestamp(date)
     }
 
     // MARK: - Data & Grouping
@@ -566,17 +566,17 @@ private struct CheersButton: View {
                 Image(systemName: hasCheered ? "wineglass.fill" : "wineglass")
                     .font(.system(size: 16))
                 Text("Cheers")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
                 if count > 0 {
                     Text("\(count)")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
                 }
             }
-            .foregroundStyle(hasCheered ? VitisTheme.accent(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme))
+            .foregroundStyle(hasCheered ? PariTheme.accent(for: colorScheme) : PariTheme.textSecondary(for: colorScheme))
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(VitisTheme.placeholderBackground(for: colorScheme))
+            .background(PariTheme.placeholderBackground(for: colorScheme))
             .clipShape(Capsule())
         }
         .buttonStyle(CheersPressStyle())
@@ -593,4 +593,4 @@ private struct CheersPressStyle: ButtonStyle {
     }
 }
 
-// FlowLayout extracted to Vitis/Utilities/FlowLayout.swift
+// FlowLayout extracted to Pari/Utilities/FlowLayout.swift

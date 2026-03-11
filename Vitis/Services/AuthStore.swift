@@ -1,6 +1,6 @@
 //
 //  AuthStore.swift
-//  Vitis
+//  Pari
 //
 //  Central auth state: phone OTP + session restore.
 //

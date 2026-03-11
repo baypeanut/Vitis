@@ -1,6 +1,6 @@
 //
 //  UsernameStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -12,12 +12,12 @@ struct UsernameStepView: View {
         VStack(alignment: .leading, spacing: 24) {
             SerifTitleText(title: "Your username")
             Text("You can always change this later.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText)
 
             HStack(alignment: .bottom, spacing: 0) {
                 Text("@")
-                    .font(VitisTheme.uiFont(size: 16))
+                    .font(PariTheme.uiFont(size: 16))
                     .foregroundStyle(.primary)
                     .padding(.vertical, 12)
                 UnderlineTextField(
@@ -30,7 +30,7 @@ struct UsernameStepView: View {
                 if vm.usernameChecking {
                     ProgressView()
                         .scaleEffect(0.8)
-                        .tint(VitisTheme.secondaryText)
+                        .tint(PariTheme.secondaryText)
                         .padding(.leading, 8)
                 } else if vm.usernameAvailable == true {
                     Image(systemName: "checkmark.circle.fill")
@@ -42,7 +42,7 @@ struct UsernameStepView: View {
 
             if let err = vm.usernameError {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
         }

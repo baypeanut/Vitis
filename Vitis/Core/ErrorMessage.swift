@@ -1,6 +1,6 @@
 //
 //  ErrorMessage.swift
-//  Vitis
+//  Pari
 //
 //  Minimal user-facing error messages. English only. Do not clear UI state on error.
 //

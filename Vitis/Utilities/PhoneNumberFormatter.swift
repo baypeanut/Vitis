@@ -1,6 +1,6 @@
 //
 //  PhoneNumberFormatter.swift
-//  Vitis
+//  Pari
 //
 //  Lightweight helpers for normalizing numbers into E.164.
 //

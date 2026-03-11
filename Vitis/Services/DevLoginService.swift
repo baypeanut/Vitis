@@ -1,6 +1,6 @@
 //
 //  DevLoginService.swift
-//  Vitis
+//  Pari
 //
 //  Dev-only login: find dev_accounts by username or email (case-insensitive). No Supabase Auth.
 //

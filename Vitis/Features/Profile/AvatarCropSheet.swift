@@ -1,6 +1,6 @@
 //
 //  AvatarCropSheet.swift
-//  Vitis
+//  Pari
 //
 //  Zoom/pan crop. User picks region; circular overlay. Output: JPEG for avatar.
 //
@@ -27,7 +27,7 @@ struct AvatarCropSheet: View {
                 .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(VitisTheme.border, lineWidth: 1)
+                        .stroke(PariTheme.border, lineWidth: 1)
                         .allowsHitTesting(false)
                 )
             }
@@ -37,23 +37,23 @@ struct AvatarCropSheet: View {
                 Button("Cancel") {
                     onCancel()
                 }
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText)
 
                 Button("Use Photo") {
                     triggerCrop = true
                 }
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                .font(PariTheme.uiFont(size: 15, weight: .medium))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
-                .background(VitisTheme.accent)
+                .background(PariTheme.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .padding(.bottom, 32)
         }
         .padding(.top, 32)
         .frame(maxWidth: .infinity)
-        .background(VitisTheme.background)
+        .background(PariTheme.background)
     }
 }

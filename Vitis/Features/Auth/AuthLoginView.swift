@@ -1,6 +1,6 @@
 //
 //  AuthLoginView.swift
-//  Vitis
+//  Pari
 //
 //  Real Supabase Auth login: email + password, signInWithPassword. Show real errors.
 //
@@ -22,12 +22,12 @@ struct AuthLoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     SerifTitleText(title: "Log in")
                     Text("Sign in with your email and password.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
 
                     UnderlineTextField(
                         placeholder: "Email",
@@ -49,7 +49,7 @@ struct AuthLoginView: View {
 
                     if let err = errorMessage {
                         Text(err)
-                            .font(VitisTheme.uiFont(size: 13))
+                            .font(PariTheme.uiFont(size: 13))
                             .foregroundStyle(.red)
                     }
 
@@ -60,8 +60,8 @@ struct AuthLoginView: View {
                     Button("Forgot password?") {
                         showForgotPassword = true
                     }
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     .padding(.top, 4)
 
                     #if DEBUG
@@ -69,8 +69,8 @@ struct AuthLoginView: View {
                         Button("Sign in as test user") {
                             Task { await signInAsTestUser() }
                         }
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                         .padding(.top, 8)
                     }
                     #endif
@@ -90,8 +90,8 @@ struct AuthLoginView: View {
                     Button("Cancel") {
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
             .sheet(isPresented: $showForgotPassword) {
@@ -159,12 +159,12 @@ struct AuthLoginViewContent: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(alignment: .leading, spacing: 24) {
                 SerifTitleText(title: "Log in")
                 Text("Sign in with your email and password.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
 
                 UnderlineTextField(
                     placeholder: "Email",
@@ -186,7 +186,7 @@ struct AuthLoginViewContent: View {
 
                 if let err = errorMessage {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                 }
 
@@ -197,8 +197,8 @@ struct AuthLoginViewContent: View {
                 Button("Forgot password?") {
                     showForgotPassword = true
                 }
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 14))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .padding(.top, 4)
 
                 #if DEBUG
@@ -206,8 +206,8 @@ struct AuthLoginViewContent: View {
                     Button("Sign in as test user") {
                         Task { await signInAsTestUser() }
                     }
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                     .padding(.top, 8)
                 }
                 #endif

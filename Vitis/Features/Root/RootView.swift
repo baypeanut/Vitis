@@ -1,6 +1,6 @@
 //
 //  RootView.swift
-//  Vitis
+//  Pari
 //
 //  Auth gate: phone OTP + profile setup. Restores session if available.
 //
@@ -35,8 +35,8 @@ struct RootView: View {
             } else {
                 switch authStore.state {
                 case .checking:
-                    VitisTheme.background(for: colorScheme).overlay {
-                        ProgressView().tint(VitisTheme.accent(for: colorScheme))
+                    PariTheme.background(for: colorScheme).overlay {
+                        ProgressView().tint(PariTheme.accent(for: colorScheme))
                     }
                     .ignoresSafeArea()
                 case .unauthenticated:
@@ -134,9 +134,9 @@ struct RootView: View {
                         .tabItem { Image(systemName: "person.crop.circle") }
                         .tag(Tab.profile)
                 }
-                .tint(VitisTheme.accentWine(for: colorScheme))
+                .tint(PariTheme.accentWine(for: colorScheme))
                 .toolbarBackground(.visible, for: .tabBar)
-                .toolbarBackground(VitisTheme.tabBarBackground(for: colorScheme), for: .tabBar)
+                .toolbarBackground(PariTheme.tabBarBackground(for: colorScheme), for: .tabBar)
                 .tabBarTheme()
 
                 // Grappe Dorée — button bottom aligns with safe area top (Vivino positioning)

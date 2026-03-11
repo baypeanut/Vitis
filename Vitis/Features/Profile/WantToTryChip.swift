@@ -1,6 +1,6 @@
 //
 //  WantToTryChip.swift
-//  Vitis
+//  Pari
 //
 //  Compact stat chip for Want to Try count. Tappable, opens full list.
 //
@@ -18,20 +18,20 @@ struct WantToTryChip: View {
             HStack(spacing: 6) {
                 Image(systemName: "bookmark")
                     .font(.system(size: 12))
-                    .foregroundStyle(VitisTheme.accent)
+                    .foregroundStyle(PariTheme.accent)
                 Text("Reserve List")
-                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                    .font(PariTheme.uiFont(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
                 Text("\(count)")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.accent)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color(white: 0.98))
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(VitisTheme.accent.opacity(0.4), lineWidth: 1)
+                    .stroke(PariTheme.accent.opacity(0.4), lineWidth: 1)
             )
             .clipShape(Capsule())
         }

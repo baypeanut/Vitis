@@ -1,6 +1,6 @@
 //
 //  FeedFollowingParams.swift
-//  Vitis
+//  Pari
 //
 //  RPC params for feed_following. Explicit Sendable + nonisolated encode
 //  so encoding works from non–MainActor contexts (Supabase default isolation).

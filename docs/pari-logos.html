@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pari — Icon Directions</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;1,200;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0D0A09; color:#EDE4D5; font-family:'DM Sans',sans-serif; padding:56px 0 100px; }
+
+/* ── header ── */
+.hd { text-align:center; margin-bottom:56px; }
+.hd-sup { font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:rgba(237,228,213,.3); margin-bottom:10px; }
+.hd-title { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:28px; letter-spacing:.04em; color:rgba(237,228,213,.85); }
+
+/* ── icon grid ── */
+.grid { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; padding:0 20px; margin-bottom:72px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.shell {
+  width:108px; height:108px; border-radius:24px; position:relative; overflow:hidden; flex-shrink:0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.shell::after {
+  content:''; position:absolute; inset:0; border-radius:24px; pointer-events:none; z-index:10;
+  background:linear-gradient(148deg, rgba(255,255,255,.085) 0%, rgba(255,255,255,.01) 40%, transparent 65%);
+}
+.cell-label { font-size:10px; letter-spacing:.08em; color:rgba(237,228,213,.4); text-transform:uppercase; }
+
+/* ── detail list ── */
+.list { display:flex; flex-direction:column; gap:1px; max-width:740px; margin:0 auto; padding:0 16px; }
+.row {
+  display:grid; grid-template-columns:200px 1fr; overflow:hidden;
+  background:rgba(255,255,255,.022); border:1px solid rgba(255,255,255,.045);
+  transition:background .18s;
+}
+.row:first-child { border-radius:14px 14px 0 0; }
+.row:last-child  { border-radius:0 0 14px 14px; }
+.row:hover { background:rgba(255,255,255,.038); }
+.row-icon-wrap { display:flex; align-items:center; justify-content:center; padding:28px; border-right:1px solid rgba(255,255,255,.04); }
+.row-shell {
+  width:128px; height:128px; border-radius:28px; position:relative; overflow:hidden; flex-shrink:0;
+  box-shadow: 0 4px 14px rgba(0,0,0,.55), 0 16px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.row-shell::after {
+  content:''; position:absolute; inset:0; border-radius:28px; pointer-events:none; z-index:10;
+  background:linear-gradient(148deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.01) 38%, transparent 60%);
+}
+.row-text { padding:28px 32px; display:flex; flex-direction:column; justify-content:center; gap:8px; }
+.row-num { font-size:9px; letter-spacing:.28em; color:rgba(184,74,88,.55); }
+.row-name { font-family:'Cormorant Garamond',serif; font-weight:400; font-size:22px; letter-spacing:.03em; color:rgba(237,228,213,.95); }
+.row-concept { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:rgba(237,228,213,.28); margin-bottom:2px; }
+.row-desc { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:14.5px; line-height:1.65; color:rgba(237,228,213,.5); }
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-sup">Pari · App Icon · 2026</div>
+  <div class="hd-title">10 Directions</div>
+</div>
+
+<!-- ═══════════════════════════════════════ GRID ═══ -->
+<div class="grid">
+
+  <!-- 01 GRAPPE — evolved golden grape -->
+  <div class="cell">
+    <div class="shell" id="i01" style="background:linear-gradient(145deg,#14100B,#0C0907);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <radialGradient id="g1a" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#EDD48A"/>
+            <stop offset="55%" stop-color="#C8A050"/>
+            <stop offset="100%" stop-color="#7A5520"/>
+          </radialGradient>
+          <radialGradient id="g1b" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#E0C070"/>
+            <stop offset="55%" stop-color="#B08840"/>
+            <stop offset="100%" stop-color="#654010"/>
+          </radialGradient>
+        </defs>
+        <!-- stem + leaf -->
+        <line x1="54" y1="14" x2="54" y2="26" stroke="#C8A97E" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M54 18 C54 18 46 14 42 18 C46 22 54 20 54 18Z" fill="#C8A97E" opacity=".6"/>
+        <!-- 1+2+3 triangle cluster -->
+        <circle cx="54" cy="34" r="11" fill="url(#g1a)"/>
+        <circle cx="54" cy="34" r="11" fill="white" opacity=".1" style="transform-origin:54px 34px;transform:translateX(-3px) translateY(-3px);"/>
+        <circle cx="42" cy="51" r="11" fill="url(#g1a)"/>
+        <circle cx="66" cy="51" r="11" fill="url(#g1a)"/>
+        <circle cx="30" cy="68" r="11" fill="url(#g1b)"/>
+        <circle cx="54" cy="68" r="11" fill="url(#g1b)"/>
+        <circle cx="78" cy="68" r="11" fill="url(#g1b)"/>
+        <!-- shines -->
+        <circle cx="50" cy="30" r="3.5" fill="white" opacity=".14"/>
+        <circle cx="38" cy="47" r="3.5" fill="white" opacity=".12"/>
+        <circle cx="62" cy="47" r="3.5" fill="white" opacity=".12"/>
+        <circle cx="26" cy="64" r="3.5" fill="white" opacity=".1"/>
+        <circle cx="50" cy="64" r="3.5" fill="white" opacity=".1"/>
+        <circle cx="74" cy="64" r="3.5" fill="white" opacity=".1"/>
+      </svg>
+    </div>
+    <span class="cell-label">Grappe</span>
+  </div>
+
+  <!-- 02 GÉMEAU — twin berries, the core feature made literal -->
+  <div class="cell">
+    <div class="shell" id="i02" style="background:linear-gradient(145deg,#0E0C16,#09080E);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <radialGradient id="g2r" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#D05060"/>
+            <stop offset="60%" stop-color="#7A1828"/>
+            <stop offset="100%" stop-color="#280810"/>
+          </radialGradient>
+          <radialGradient id="g2g" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#E0C878"/>
+            <stop offset="60%" stop-color="#B09040"/>
+            <stop offset="100%" stop-color="#5A4010"/>
+          </radialGradient>
+        </defs>
+        <!-- Shared Y-stem -->
+        <path d="M54 16 L54 20 M54 20 L38 32 M54 20 L70 32"
+          stroke="#C8A97E" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <!-- Left berry (ruby — your palate) -->
+        <circle cx="36" cy="56" r="24" fill="url(#g2r)"/>
+        <circle cx="29" cy="49" r="7" fill="white" opacity=".12"/>
+        <!-- Right berry (gold — twin's palate) -->
+        <circle cx="72" cy="56" r="24" fill="url(#g2g)"/>
+        <circle cx="65" cy="49" r="7" fill="white" opacity=".1"/>
+        <!-- Touch point highlight -->
+        <circle cx="54" cy="56" r="4" fill="white" opacity=".08"/>
+      </svg>
+    </div>
+    <span class="cell-label">Gémeau</span>
+  </div>
+
+  <!-- 03 MONOGRAMME — italic P, vine tendril at foot -->
+  <div class="cell">
+    <div class="shell" id="i03" style="background:linear-gradient(145deg,#130E0C,#0A0807);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <!-- Large italic P -->
+        <text x="30" y="84" font-family="'Cormorant Garamond',Georgia,serif"
+          font-style="italic" font-weight="300" font-size="88" fill="#EDE4D5" opacity=".92">P</text>
+        <!-- Vine tendril growing from the serif foot of P -->
+        <path d="M34 82 C32 78 26 76 24 70 C22 64 26 58 30 56"
+          stroke="#C8A97E" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <!-- Small leaf at tip of tendril -->
+        <ellipse cx="30.5" cy="55" rx="4" ry="6" fill="#C8A97E" opacity=".55"
+          transform="rotate(-20,30.5,55)"/>
+        <!-- Ruby dot — like a berry -->
+        <circle cx="24" cy="70" r="2.5" fill="#B84A58" opacity=".8"/>
+        <!-- Ruby underline bar -->
+        <rect x="22" y="88" width="64" height="1.5" rx="1" fill="#B84A58" opacity=".7"/>
+      </svg>
+    </div>
+    <span class="cell-label">Monogramme</span>
+  </div>
+
+  <!-- 04 MÉDAILLON — wax-seal, heraldic -->
+  <div class="cell">
+    <div class="shell" id="i04" style="background:linear-gradient(145deg,#0D0B09,#070605);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <!-- Outer ring -->
+        <circle cx="54" cy="54" r="46" stroke="#C8A97E" stroke-width="1" opacity=".4"/>
+        <!-- Dotted inner ring -->
+        <circle cx="54" cy="54" r="39" stroke="#C8A97E" stroke-width=".6" stroke-dasharray="2 4" opacity=".35"/>
+        <!-- Small grape cluster mark at center-top -->
+        <circle cx="54" cy="32" r="5.5" fill="#C8A97E" opacity=".7"/>
+        <circle cx="46" cy="41" r="5.5" fill="#C8A97E" opacity=".65"/>
+        <circle cx="62" cy="41" r="5.5" fill="#C8A97E" opacity=".65"/>
+        <!-- Stem -->
+        <line x1="54" y1="24" x2="54" y2="27" stroke="#C8A97E" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+        <!-- PARI text -->
+        <text x="54" y="64" text-anchor="middle"
+          font-family="'Cormorant Garamond',Georgia,serif"
+          font-size="16" font-weight="300" letter-spacing="5" fill="#EDE4D5" opacity=".85">PARI</text>
+        <!-- Rule below text -->
+        <line x1="30" y1="69" x2="78" y2="69" stroke="#C8A97E" stroke-width=".6" opacity=".3"/>
+        <!-- Vintage text -->
+        <text x="54" y="80" text-anchor="middle"
+          font-family="'Cormorant Garamond',Georgia,serif"
+          font-size="8" font-weight="300" letter-spacing="3" fill="#C8A97E" opacity=".45">EST. MMXXV</text>
+      </svg>
+    </div>
+    <span class="cell-label">Médaillon</span>
+  </div>
+
+  <!-- 05 BAIE — single berry, ultra minimal -->
+  <div class="cell">
+    <div class="shell" id="i05" style="background:linear-gradient(145deg,#0F0A0D,#08060A);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <radialGradient id="g5" cx="38%" cy="32%" r="68%">
+            <stop offset="0%" stop-color="#D05060"/>
+            <stop offset="45%" stop-color="#8A1C2C"/>
+            <stop offset="100%" stop-color="#1C0608"/>
+          </radialGradient>
+          <filter id="glow5">
+            <feGaussianBlur stdDeviation="4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Single large grape berry — slightly oblate like a real grape -->
+        <ellipse cx="54" cy="58" rx="30" ry="32" fill="url(#g5)" filter="url(#glow5)"/>
+        <!-- Short stem -->
+        <line x1="54" y1="22" x2="54" y2="27" stroke="#C8A97E" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+        <!-- Highlight -->
+        <ellipse cx="44" cy="45" rx="10" ry="12" fill="white" opacity=".12" transform="rotate(-10,44,45)"/>
+      </svg>
+    </div>
+    <span class="cell-label">Baie</span>
+  </div>
+
+  <!-- 06 COUPE — champagne coupe silhouette -->
+  <div class="cell">
+    <div class="shell" id="i06" style="background:linear-gradient(145deg,#110E0C,#090706);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <linearGradient id="g6wine" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B84A58" stop-opacity=".85"/>
+            <stop offset="100%" stop-color="#5A1420" stop-opacity="1"/>
+          </linearGradient>
+        </defs>
+        <!-- Coupe bowl — wide and shallow, characteristic shape -->
+        <path d="M16 30 Q20 18 54 18 Q88 18 92 30 L76 62 Q72 70 54 70 Q36 70 32 62 Z"
+          fill="#EDE4D5" opacity=".88"/>
+        <!-- Wine fill inside coupe bowl -->
+        <path d="M34 55 Q38 70 54 70 Q70 70 74 55 Z"
+          fill="url(#g6wine)"/>
+        <!-- Meniscus -->
+        <path d="M34 55 Q54 50 74 55" stroke="#EDE4D5" stroke-width=".7" fill="none" opacity=".18"/>
+        <!-- Thin stem -->
+        <rect x="52" y="70" width="4" height="20" rx="2" fill="#EDE4D5" opacity=".6"/>
+        <!-- Base -->
+        <rect x="34" y="90" width="40" height="5" rx="2.5" fill="#EDE4D5" opacity=".6"/>
+        <!-- Shine on bowl -->
+        <path d="M22 36 L28 56" stroke="white" stroke-width=".8" stroke-linecap="round" opacity=".12"/>
+      </svg>
+    </div>
+    <span class="cell-label">Coupe</span>
+  </div>
+
+  <!-- 07 BRIN — botanical sprig -->
+  <div class="cell">
+    <div class="shell" id="i07" style="background:linear-gradient(145deg,#0A0C08,#070806);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <linearGradient id="g7stem" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#D4C090"/>
+            <stop offset="100%" stop-color="#8A7040"/>
+          </linearGradient>
+        </defs>
+        <!-- Main curving stem -->
+        <path d="M54 90 C54 70 58 60 54 44 C52 36 48 28 50 18"
+          stroke="url(#g7stem)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        <!-- Left leaf -->
+        <path d="M52 62 C44 54 36 54 34 62 C40 68 52 66 52 62Z"
+          stroke="#C8A97E" stroke-width="1" fill="rgba(200,169,126,.08)"/>
+        <!-- Right leaf -->
+        <path d="M56 46 C64 38 72 40 72 48 C66 54 56 50 56 46Z"
+          stroke="#C8A97E" stroke-width="1" fill="rgba(200,169,126,.08)"/>
+        <!-- Small berry cluster at top -->
+        <circle cx="46" cy="22" r="7" fill="#B84A58" opacity=".85"/>
+        <circle cx="58" cy="16" r="7" fill="#B84A58" opacity=".8"/>
+        <circle cx="56" cy="28" r="6" fill="#B84A58" opacity=".75"/>
+        <!-- Berry shines -->
+        <circle cx="43" cy="19" r="2.2" fill="white" opacity=".15"/>
+        <circle cx="55" cy="13" r="2.2" fill="white" opacity=".13"/>
+        <circle cx="53" cy="25" r="2" fill="white" opacity=".12"/>
+      </svg>
+    </div>
+    <span class="cell-label">Brin</span>
+  </div>
+
+  <!-- 08 CROISÉE — two vines crossing (twin intersection concept) -->
+  <div class="cell">
+    <div class="shell" id="i08" style="background:linear-gradient(145deg,#0D0D13,#080810);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <filter id="glow8">
+            <feGaussianBlur stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Vine 1: bottom-left to top-right, gold (user) -->
+        <path d="M22 88 C28 70 36 60 54 54 C68 48 80 36 86 20"
+          stroke="#C8A97E" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Small leaves on vine 1 -->
+        <path d="M32 76 C26 70 20 72 20 78 C26 82 32 78 32 76Z"
+          fill="#C8A97E" opacity=".4"/>
+        <path d="M76 30 C80 24 86 24 86 30 C82 36 76 34 76 30Z"
+          fill="#C8A97E" opacity=".4"/>
+        <!-- Vine 2: top-left to bottom-right, parchment (twin) -->
+        <path d="M22 20 C28 38 36 48 54 54 C68 60 80 72 86 88"
+          stroke="#EDE4D5" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/>
+        <!-- Leaves on vine 2 -->
+        <path d="M32 32 C26 26 20 28 20 34 C26 38 32 36 32 32Z"
+          fill="#EDE4D5" opacity=".25"/>
+        <path d="M76 78 C80 84 86 84 86 78 C82 72 76 74 76 78Z"
+          fill="#EDE4D5" opacity=".25"/>
+        <!-- Intersection: ruby berry -->
+        <circle cx="54" cy="54" r="8" fill="#B84A58" filter="url(#glow8)"/>
+        <circle cx="51" cy="51" r="3" fill="white" opacity=".18"/>
+      </svg>
+    </div>
+    <span class="cell-label">Croisée</span>
+  </div>
+
+  <!-- 09 ÉTIQUETTE — the logo IS a wine label -->
+  <div class="cell">
+    <div class="shell" id="i09" style="background:linear-gradient(145deg,#0C0C10,#08080C);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <!-- Outer faint border rect, slightly rounded -->
+        <rect x="14" y="14" width="80" height="80" rx="4" stroke="#C8A97E" stroke-width=".6" opacity=".2"/>
+        <!-- Top rule -->
+        <line x1="22" y1="28" x2="86" y2="28" stroke="#C8A97E" stroke-width=".8" opacity=".4"/>
+        <!-- Small ornament top-center -->
+        <path d="M54 20 L57 24 L54 22 L51 24 Z" fill="#C8A97E" opacity=".4"/>
+        <!-- PARI large serif -->
+        <text x="54" y="58" text-anchor="middle" dominant-baseline="middle"
+          font-family="'Cormorant Garamond',Georgia,serif"
+          font-size="30" font-weight="400" letter-spacing="6" fill="#EDE4D5" opacity=".92">PARI</text>
+        <!-- Bottom rule -->
+        <line x1="22" y1="68" x2="86" y2="68" stroke="#C8A97E" stroke-width=".8" opacity=".4"/>
+        <!-- Grape cluster mark -->
+        <circle cx="54" cy="80" r="4.5" fill="#C8A97E" opacity=".5"/>
+        <circle cx="47" cy="80" r="4.5" fill="#C8A97E" opacity=".45"/>
+        <circle cx="61" cy="80" r="4.5" fill="#C8A97E" opacity=".45"/>
+        <!-- Bottom corner ornaments -->
+        <text x="24" y="88" text-anchor="middle"
+          font-family="'Cormorant Garamond',Georgia,serif"
+          font-size="6.5" letter-spacing="1.5" fill="#C8A97E" opacity=".35">MMX</text>
+        <text x="84" y="88" text-anchor="middle"
+          font-family="'Cormorant Garamond',Georgia,serif"
+          font-size="6.5" letter-spacing="1.5" fill="#C8A97E" opacity=".35">XXV</text>
+      </svg>
+    </div>
+    <span class="cell-label">Étiquette</span>
+  </div>
+
+  <!-- 10 FEUILLE — vine leaf, the oldest wine symbol done right -->
+  <div class="cell">
+    <div class="shell" id="i10" style="background:linear-gradient(145deg,#0E100A,#090A07);">
+      <svg viewBox="0 0 108 108" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <defs>
+          <linearGradient id="g10" x1=".5" y1="0" x2=".5" y2="1">
+            <stop offset="0%" stop-color="#D4C080"/>
+            <stop offset="100%" stop-color="#7A6030" stop-opacity=".7"/>
+          </linearGradient>
+        </defs>
+        <!-- 5-lobe vine leaf — FILLED, not just outline -->
+        <path d="
+          M54 16
+          C54 16 63 24 68 34
+          C74 26 82 27 82 27
+          C82 27 78 37 72 42
+          C80 47 84 57 84 57
+          C84 57 73 55 67 50
+          C66 58 61 66 58 70
+          L56 84 L54 90 L52 84 L50 70
+          C47 66 42 58 41 50
+          C35 55 24 57 24 57
+          C24 57 28 47 36 42
+          C30 37 26 27 26 27
+          C26 27 34 26 40 34
+          C45 24 54 16 54 16Z"
+          fill="url(#g10)" opacity=".9"/>
+        <!-- Central vein -->
+        <line x1="54" y1="20" x2="54" y2="84" stroke="rgba(20,16,10,.5)" stroke-width="1.2"/>
+        <!-- Side veins -->
+        <line x1="54" y1="42" x2="68" y2="52" stroke="rgba(20,16,10,.3)" stroke-width=".7"/>
+        <line x1="54" y1="42" x2="40" y2="52" stroke="rgba(20,16,10,.3)" stroke-width=".7"/>
+        <line x1="54" y1="56" x2="66" y2="62" stroke="rgba(20,16,10,.25)" stroke-width=".6"/>
+        <line x1="54" y1="56" x2="42" y2="62" stroke="rgba(20,16,10,.25)" stroke-width=".6"/>
+        <!-- Stem -->
+        <line x1="54" y1="84" x2="54" y2="94" stroke="#8A6830" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="cell-label">Feuille</span>
+  </div>
+
+</div><!-- /grid -->
+
+<!-- ════════════════ DETAIL LIST ════════════════ -->
+<div class="list">
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#14100B,#0C0907);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <radialGradient id="d1a" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#EDD48A"/>
+              <stop offset="55%" stop-color="#C8A050"/>
+              <stop offset="100%" stop-color="#7A5520"/>
+            </radialGradient>
+            <radialGradient id="d1b" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#E0C070"/>
+              <stop offset="55%" stop-color="#B08840"/>
+              <stop offset="100%" stop-color="#654010"/>
+            </radialGradient>
+          </defs>
+          <line x1="64" y1="16" x2="64" y2="30" stroke="#C8A97E" stroke-width="2" stroke-linecap="round"/>
+          <path d="M64 22 C64 22 54 16 50 22 C55 27 64 24 64 22Z" fill="#C8A97E" opacity=".6"/>
+          <circle cx="64" cy="40" r="13" fill="url(#d1a)"/>
+          <circle cx="50" cy="60" r="13" fill="url(#d1a)"/>
+          <circle cx="78" cy="60" r="13" fill="url(#d1a)"/>
+          <circle cx="36" cy="80" r="13" fill="url(#d1b)"/>
+          <circle cx="64" cy="80" r="13" fill="url(#d1b)"/>
+          <circle cx="92" cy="80" r="13" fill="url(#d1b)"/>
+          <circle cx="59" cy="35" r="4" fill="white" opacity=".13"/>
+          <circle cx="45" cy="55" r="4" fill="white" opacity=".11"/>
+          <circle cx="73" cy="55" r="4" fill="white" opacity=".11"/>
+          <circle cx="31" cy="75" r="4" fill="white" opacity=".09"/>
+          <circle cx="59" cy="75" r="4" fill="white" opacity=".09"/>
+          <circle cx="87" cy="75" r="4" fill="white" opacity=".09"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">01</div>
+      <div class="row-name">Grappe</div>
+      <div class="row-concept">Evolved Golden Grape</div>
+      <div class="row-desc">The Grappe Dorée elevated to a formal app icon. The existing UI button already works — this makes it the brand. Antique gold berries in Fibonacci triangle. The definitive wine app mark.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0E0C16,#09080E);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <radialGradient id="d2r" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#D05060"/>
+              <stop offset="60%" stop-color="#7A1828"/>
+              <stop offset="100%" stop-color="#280810"/>
+            </radialGradient>
+            <radialGradient id="d2g" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#E0C878"/>
+              <stop offset="60%" stop-color="#B09040"/>
+              <stop offset="100%" stop-color="#5A4010"/>
+            </radialGradient>
+          </defs>
+          <path d="M64 18 L64 24 M64 24 L44 38 M64 24 L84 38"
+            stroke="#C8A97E" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <circle cx="42" cy="68" r="28" fill="url(#d2r)"/>
+          <circle cx="34" cy="58" r="9" fill="white" opacity=".11"/>
+          <circle cx="86" cy="68" r="28" fill="url(#d2g)"/>
+          <circle cx="78" cy="58" r="9" fill="white" opacity=".09"/>
+          <circle cx="64" cy="68" r="5" fill="white" opacity=".07"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">02</div>
+      <div class="row-name">Gémeau</div>
+      <div class="row-concept">The Core Feature As Mark</div>
+      <div class="row-desc">Two grape berries sharing one stem — ruby (you) and gold (your twin). The product's defining concept made visual. When someone asks what the app does, this icon answers before any words do.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#130E0C,#0A0807);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <text x="34" y="100" font-family="'Cormorant Garamond',Georgia,serif"
+            font-style="italic" font-weight="300" font-size="105" fill="#EDE4D5" opacity=".92">P</text>
+          <path d="M40 98 C36 92 28 88 26 80 C24 72 30 64 34 62"
+            stroke="#C8A97E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <ellipse cx="34.5" cy="61" rx="5" ry="7" fill="#C8A97E" opacity=".5" transform="rotate(-20,34.5,61)"/>
+          <circle cx="26" cy="80" r="3" fill="#B84A58" opacity=".8"/>
+          <rect x="24" y="104" width="78" height="2" rx="1" fill="#B84A58" opacity=".65"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">03</div>
+      <div class="row-name">Monogramme</div>
+      <div class="row-concept">Typographic + Botanical</div>
+      <div class="row-desc">The italic P of a fashion house, with a vine tendril growing from its foot and a ruby berry. The letter carries the brand name; the vine carries the product category. Hermès meets Château Margaux.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0D0B09,#070605);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <circle cx="64" cy="64" r="54" stroke="#C8A97E" stroke-width="1.2" opacity=".4"/>
+          <circle cx="64" cy="64" r="46" stroke="#C8A97E" stroke-width=".7" stroke-dasharray="2 5" opacity=".3"/>
+          <circle cx="64" cy="38" r="6.5" fill="#C8A97E" opacity=".7"/>
+          <circle cx="54" cy="50" r="6.5" fill="#C8A97E" opacity=".65"/>
+          <circle cx="74" cy="50" r="6.5" fill="#C8A97E" opacity=".65"/>
+          <line x1="64" y1="28" x2="64" y2="32" stroke="#C8A97E" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+          <text x="64" y="76" text-anchor="middle"
+            font-family="'Cormorant Garamond',Georgia,serif"
+            font-size="19" font-weight="300" letter-spacing="6" fill="#EDE4D5" opacity=".85">PARI</text>
+          <line x1="32" y1="82" x2="96" y2="82" stroke="#C8A97E" stroke-width=".7" opacity=".25"/>
+          <text x="64" y="94" text-anchor="middle"
+            font-family="'Cormorant Garamond',Georgia,serif"
+            font-size="9" font-weight="300" letter-spacing="3" fill="#C8A97E" opacity=".4">EST. MMXXV</text>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">04</div>
+      <div class="row-name">Médaillon</div>
+      <div class="row-concept">Winery Seal</div>
+      <div class="row-desc">A circular heraldic seal — the language of grand crus, négociants, and established houses. The kind of mark that gets engraved on crystal and pressed into wax. It says this app takes wine as seriously as the wines themselves do.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0F0A0D,#08060A);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <radialGradient id="d5" cx="38%" cy="32%" r="68%">
+              <stop offset="0%" stop-color="#D05060"/>
+              <stop offset="45%" stop-color="#8A1C2C"/>
+              <stop offset="100%" stop-color="#1C0608"/>
+            </radialGradient>
+            <filter id="glow5d">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <ellipse cx="64" cy="72" rx="36" ry="38" fill="url(#d5)" filter="url(#glow5d)"/>
+          <line x1="64" y1="26" x2="64" y2="34" stroke="#C8A97E" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>
+          <ellipse cx="50" cy="56" rx="12" ry="15" fill="white" opacity=".12" transform="rotate(-12,50,56)"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">05</div>
+      <div class="row-name">Baie</div>
+      <div class="row-concept">One Berry, Nothing Else</div>
+      <div class="row-desc">A single grape berry — the most reduced possible expression of wine. The whole category, the whole product, in one shape. Deep ruby glow. The confidence of knowing exactly what you are and needing nothing more to say it.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#110E0C,#090706);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <linearGradient id="d6wine" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#B84A58" stop-opacity=".85"/>
+              <stop offset="100%" stop-color="#5A1420"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 34 Q20 18 64 18 Q108 18 112 34 L92 74 Q87 84 64 84 Q41 84 36 74 Z"
+            fill="#EDE4D5" opacity=".88"/>
+          <path d="M40 66 Q46 84 64 84 Q82 84 88 66 Z" fill="url(#d6wine)"/>
+          <path d="M40 66 Q64 60 88 66" stroke="#EDE4D5" stroke-width=".8" fill="none" opacity=".16"/>
+          <rect x="61" y="84" width="6" height="22" rx="3" fill="#EDE4D5" opacity=".55"/>
+          <rect x="40" y="106" width="48" height="6" rx="3" fill="#EDE4D5" opacity=".55"/>
+          <path d="M22 42 L30 68" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".1"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">06</div>
+      <div class="row-name">Coupe</div>
+      <div class="row-concept">The Iconic Shape</div>
+      <div class="row-desc">A champagne coupe — the wide, shallow bowl that Art Deco built a whole aesthetic around. More distinctive than a standard wine glass, more iconic than a flute. The shape alone reads "celebration, elegance, occasion." Ruby wine at the base.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0A0C08,#070806);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <linearGradient id="d7stem" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#D4C090"/>
+              <stop offset="100%" stop-color="#8A7040"/>
+            </linearGradient>
+          </defs>
+          <path d="M64 108 C64 84 70 70 64 52 C60 42 55 30 58 18"
+            stroke="url(#d7stem)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <path d="M62 74 C52 64 40 65 38 76 C47 84 62 80 62 74Z"
+            stroke="#C8A97E" stroke-width="1.1" fill="rgba(200,169,126,.07)"/>
+          <path d="M66 54 C76 44 88 46 88 56 C80 64 66 60 66 54Z"
+            stroke="#C8A97E" stroke-width="1.1" fill="rgba(200,169,126,.07)"/>
+          <circle cx="52" cy="24" r="9" fill="#B84A58" opacity=".85"/>
+          <circle cx="68" cy="16" r="9" fill="#B84A58" opacity=".8"/>
+          <circle cx="67" cy="30" r="7.5" fill="#B84A58" opacity=".75"/>
+          <circle cx="48" cy="20" r="3" fill="white" opacity=".14"/>
+          <circle cx="64" cy="12" r="3" fill="white" opacity=".12"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">07</div>
+      <div class="row-name">Brin</div>
+      <div class="row-concept">Botanical Sprig</div>
+      <div class="row-desc">A vine sprig: curved stem, two simplified leaves, ruby berry cluster at the crown. The vocabulary of herbalists, pharmacopoeias, and old winery prints. Feels handcrafted without being precious. The kind of mark you'd find on a 19th-century Bordeaux label.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0D0D13,#080810);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <filter id="glow8d">
+              <feGaussianBlur stdDeviation="3" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M26 106 C34 84 44 70 64 64 C80 58 96 44 102 22"
+            stroke="#C8A97E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M38 90 C30 82 22 84 22 92 C30 98 38 94 38 90Z" fill="#C8A97E" opacity=".4"/>
+          <path d="M90 36 C96 28 104 30 104 38 C98 44 90 40 90 36Z" fill="#C8A97E" opacity=".4"/>
+          <path d="M26 22 C34 44 44 58 64 64 C80 70 96 84 102 106"
+            stroke="#EDE4D5" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".42"/>
+          <path d="M38 38 C30 30 22 32 22 40 C30 46 38 42 38 38Z" fill="#EDE4D5" opacity=".22"/>
+          <path d="M90 90 C96 96 104 94 104 86 C98 80 90 84 90 90Z" fill="#EDE4D5" opacity=".22"/>
+          <circle cx="64" cy="64" r="10" fill="#B84A58" filter="url(#glow8d)"/>
+          <circle cx="60" cy="60" r="3.5" fill="white" opacity=".2"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">08</div>
+      <div class="row-name">Croisée</div>
+      <div class="row-concept">Two Palates, One Point</div>
+      <div class="row-desc">Two vine stems crossing — gold and parchment — meeting at a single ruby berry. A direct visual metaphor for the twin engine: two different taste journeys converging at shared wines. Abstract enough to be timeless, specific enough to mean something.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0C0C10,#08080C);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <rect x="16" y="16" width="96" height="96" rx="5" stroke="#C8A97E" stroke-width=".7" opacity=".18"/>
+          <line x1="26" y1="32" x2="102" y2="32" stroke="#C8A97E" stroke-width="1" opacity=".4"/>
+          <path d="M64 22 L68 28 L64 26 L60 28 Z" fill="#C8A97E" opacity=".38"/>
+          <text x="64" y="68" text-anchor="middle" dominant-baseline="middle"
+            font-family="'Cormorant Garamond',Georgia,serif"
+            font-size="36" font-weight="400" letter-spacing="7" fill="#EDE4D5" opacity=".92">PARI</text>
+          <line x1="26" y1="80" x2="102" y2="80" stroke="#C8A97E" stroke-width="1" opacity=".4"/>
+          <circle cx="64" cy="94" r="5.5" fill="#C8A97E" opacity=".5"/>
+          <circle cx="54" cy="94" r="5.5" fill="#C8A97E" opacity=".45"/>
+          <circle cx="74" cy="94" r="5.5" fill="#C8A97E" opacity=".45"/>
+          <text x="28" y="106" font-family="'Cormorant Garamond',Georgia,serif"
+            font-size="8" letter-spacing="2" fill="#C8A97E" opacity=".32">MMX</text>
+          <text x="96" y="106" text-anchor="end" font-family="'Cormorant Garamond',Georgia,serif"
+            font-size="8" letter-spacing="2" fill="#C8A97E" opacity=".32">XXV</text>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">09</div>
+      <div class="row-name">Étiquette</div>
+      <div class="row-concept">The Label Is The Logo</div>
+      <div class="row-desc">The app icon is a miniature wine label — rules, name in serif, gold grape cluster, vintage year. Self-referential and conceptually tight: a wine journaling app whose icon looks like what it's about. Every element follows fine wine label conventions.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="row-icon-wrap">
+      <div class="row-shell" style="background:linear-gradient(145deg,#0E100A,#090A07);">
+        <svg viewBox="0 0 128 128" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+          <defs>
+            <linearGradient id="d10" x1=".5" y1="0" x2=".5" y2="1">
+              <stop offset="0%" stop-color="#D8C880"/>
+              <stop offset="100%" stop-color="#7A6030" stop-opacity=".7"/>
+            </linearGradient>
+          </defs>
+          <path d="
+            M64 16
+            C64 16 75 26 81 38
+            C89 29 99 30 99 30
+            C99 30 94 42 87 48
+            C96 54 100 66 100 66
+            C100 66 88 64 81 58
+            C80 67 74 76 70 81
+            L68 98 L64 106 L60 98 L58 81
+            C54 76 48 67 47 58
+            C40 64 28 66 28 66
+            C28 66 32 54 41 48
+            C34 42 29 30 29 30
+            C29 30 39 29 47 38
+            C53 26 64 16 64 16Z"
+            fill="url(#d10)"/>
+          <line x1="64" y1="20" x2="64" y2="98" stroke="rgba(20,15,8,.55)" stroke-width="1.5"/>
+          <line x1="64" y1="48" x2="80" y2="60" stroke="rgba(20,15,8,.3)" stroke-width=".9"/>
+          <line x1="64" y1="48" x2="48" y2="60" stroke="rgba(20,15,8,.3)" stroke-width=".9"/>
+          <line x1="64" y1="65" x2="78" y2="72" stroke="rgba(20,15,8,.22)" stroke-width=".7"/>
+          <line x1="64" y1="65" x2="50" y2="72" stroke="rgba(20,15,8,.22)" stroke-width=".7"/>
+          <line x1="64" y1="98" x2="64" y2="112" stroke="#8A6830" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="row-text">
+      <div class="row-num">10</div>
+      <div class="row-name">Feuille</div>
+      <div class="row-concept">Oldest Wine Symbol, Done Seriously</div>
+      <div class="row-desc">A five-lobed vine leaf — filled in antique gold, not a hairline. Veins pressed into it like an engraving. The leaf predates the bottle, the label, everything. It's on Greek coins and Roman arches. Used with restraint and precision, it's the most authoritative wine mark possible.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 //
 //  PrivacyPolicyView.swift
-//  Vitis
+//  Pari
 //
 //  In-app Privacy Policy. GDPR & CCPA compliant. Last updated March 2025.
 //
@@ -41,7 +41,7 @@ struct PrivacyPolicyView: View {
 
                 section("2. How We Use Your Information") {
                     body("We use your information to:")
-                    body("• Provide and improve the Vitis service")
+                    body("• Provide and improve the Pari service")
                     body("• Power features: Taste Twin similarity, Taste Profile, Reserve List, social feed")
                     body("• Send transactional notifications (cheers, new followers). You can opt out in Settings.")
                     body("• Detect and prevent abuse, fraud, and policy violations")
@@ -60,7 +60,7 @@ struct PrivacyPolicyView: View {
                 section("4. Sharing Your Information") {
                     body("We do not sell your personal data. We share data only in these limited circumstances:")
                     body("• Service providers: cloud hosting (Supabase/AWS), analytics, and crash reporting, bound by data processing agreements")
-                    body("• Other users: your public profile, tastings with public visibility, and social activity (follows, cheers) are visible to other Vitis users per your privacy settings")
+                    body("• Other users: your public profile, tastings with public visibility, and social activity (follows, cheers) are visible to other Pari users per your privacy settings")
                     body("• Legal requirements: when required by law, regulation, or valid legal process")
                     body("• Business transfers: in the event of a merger or acquisition, your data may be transferred subject to equivalent privacy protections")
                 }
@@ -84,16 +84,16 @@ struct PrivacyPolicyView: View {
                     body("• Objection / Restriction: object to or restrict certain processing activities")
                     body("• Withdraw consent: revoke optional permissions (e.g., contact matching) at any time")
                     body("EU/UK users: you have the right to lodge a complaint with your local data protection authority. A list of EU supervisory authorities is available at edpb.europa.eu.")
-                    body("California residents: Vitis does not sell or share personal information for cross-context behavioral advertising. You may exercise your CCPA rights by contacting us at the address below.")
-                    body("To exercise any right, contact us at privacy@vitis.app or through Settings → Contact Concierge.")
+                    body("California residents: Pari does not sell or share personal information for cross-context behavioral advertising. You may exercise your CCPA rights by contacting us at the address below.")
+                    body("To exercise any right, contact us at privacy@pari.app or through Settings → Contact Concierge.")
                 }
 
                 section("8. International Data Transfers") {
-                    body("Vitis is operated from Turkey and uses cloud infrastructure that may process data in the United States and European Union. Transfers outside the EEA are protected by Standard Contractual Clauses (SCCs) approved by the European Commission.")
+                    body("Pari is operated from Turkey and uses cloud infrastructure that may process data in the United States and European Union. Transfers outside the EEA are protected by Standard Contractual Clauses (SCCs) approved by the European Commission.")
                 }
 
                 section("9. Children's Privacy") {
-                    body("Vitis is not directed at children under 13 (or the applicable minimum age in your jurisdiction). We do not knowingly collect data from children. If you believe a child has provided us data, contact us and we will delete it promptly.")
+                    body("Pari is not directed at children under 13 (or the applicable minimum age in your jurisdiction). We do not knowingly collect data from children. If you believe a child has provided us data, contact us and we will delete it promptly.")
                 }
 
                 section("10. Security") {
@@ -101,7 +101,7 @@ struct PrivacyPolicyView: View {
                 }
 
                 section("11. Third-Party Links") {
-                    body("Vitis may display links to external sites (e.g., Instagram profiles). This Policy does not apply to those sites. Review their privacy policies independently.")
+                    body("Pari may display links to external sites (e.g., Instagram profiles). This Policy does not apply to those sites. Review their privacy policies independently.")
                 }
 
                 section("12. Changes to This Policy") {
@@ -109,22 +109,22 @@ struct PrivacyPolicyView: View {
                 }
 
                 section("13. Contact") {
-                    body("Data Controller: Vitis\nEmail: privacy@vitis.app\nFor data subject requests: Settings → Contact Concierge")
-                    body("EU Representative: if you are in the EEA and have questions about our GDPR compliance, contact us at privacy@vitis.app.")
+                    body("Data Controller: Pari\nEmail: privacy@pari.app\nFor data subject requests: Settings → Contact Concierge")
+                    body("EU Representative: if you are in the EEA and have questions about our GDPR compliance, contact us at privacy@pari.app.")
                 }
 
                 Divider()
                     .padding(.top, 8)
 
                 Text("This Privacy Policy was last updated March 1, 2025.")
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 12))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .padding(.bottom, 40)
             }
             .padding(.horizontal, 24)
             .padding(.top, 24)
         }
-        .background(VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Privacy Policy")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -132,9 +132,9 @@ struct PrivacyPolicyView: View {
     // MARK: - Helpers
 
     private var intro: some View {
-        Text("Vitis values your privacy. This Policy explains what data we collect, how we use it, and your rights. It applies to all users globally, with additional rights for users in the European Economic Area (EEA), United Kingdom, and California.")
-            .font(VitisTheme.uiFont(size: 15))
-            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+        Text("Pari values your privacy. This Policy explains what data we collect, how we use it, and your rights. It applies to all users globally, with additional rights for users in the European Economic Area (EEA), United Kingdom, and California.")
+            .font(PariTheme.uiFont(size: 15))
+            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             .fixedSize(horizontal: false, vertical: true)
             .lineSpacing(3)
     }
@@ -143,33 +143,33 @@ struct PrivacyPolicyView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(.title2, design: .serif, weight: .regular))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             Text(effectiveDate)
-                .font(VitisTheme.uiFont(size: 13))
-                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
         }
     }
 
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15, weight: .semibold))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             content()
         }
     }
 
     private func subhead(_ text: String) -> some View {
         Text(text)
-            .font(VitisTheme.uiFont(size: 14, weight: .medium))
-            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+            .font(PariTheme.uiFont(size: 14, weight: .medium))
+            .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             .padding(.top, 4)
     }
 
     private func body(_ text: String) -> some View {
         Text(text)
-            .font(VitisTheme.uiFont(size: 15))
-            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+            .font(PariTheme.uiFont(size: 15))
+            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             .fixedSize(horizontal: false, vertical: true)
             .lineSpacing(3)
     }

@@ -1,6 +1,6 @@
 //
 //  LabelScanResult.swift
-//  Vitis
+//  Pari
 //
 //  Structured response from Claude Vision label analysis.
 //  is_wine == false means the image is not a wine label (beer, spirits, random object).

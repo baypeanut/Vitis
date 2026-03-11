@@ -1,6 +1,6 @@
 //
 //  DevSignupService.swift
-//  Vitis
+//  Pari
 //
 //  Dev-only signup: store onboarding data in dev_accounts, no Supabase Auth.
 //  Single source of truth: vitis_dev_user_id in UserDefaults.

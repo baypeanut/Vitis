@@ -1,6 +1,6 @@
 //
 //  AddWineViewModel.swift
-//  Vitis
+//  Pari
 //
 //  Search: Supabase wines catalog (X-Wines import). Debounced. Optional OFF cache kept for future.
 //

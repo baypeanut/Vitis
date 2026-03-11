@@ -1,6 +1,6 @@
 //
 //  AnalyticsService.swift
-//  Vitis
+//  Pari
 //
 //  PostHog analytics. Fire-and-forget. No PII. Keys from Config/Secrets.xcconfig.
 //

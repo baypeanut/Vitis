@@ -1,6 +1,6 @@
 //
 //  OnboardingComponents.swift
-//  Vitis
+//  Pari
 //
 //  Shared onboarding UI: SerifTitleText, UnderlineTextField, PrimaryButton.
 //
@@ -37,7 +37,7 @@ struct UnderlineTextField: View {
                 TextField(placeholder, text: $text)
             }
         }
-        .font(VitisTheme.uiFont(size: 16))
+        .font(PariTheme.uiFont(size: 16))
         .keyboardType(keyboardType)
         .textContentType(textContentType)
         .textInputAutocapitalization(autocapitalization)
@@ -46,7 +46,7 @@ struct UnderlineTextField: View {
         .padding(.vertical, 12)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(VitisTheme.border)
+                .fill(PariTheme.border)
                 .frame(height: 1)
         }
     }
@@ -68,11 +68,11 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                .font(PariTheme.uiFont(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(enabled ? VitisTheme.accent : Color(white: 0.88))
+                .background(enabled ? PariTheme.accent : Color(white: 0.88))
                 .clipShape(Capsule())
         }
         .disabled(!enabled)

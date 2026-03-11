@@ -1,6 +1,6 @@
 //
 //  AnalyticsConfig.swift
-//  Vitis
+//  Pari
 //
 //  Reads PostHog keys from Info.plist (injected from Config/Secrets.xcconfig).
 //  Paste your PostHog API key in Config/Secrets.xcconfig.

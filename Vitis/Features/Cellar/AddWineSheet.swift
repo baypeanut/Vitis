@@ -1,6 +1,6 @@
 //
 //  AddWineSheet.swift
-//  Vitis
+//  Pari
 //
 //  Flow: Search -> Select -> Rate (slider + notes + Cheers in one screen).
 //
@@ -60,11 +60,11 @@ struct AddWineSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
                 contentForStep
                 if viewModel.isUpserting || isSaving {
                     Color.black.opacity(0.15).ignoresSafeArea()
-                    ProgressView().progressViewStyle(.circular).tint(VitisTheme.accent).scaleEffect(1.2)
+                    ProgressView().progressViewStyle(.circular).tint(PariTheme.accent).scaleEffect(1.2)
                 }
             }
             .alert("Error", isPresented: .constant(saveError != nil)) {
@@ -82,8 +82,8 @@ struct AddWineSheet: View {
                         resetFlow()
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accent)
                 }
             }
         }
@@ -128,7 +128,7 @@ struct AddWineSheet: View {
     private var searchContent: some View {
         VStack(spacing: 0) {
             searchBar
-            Rectangle().fill(VitisTheme.border).frame(height: 1)
+            Rectangle().fill(PariTheme.border).frame(height: 1)
             searchResults
         }
     }
@@ -138,9 +138,9 @@ struct AddWineSheet: View {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(PariTheme.secondaryText)
                 TextField("Search wines…", text: $viewModel.query)
-                    .font(VitisTheme.uiFont(size: 16))
+                    .font(PariTheme.uiFont(size: 16))
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
                 Button {
@@ -149,7 +149,7 @@ struct AddWineSheet: View {
                 } label: {
                     Text("V")
                         .font(.system(size: 18, weight: .light, design: .serif))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         .padding(6)
                 }
                 .buttonStyle(.plain)
@@ -157,7 +157,7 @@ struct AddWineSheet: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(colorScheme == .dark
-                ? VitisTheme.surface(for: colorScheme)
+                ? PariTheme.surface(for: colorScheme)
                 : Color(white: 0.95))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 24)
@@ -166,7 +166,7 @@ struct AddWineSheet: View {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .scaleEffect(0.7)
-                    .tint(VitisTheme.accent)
+                    .tint(PariTheme.accent)
                     .frame(height: 20)
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 8)
@@ -182,11 +182,11 @@ struct AddWineSheet: View {
             VStack(spacing: 12) {
                 Text("Search by name, producer, or region")
                     .font(.system(.body, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     .multilineTextAlignment(.center)
                 Text("Find your next bottle")
                     .font(.system(.subheadline, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 40)
@@ -196,16 +196,16 @@ struct AddWineSheet: View {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .scaleEffect(0.9)
-                    .tint(VitisTheme.accent(for: colorScheme))
+                    .tint(PariTheme.accent(for: colorScheme))
                 Text("Searching…")
                     .font(.system(.subheadline, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.searchCompletedForCurrentQuery && viewModel.dbSearchResults.isEmpty {
             Text("No wines found. Try another search or add the wine from our catalog.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -215,7 +215,7 @@ struct AddWineSheet: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.dbSearchResults) { wine in
                         wineRow(wine)
-                        Rectangle().fill(VitisTheme.border).frame(height: 1).padding(.leading, 24)
+                        Rectangle().fill(PariTheme.border).frame(height: 1).padding(.leading, 24)
                     }
                 }
                 .padding(.top, 8)
@@ -249,18 +249,18 @@ struct AddWineSheet: View {
                 thumbnail(wine.labelImageURL)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(wine.producer)
-                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                        .font(colorScheme == .dark ? PariTheme.uiFont(size: 13, weight: .regular) : PariTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                     Text(wine.name)
-                        .font(VitisTheme.wineNameFont(for: colorScheme))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: wine))
+                        .font(PariTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: wine))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let state {
                     Text(state)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
             }
             .padding(.horizontal, 24)
@@ -300,11 +300,11 @@ struct AddWineSheet: View {
                 thumbnail(p.imageUrl)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(p.brands ?? "Unknown")
-                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                        .font(colorScheme == .dark ? PariTheme.uiFont(size: 13, weight: .regular) : PariTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                     Text(p.productName ?? "Unknown")
-                        .font(VitisTheme.wineNameFont(for: colorScheme))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
+                        .font(PariTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -334,7 +334,7 @@ struct AddWineSheet: View {
     private var placeholder: some View {
         RoundedRectangle(cornerRadius: 8)
             .fill(Color(white: 0.94))
-            .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(VitisTheme.secondaryText.opacity(0.6)))
+            .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(PariTheme.secondaryText.opacity(0.6)))
     }
 
     @MainActor

@@ -1,6 +1,6 @@
 //
 //  DrinkResponsiblyView.swift
-//  Vitis
+//  Pari
 //
 //  One-time "drink responsibly" modal shown after age gate.
 //  Apple App Store guideline for alcohol apps.
@@ -16,36 +16,36 @@ struct DrinkResponsiblyView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(spacing: 32) {
                 Spacer()
                 Image(systemName: "heart.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                 VStack(spacing: 12) {
                     Text("Drink Responsibly")
-                        .font(VitisTheme.titleFont())
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .font(PariTheme.titleFont())
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         .multilineTextAlignment(.center)
-                    Text("Vitis is designed for wine enthusiasts who enjoy drinking in moderation. Please drink responsibly and never drink and drive. If you or someone you know is struggling with alcohol, help is available.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    Text("Pari is designed for wine enthusiasts who enjoy drinking in moderation. Please drink responsibly and never drink and drive. If you or someone you know is struggling with alcohol, help is available.")
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                     Link("Get help — responsibility.org", destination: Self.helpURL)
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
                 .padding(.horizontal, 8)
                 Button {
                     onContinue()
                 } label: {
                     Text("I understand")
-                        .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                        .font(PariTheme.uiFont(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(VitisTheme.accent(for: colorScheme))
+                        .background(PariTheme.accent(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)

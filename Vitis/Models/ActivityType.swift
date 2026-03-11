@@ -1,6 +1,6 @@
 //
 //  ActivityType.swift
-//  Vitis
+//  Pari
 //
 //  activity_feed.activity_type: rank_update, new_entry, duel_win.
 //

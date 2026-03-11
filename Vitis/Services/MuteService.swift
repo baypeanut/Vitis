@@ -1,6 +1,6 @@
 //
 //  MuteService.swift
-//  Vitis
+//  Pari
 //
 //  Local mute list — stores muted user UUIDs in UserDefaults.
 //  Posts from muted users are filtered out of the feed client-side.

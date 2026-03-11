@@ -1,6 +1,6 @@
 //
 //  TasteSimilarity.swift
-//  Vitis
+//  Pari
 //
 //  Taste Twin Engine: similarity model between two users.
 //  Uses Bayesian-shrunk Pearson correlation on shared wine ratings.

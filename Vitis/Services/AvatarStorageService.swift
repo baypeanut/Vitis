@@ -1,6 +1,6 @@
 //
 //  AvatarStorageService.swift
-//  Vitis
+//  Pari
 //
 //  Upload avatar to Supabase storage bucket "avatars". Path: {userId}/avatar.jpg
 //

@@ -1,6 +1,6 @@
 //
 //  UserProfileView.swift
-//  Vitis
+//  Pari
 //
 //  Other user's profile from feed. Uses ProfileViewModel + ProfileContentView.
 //  Never uses current user for profile data; always fetches by passed userId.
@@ -62,11 +62,11 @@ struct UserProfileView: View {
         ZStack {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 if viewModel.isLoading {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if viewModel.profile != nil {
                     ProfileContentView(
@@ -96,11 +96,11 @@ struct UserProfileView: View {
                 } else {
                     VStack(spacing: 12) {
                         Text("User not found")
-                            .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                            .font(PariTheme.uiFont(size: 16, weight: .medium))
                             .foregroundStyle(.primary)
                         Text("This account may have been deleted.")
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,8 +114,8 @@ struct UserProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
                 if !viewModel.isOwn {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -133,7 +133,7 @@ struct UserProfileView: View {
                         } label: {
                             Image(systemName: "ellipsis")
                                 .font(.system(size: 18))
-                                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         }
                     }
                 }
@@ -198,11 +198,11 @@ struct UserProfileView: View {
                 .ignoresSafeArea()
                 .overlay(alignment: .center) {
                     Text("You've already tasted this wine")
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(VitisTheme.secondaryElevated(for: colorScheme))
+                        .background(PariTheme.secondaryElevated(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
                 }
@@ -327,11 +327,11 @@ struct UserProfileViewContent: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             if viewModel.isLoading {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent(for: colorScheme))
+                    .tint(PariTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.profile != nil {
                 ProfileContentView(
@@ -360,11 +360,11 @@ struct UserProfileViewContent: View {
             } else {
                 VStack(spacing: 12) {
                     Text("User not found")
-                        .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                        .font(PariTheme.uiFont(size: 16, weight: .medium))
                         .foregroundStyle(.primary)
                     Text("This account may have been deleted.")
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

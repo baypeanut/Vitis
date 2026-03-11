@@ -1,6 +1,6 @@
 //
 //  OnboardingService.swift
-//  Vitis
+//  Pari
 //
 //  Complete onboarding: sign up, profile, user_private, avatar upload.
 //

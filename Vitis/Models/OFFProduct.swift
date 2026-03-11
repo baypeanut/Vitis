@@ -1,6 +1,6 @@
 //
 //  OFFProduct.swift
-//  Vitis
+//  Pari
 //
 //  Open Food Facts API response. Map to Wine: brands→producer, product_name→name, image_url→label_image_url.
 //

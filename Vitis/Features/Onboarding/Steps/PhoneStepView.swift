@@ -1,6 +1,6 @@
 //
 //  PhoneStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -13,8 +13,8 @@ struct PhoneStepView: View {
         VStack(alignment: .leading, spacing: 24) {
             SerifTitleText(title: "First, what's your phone number?")
             Text("Used for account recovery and trust.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
 
             HStack(alignment: .bottom, spacing: 12) {
                 Menu {
@@ -26,14 +26,14 @@ struct PhoneStepView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(vm.countryCode)
-                            .font(VitisTheme.uiFont(size: 16))
+                            .font(PariTheme.uiFont(size: 16))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(.primary)
                     .padding(.vertical, 12)
                     .overlay(alignment: .bottom) {
-                        Rectangle().fill(VitisTheme.divider(for: colorScheme)).frame(height: 1)
+                        Rectangle().fill(PariTheme.divider(for: colorScheme)).frame(height: 1)
                     }
                 }
                 UnderlineTextField(
@@ -56,7 +56,7 @@ struct PhoneStepView: View {
 
             if let err = vm.phoneError {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
         }

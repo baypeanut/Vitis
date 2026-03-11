@@ -1,6 +1,6 @@
 //
 //  ProfileView.swift
-//  Vitis
+//  Pari
 //
 //  My profile tab. Beli-style layout via ProfileContentView. Edit → EditProfileView page.
 //
@@ -43,11 +43,11 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 if !didRunEnsure {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let vm = viewModel, (vm.isLoadingInitial || vm.isRefreshing || vm.profile == nil && !showErrorAfterDelay) {
                     ProfileSkeletonView()
@@ -74,12 +74,12 @@ struct ProfileView: View {
                 } else if let vm = viewModel, !vm.isLoading && !vm.isRefreshing && showErrorAfterDelay {
                     VStack(spacing: 16) {
                         Text(vm.errorMessage ?? "Could not load profile.")
-                            .font(VitisTheme.uiFont(size: 14))
+                            .font(PariTheme.uiFont(size: 14))
                             .foregroundStyle(.red)
                             .multilineTextAlignment(.center)
                         Button("Sign out") { Task { await signOut() } }
-                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -94,7 +94,7 @@ struct ProfileView: View {
                     } label: {
                         Image(systemName: "line.3.horizontal")
                             .font(.system(size: 18))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                     }
                 }
             }
@@ -249,8 +249,8 @@ struct ProfileView: View {
 private struct ProfileSkeletonView: View {
     @Environment(\.colorScheme) private var colorScheme
     var body: some View {
-        let placeholder = VitisTheme.placeholderBackground(for: colorScheme)
-        let card = VitisTheme.elevatedSurface(for: colorScheme)
+        let placeholder = PariTheme.placeholderBackground(for: colorScheme)
+        let card = PariTheme.elevatedSurface(for: colorScheme)
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(spacing: 12) {

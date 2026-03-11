@@ -1,6 +1,6 @@
 //
 //  SocialDiscoveryService.swift
-//  Vitis
+//  Pari
 //
 //  Social discovery backend: global search + suggestions from contacts and Taste Twins.
 //  Privacy-first: contacts are normalized to E.164 and SHA-256 hashed on-device; only hashes are sent.
@@ -80,8 +80,8 @@ enum SocialDiscoveryService {
 
     // MARK: - Contacts-based suggestions
 
-    /// Fetch Vitis users that match the user's contacts by phone hash.
-    /// Returns (matches, inviteCandidates) — inviteCandidates are normalized contacts with no Vitis profile.
+    /// Fetch Pari users that match the user's contacts by phone hash.
+    /// Returns (matches, inviteCandidates) — inviteCandidates are normalized contacts with no Pari profile.
     static func fetchContactsSuggestions(defaultCountry: Country) async -> ([DiscoveryUser], [InviteContact]) {
         let store = CNContactStore()
         let keys: [CNKeyDescriptor] = [CNContactPhoneNumbersKey as CNKeyDescriptor,

@@ -1,6 +1,6 @@
 //
 //  AppConstants.swift
-//  Vitis
+//  Pari
 //
 //  App-wide constants and configuration.
 //
@@ -14,7 +14,7 @@ enum AppConstants {
         static let privacyPolicy = URL(string: "https://vitis.app/privacy")!
         static let termsOfService = URL(string: "https://vitis.app/terms")!
         /// Contact / Support (App Store Guideline 1.5). Opens mail client or support page.
-        static let supportContact = URL(string: "mailto:support@vitis.app")!
+        static let supportContact = URL(string: "mailto:support@pari.app")!
     }
 
     /// When false, skip login/signup (dev/test). Set true for production / App Store.
@@ -28,7 +28,7 @@ enum AppConstants {
 
     #if DEBUG
     /// Fixed test account for "Sign in as test user" in dev. Create this user once in Supabase → Auth → Users.
-    static let devTestEmail = "dev@vitis.test"
+    static let devTestEmail = "dev@pari.test"
     static let devTestPassword = "DevTest1!"
     #endif
 }

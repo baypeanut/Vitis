@@ -1,6 +1,6 @@
 //
 //  TastingNotes.swift
-//  Vitis
+//  Pari
 //
 //  Category-based tasting notes. Expertise-adaptive: novice sees 6 approachable
 //  notes, intermediate/expert sees full palette.

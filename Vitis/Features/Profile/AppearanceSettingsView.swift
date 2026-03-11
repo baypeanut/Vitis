@@ -1,6 +1,6 @@
 //
 //  AppearanceSettingsView.swift
-//  Vitis
+//  Pari
 //
 //  Appearance: System, Light, Dark. Stored in AppStorage, applied at root.
 //
@@ -57,13 +57,13 @@ struct AppearanceSettingsView: View {
                 } label: {
                     HStack {
                         Text(option.rawValue)
-                            .font(VitisTheme.uiFont(size: 16))
+                            .font(PariTheme.uiFont(size: 16))
                             .foregroundStyle(.primary)
                         Spacer()
                         if selected == option {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                                .foregroundStyle(PariTheme.accent(for: colorScheme))
                         }
                     }
                     .padding(.vertical, 4)
@@ -74,7 +74,7 @@ struct AppearanceSettingsView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

@@ -1,6 +1,6 @@
 //
 //  NotificationService.swift
-//  Vitis
+//  Pari
 //
 //  In-app notifications for like, comment, and follow.
 //

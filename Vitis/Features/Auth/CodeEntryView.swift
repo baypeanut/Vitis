@@ -1,6 +1,6 @@
 //
 //  CodeEntryView.swift
-//  Vitis
+//  Pari
 //
 //  6-digit OTP entry with resend cooldown.
 //
@@ -27,19 +27,19 @@ struct CodeEntryView: View {
                         Image(systemName: "chevron.left")
                         Text("Back")
                     }
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 }
                 .buttonStyle(.plain)
                 Spacer()
             }
             VStack(spacing: 8) {
                 Text("Enter code")
-                    .font(VitisTheme.titleFont())
+                    .font(PariTheme.titleFont())
                     .foregroundStyle(.primary)
                 Text("We sent a 6-digit code to \(phoneDisplay)")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 16)
@@ -49,7 +49,7 @@ struct CodeEntryView: View {
 
                 if let err = AuthStore.shared.lastError {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -58,11 +58,11 @@ struct CodeEntryView: View {
                     Task { await verify() }
                 } label: {
                     Text("Verify")
-                        .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                        .font(PariTheme.uiFont(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(canSubmit ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textDisabled(for: colorScheme))
+                        .background(canSubmit ? PariTheme.accentWine(for: colorScheme) : PariTheme.textDisabled(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .disabled(!canSubmit || isVerifying || AuthStore.shared.isProcessing)
@@ -77,14 +77,14 @@ struct CodeEntryView: View {
                         Text("Resend in \(remainingSeconds)s")
                     }
                 }
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(canResend ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(canResend ? PariTheme.accentWine(for: colorScheme) : PariTheme.textSecondary(for: colorScheme))
                 .disabled(!canResend || AuthStore.shared.isProcessing)
                 .buttonStyle(.plain)
 
                 Text("If you did not request this code, contact your carrier to secure your number.")
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 12))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.top, 8)
             }
@@ -93,7 +93,7 @@ struct CodeEntryView: View {
         }
         .padding(.horizontal, 28)
         .padding(.top, 60)
-        .background(VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea())
         .onAppear {
             AuthStore.shared.lastError = nil
             startCountdown()
@@ -110,16 +110,16 @@ struct CodeEntryView: View {
     private var codeField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("6-digit code")
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             TextField("••••••", text: $code)
-                .font(VitisTheme.uiFont(size: 20, weight: .semibold))
+                .font(PariTheme.uiFont(size: 20, weight: .semibold))
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
-                .background(VitisTheme.placeholderBackground(for: colorScheme))
+                .background(PariTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }

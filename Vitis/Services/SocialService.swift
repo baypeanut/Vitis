@@ -1,6 +1,6 @@
 //
 //  SocialService.swift
-//  Vitis
+//  Pari
 //
 //  Likes (Cheers) and Comments via separate tables. Follow/unfollow. Uses AuthService.currentUserId (mock in DEBUG).
 //

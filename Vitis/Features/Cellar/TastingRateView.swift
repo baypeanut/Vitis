@@ -1,6 +1,6 @@
 //
 //  TastingRateView.swift
-//  Vitis
+//  Pari
 //
 //  Single-page rating flow: wine identity, rating, notes, moment, comment, visibility.
 //
@@ -26,7 +26,7 @@ struct TastingRateView: View {
     }
 
     private var ratingAccentColor: Color {
-        VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme)
+        PariTheme.ratingColorAdaptive(rating: rating, for: colorScheme)
     }
 
     private var expertiseTier: ExpertiseTier { ProfileStore.shared.expertiseTier }
@@ -68,26 +68,26 @@ struct TastingRateView: View {
         VStack(spacing: 6) {
             Text(wine.producer)
                 .font(colorScheme == .dark
-                      ? VitisTheme.uiFont(size: 13, weight: .regular)
-                      : VitisTheme.producerSerifFont())
-                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                      ? PariTheme.uiFont(size: 13, weight: .regular)
+                      : PariTheme.producerSerifFont())
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
 
             Text(wine.name)
-                .font(VitisTheme.wineNameFont(for: colorScheme))
+                .font(PariTheme.wineNameFont(for: colorScheme))
                 .foregroundStyle(colorScheme == .dark
-                                 ? VitisTheme.wineNameColor(for: colorScheme)
+                                 ? PariTheme.wineNameColor(for: colorScheme)
                                  : WineColorResolver.resolveWineDisplayColor(wine: wine))
                 .multilineTextAlignment(.center)
 
             if let v = wine.vintage {
                 Text(String(v))
-                    .font(VitisTheme.detailFont())
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.detailFont())
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             }
             if let r = wine.region {
                 Text(r)
-                    .font(VitisTheme.detailFont())
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.detailFont())
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             }
         }
         .multilineTextAlignment(.center)
@@ -114,8 +114,8 @@ struct TastingRateView: View {
 
             if expertiseTier == .novice {
                 Text("Tap the glasses to set your rating")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
         }
         .padding(.horizontal, 24)
@@ -127,11 +127,11 @@ struct TastingRateView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 4) {
                 Text("Tasting Notes")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 Text("— optional")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 10) {
                 ForEach(availableNotes, id: \.self) { note in
@@ -156,14 +156,14 @@ struct TastingRateView: View {
             }
         } label: {
             Text(note)
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(isSelected ? wineTypeColor : VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 14))
+                .foregroundStyle(isSelected ? wineTypeColor : PariTheme.secondaryText(for: colorScheme))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
                 .background(isSelected ? wineTypeColor.opacity(0.1) : Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(isSelected ? wineTypeColor : VitisTheme.divider(for: colorScheme), lineWidth: 1)
+                        .stroke(isSelected ? wineTypeColor : PariTheme.divider(for: colorScheme), lineWidth: 1)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 20))
         }
@@ -178,11 +178,11 @@ struct TastingRateView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 4) {
                 Text("Capture Now")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 Text("— optional · appears in feed")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             if let data = momentImageData, let ui = UIImage(data: data) {
                 HStack(spacing: 12) {
@@ -195,8 +195,8 @@ struct TastingRateView: View {
                         momentImageData = nil
                     } label: {
                         Text("Remove")
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     }
                     .buttonStyle(.plain)
                 }
@@ -209,15 +209,15 @@ struct TastingRateView: View {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 16))
                         Text("Capture Now")
-                            .font(VitisTheme.uiFont(size: 14, weight: .medium))
+                            .font(PariTheme.uiFont(size: 14, weight: .medium))
                     }
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(VitisTheme.backgroundSecondary(for: colorScheme))
+                    .background(PariTheme.backgroundSecondary(for: colorScheme))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(VitisTheme.divider(for: colorScheme), lineWidth: 1)
+                            .stroke(PariTheme.divider(for: colorScheme), lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -247,14 +247,14 @@ struct TastingRateView: View {
             ZStack(alignment: .topLeading) {
                 if comment.isEmpty {
                     Text("What did you think?")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 12)
                 }
                 TextEditor(text: $comment)
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     .frame(minHeight: 96, maxHeight: 140)
                     .scrollContentBackground(.hidden)
                     .padding(4)
@@ -262,15 +262,15 @@ struct TastingRateView: View {
                         if newValue.count > 500 { comment = String(newValue.prefix(500)) }
                     }
             }
-            .background(VitisTheme.backgroundSecondary(for: colorScheme))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(VitisTheme.divider(for: colorScheme), lineWidth: 1))
+            .background(PariTheme.backgroundSecondary(for: colorScheme))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(PariTheme.divider(for: colorScheme), lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
             HStack {
                 Spacer()
                 Text("\(comment.count)/500")
-                    .font(VitisTheme.uiFont(size: 11))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 11))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
         }
         .padding(.horizontal, 24)
@@ -288,15 +288,15 @@ struct TastingRateView: View {
                         Image(systemName: option.icon)
                             .font(.system(size: 13))
                         Text(option.displayName)
-                            .font(VitisTheme.uiFont(size: 13, weight: .medium))
+                            .font(PariTheme.uiFont(size: 13, weight: .medium))
                     }
-                    .foregroundStyle(visibility == option ? wineTypeColor : VitisTheme.textSecondary(for: colorScheme))
+                    .foregroundStyle(visibility == option ? wineTypeColor : PariTheme.textSecondary(for: colorScheme))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(visibility == option ? wineTypeColor.opacity(0.1) : Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(visibility == option ? wineTypeColor : VitisTheme.divider(for: colorScheme), lineWidth: 1)
+                            .stroke(visibility == option ? wineTypeColor : PariTheme.divider(for: colorScheme), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -318,7 +318,7 @@ struct TastingRateView: View {
                 Image(systemName: isEditMode ? "checkmark" : "wineglass.fill")
                     .font(.system(size: 14))
                 Text(isEditMode ? "Save" : "Save Tasting")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)

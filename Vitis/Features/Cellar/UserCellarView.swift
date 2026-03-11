@@ -1,6 +1,6 @@
 //
 //  UserCellarView.swift
-//  Vitis
+//  Pari
 //
 //  View to display any user's cellar/tasting history
 //
@@ -20,31 +20,31 @@ struct UserCellarView: View {
     
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             
             if cellarLocked {
                 Text("Cellar is visible to friends.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if isLoading && tastings.isEmpty {
                 ProgressView()
                     .progressViewStyle(.circular)
-                    .tint(VitisTheme.accent(for: colorScheme))
+                    .tint(PariTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 14))
+                    .font(PariTheme.uiFont(size: 14))
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if groupedTastings.isEmpty {
                 Text("No wines rated yet")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 listContent

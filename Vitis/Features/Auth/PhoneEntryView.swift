@@ -1,6 +1,6 @@
 //
 //  PhoneEntryView.swift
-//  Vitis
+//  Pari
 //
 //  Minimal phone entry UI for OTP auth.
 //
@@ -18,12 +18,12 @@ struct PhoneEntryView: View {
     var body: some View {
         VStack(spacing: 32) {
             VStack(spacing: 6) {
-                Text("Welcome to Vitis")
-                    .font(VitisTheme.titleFont())
+                Text("Welcome to Pari")
+                    .font(PariTheme.titleFont())
                     .foregroundStyle(.primary)
                 Text("Log wines. Discover friends. Build your palate.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.top, 24)
@@ -39,12 +39,12 @@ struct PhoneEntryView: View {
                 if noAccountFound {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("No account found. Create an account with your phone number.")
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     }
                 } else if let err = localError ?? AuthStore.shared.lastError {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -54,11 +54,11 @@ struct PhoneEntryView: View {
                         Task { await createAccount() }
                     } label: {
                         Text("Create account")
-                            .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                            .font(PariTheme.uiFont(size: 17, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(VitisTheme.accent(for: colorScheme))
+                            .background(PariTheme.accent(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(AuthStore.shared.isProcessing)
@@ -66,8 +66,8 @@ struct PhoneEntryView: View {
                 } else {
                 if isCountryUnsupported {
                     Text("SMS verification may not be available in this region. Try a supported country.")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 VStack(spacing: 12) {
@@ -75,11 +75,11 @@ struct PhoneEntryView: View {
                         Task { await sendCode(intent: .loginExisting) }
                     } label: {
                         Text("Send code")
-                            .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                            .font(PariTheme.uiFont(size: 17, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(canSubmit ? VitisTheme.accent(for: colorScheme) : VitisTheme.textDisabled(for: colorScheme))
+                            .background(canSubmit ? PariTheme.accent(for: colorScheme) : PariTheme.textDisabled(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(!canSubmit || AuthStore.shared.isProcessing)
@@ -89,14 +89,14 @@ struct PhoneEntryView: View {
                         showEmailSheet = true
                     } label: {
                         Text("Log in with email instead")
-                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     }
                     .buttonStyle(.plain)
 
                     Text("No password. We will email you a sign in link.")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         .multilineTextAlignment(.center)
                 }
                 }
@@ -105,7 +105,7 @@ struct PhoneEntryView: View {
         }
         .padding(.horizontal, 28)
         .padding(.top, 60)
-        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.background(for: colorScheme).ignoresSafeArea())
         .onAppear {
             AuthStore.shared.lastError = nil
         }

@@ -1,6 +1,6 @@
 //
 //  SupabaseConfig.example.swift
-//  Vitis
+//  Pari
 //
 //  Copy this file to SupabaseConfig.swift and fill in your project URL and anon key.
 //  SupabaseConfig.swift is gitignored. Do not commit real keys.

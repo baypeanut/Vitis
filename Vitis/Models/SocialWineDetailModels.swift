@@ -1,6 +1,6 @@
 //
 //  SocialWineDetailModels.swift
-//  Vitis
+//  Pari
 //
 //  Host-centric social wine detail: host review + mutual friends who tasted.
 //

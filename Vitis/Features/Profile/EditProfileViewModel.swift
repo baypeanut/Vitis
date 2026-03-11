@@ -1,6 +1,6 @@
 //
 //  EditProfileViewModel.swift
-//  Vitis
+//  Pari
 //
 //  Edit profile form: bio, taste snapshot, weekly goal, Instagram handle.
 //

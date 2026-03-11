@@ -1,6 +1,6 @@
 //
 //  LocalWineCatalog.swift
-//  Vitis
+//  Pari
 //
 //  Yerel şarap listesi. Ağ olmadan anında arama; ~1 sn içinde sonuç.
 //

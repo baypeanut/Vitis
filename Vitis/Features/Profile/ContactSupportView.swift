@@ -1,8 +1,8 @@
 //
 //  ContactSupportView.swift
-//  Vitis
+//  Pari
 //
-//  Vitis Concierge: minimalist in-app support.
+//  Pari Concierge: minimalist in-app support.
 //
 
 import SwiftUI
@@ -29,7 +29,7 @@ struct ContactSupportView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
+                PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
 
                 if didSucceed {
                     successContent
@@ -54,8 +54,8 @@ struct ContactSupportView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                 }
             }
             .onAppear {
@@ -69,14 +69,14 @@ struct ContactSupportView: View {
             Spacer()
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 48))
-                .foregroundStyle(VitisTheme.accentWineMuted(for: colorScheme))
+                .foregroundStyle(PariTheme.accentWineMuted(for: colorScheme))
             Text("Your message has been received.")
                 .font(.system(.title3, design: .serif, weight: .semibold))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 .multilineTextAlignment(.center)
             Text("Our concierge will reach out shortly.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -88,32 +88,32 @@ struct ContactSupportView: View {
             VStack(alignment: .leading, spacing: 28) {
                 SerifTitleText(title: "Direct Support")
                 Text("We're here to help. Share your thoughts or questions below.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Contact email")
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     TextField("", text: $contactEmail)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
-                        .font(VitisTheme.uiFont(size: 16))
+                        .font(PariTheme.uiFont(size: 16))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(VitisTheme.placeholderBackground(for: colorScheme))
+                        .background(PariTheme.placeholderBackground(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(VitisTheme.borderSubtle(for: colorScheme), lineWidth: 1)
+                                .stroke(PariTheme.borderSubtle(for: colorScheme), lineWidth: 1)
                         )
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Subject")
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     Menu {
                         ForEach(SupportTicketSubject.allCases) { option in
                             Button(option.rawValue) {
@@ -123,20 +123,20 @@ struct ContactSupportView: View {
                     } label: {
                         HStack {
                             Text(subject.rawValue)
-                                .font(VitisTheme.uiFont(size: 16))
-                                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 16))
+                                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                             Spacer()
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(VitisTheme.placeholderBackground(for: colorScheme))
+                        .background(PariTheme.placeholderBackground(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(VitisTheme.borderSubtle(for: colorScheme), lineWidth: 1)
+                                .stroke(PariTheme.borderSubtle(for: colorScheme), lineWidth: 1)
                         )
                     }
                     .buttonStyle(.plain)
@@ -144,46 +144,46 @@ struct ContactSupportView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Message")
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     ZStack(alignment: .topLeading) {
                         if message.isEmpty {
                             Text(messagePlaceholder)
-                                .font(VitisTheme.uiFont(size: 16))
-                                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 16))
+                                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
                         }
                         TextEditor(text: $message)
-                            .font(VitisTheme.uiFont(size: 16))
+                            .font(PariTheme.uiFont(size: 16))
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 120)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                     }
-                    .background(VitisTheme.placeholderBackground(for: colorScheme))
+                    .background(PariTheme.placeholderBackground(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(VitisTheme.borderSubtle(for: colorScheme), lineWidth: 1)
+                            .stroke(PariTheme.borderSubtle(for: colorScheme), lineWidth: 1)
                     )
                 }
 
                 if let err = errorMessage {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.dangerMuted(for: colorScheme))
                 }
 
                 Button {
                     Task { await send() }
                 } label: {
                     Text("Send")
-                        .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                        .font(PariTheme.uiFont(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(canSend ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textDisabled(for: colorScheme))
+                        .background(canSend ? PariTheme.accentWine(for: colorScheme) : PariTheme.textDisabled(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .disabled(!canSend || isSending)

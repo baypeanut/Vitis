@@ -1,6 +1,6 @@
 //
 //  WineColorResolver.swift
-//  Vitis
+//  Pari
 //
 //  Centralized wine display color: maps type/category to brand palette.
 //  Never returns black; fallback is a neutral burgundy.

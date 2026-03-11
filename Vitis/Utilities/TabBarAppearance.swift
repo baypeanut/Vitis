@@ -1,6 +1,6 @@
 //
 //  TabBarAppearance.swift
-//  Vitis
+//  Pari
 //
 //  Applies semantic theme to UITabBar: opaque background, correct tints.
 //
@@ -23,16 +23,16 @@ struct TabBarAppearanceModifier: ViewModifier {
         let appearance = UITabBarAppearance()
         if colorScheme == .dark {
             appearance.configureWithDefaultBackground()
-            appearance.backgroundColor = UIColor(VitisTheme.tabBarBackground(for: colorScheme))
+            appearance.backgroundColor = UIColor(PariTheme.tabBarBackground(for: colorScheme))
             appearance.shadowColor = .clear
         } else {
             appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(VitisTheme.tabBarBackground(for: colorScheme))
-            appearance.shadowColor = UIColor(VitisTheme.divider(for: colorScheme))
+            appearance.backgroundColor = UIColor(PariTheme.tabBarBackground(for: colorScheme))
+            appearance.shadowColor = UIColor(PariTheme.divider(for: colorScheme))
         }
 
-        let accent = UIColor(VitisTheme.accentWine(for: colorScheme))
-        let unselected = UIColor(VitisTheme.tabBarInactiveColor(for: colorScheme))
+        let accent = UIColor(PariTheme.accentWine(for: colorScheme))
+        let unselected = UIColor(PariTheme.tabBarInactiveColor(for: colorScheme))
 
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance

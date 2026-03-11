@@ -1,6 +1,6 @@
 //
 //  ReportService.swift
-//  Vitis
+//  Pari
 //
 //  Submits user reports to the `reports` Supabase table.
 //  Apple App Store Section 1.2 requirement for UGC apps.

@@ -1,6 +1,6 @@
 //
 //  ConfirmationSheetView.swift
-//  Vitis
+//  Pari
 //
 //  One-shot auth confirmation: email linked, phone changed, or error.
 //
@@ -15,30 +15,30 @@ struct ConfirmationSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
+                PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 20) {
                     switch event {
                     case .emailLinked:
                         Text("Email verified")
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text("Your email is now linked to your account.")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     case .phoneChanged:
                         Text("Phone number updated")
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text("You can now sign in with your new number.")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     case .error(let title, let message):
                         Text(title)
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text(message)
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     }
                     Spacer()
                 }
@@ -52,8 +52,8 @@ struct ConfirmationSheetView: View {
                     Button("Done") {
                         onDone()
                     }
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
+                    .foregroundStyle(PariTheme.accent)
                 }
             }
         }

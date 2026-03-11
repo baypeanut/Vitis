@@ -1,6 +1,6 @@
 //
 //  NotificationsView.swift
-//  Vitis
+//  Pari
 //
 //  In-app notifications for like, comment, and follow.
 //
@@ -27,29 +27,29 @@ struct NotificationsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 if isLoading && items.isEmpty {
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let err = errorMessage, items.isEmpty {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .onTapGesture { errorMessage = nil }
                 } else if items.isEmpty {
                     Text("No notifications yet.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(items) { n in
                                 notificationRow(n)
-                                Rectangle().fill(VitisTheme.divider(for: colorScheme)).frame(height: 1).padding(.leading, 24)
+                                Rectangle().fill(PariTheme.divider(for: colorScheme)).frame(height: 1).padding(.leading, 24)
                             }
                             .padding(.bottom, 24)
                         }
@@ -64,8 +64,8 @@ struct NotificationsView: View {
                         Button("Mark all as read") {
                             Task { await markAllRead() }
                         }
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textSecondary(for: colorScheme) : VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textSecondary(for: colorScheme) : PariTheme.accent(for: colorScheme))
                     }
                 }
             }
@@ -101,15 +101,15 @@ struct NotificationsView: View {
     private func notificationRow(_ n: NotificationItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Circle()
-                .fill(n.isRead ? Color.clear : VitisTheme.accent(for: colorScheme))
+                .fill(n.isRead ? Color.clear : PariTheme.accent(for: colorScheme))
                 .frame(width: 8, height: 8)
                 .opacity(n.isRead ? 0 : 1)
             avatar(url: n.actorAvatarUrl, name: n.actorUsername ?? "?")
             VStack(alignment: .leading, spacing: 4) {
                 notificationText(n)
-                Text(VitisTheme.compactTimestamp(n.createdAt))
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                Text(PariTheme.compactTimestamp(n.createdAt))
+                    .font(PariTheme.uiFont(size: 12))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -134,21 +134,21 @@ struct NotificationsView: View {
     private func notificationText(_ n: NotificationItem) -> some View {
         let name = n.actorUsername ?? "Someone"
         if n.type == "follow" {
-            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(" started following you.").foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
-                .font(VitisTheme.uiFont(size: 15))
+            (Text(name).fontWeight(.medium).foregroundStyle(PariTheme.textPrimary(for: colorScheme)) + Text(" started following you.").foregroundStyle(PariTheme.textPrimary(for: colorScheme)))
+                .font(PariTheme.uiFont(size: 15))
         } else if n.type == "like" {
             let tastingText = n.tastingTitle?.isEmpty == false ? " liked your tasting of \(n.tastingTitle!)." : " liked your tasting."
-            (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(tastingText).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
-                .font(VitisTheme.uiFont(size: 15))
+            (Text(name).fontWeight(.medium).foregroundStyle(PariTheme.textPrimary(for: colorScheme)) + Text(tastingText).foregroundStyle(PariTheme.textPrimary(for: colorScheme)))
+                .font(PariTheme.uiFont(size: 15))
         } else {
             VStack(alignment: .leading, spacing: 2) {
                 let commentLead = n.tastingTitle?.isEmpty == false ? " commented on your tasting of \(n.tastingTitle!): " : " commented: "
-                (Text(name).fontWeight(.medium).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)) + Text(commentLead).foregroundStyle(VitisTheme.textPrimary(for: colorScheme)))
-                    .font(VitisTheme.uiFont(size: 15))
+                (Text(name).fontWeight(.medium).foregroundStyle(PariTheme.textPrimary(for: colorScheme)) + Text(commentLead).foregroundStyle(PariTheme.textPrimary(for: colorScheme)))
+                    .font(PariTheme.uiFont(size: 15))
                 if let prev = n.commentPreview {
                     Text(prev)
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                         .lineLimit(2)
                 }
             }
@@ -174,11 +174,11 @@ struct NotificationsView: View {
 
     private func placeholder(_ name: String) -> some View {
         Circle()
-            .fill(VitisTheme.placeholderBackground(for: colorScheme))
+            .fill(PariTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(name.prefix(1)).uppercased())
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 16, weight: .medium))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             )
     }
 

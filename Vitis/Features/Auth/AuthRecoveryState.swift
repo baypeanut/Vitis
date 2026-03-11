@@ -1,6 +1,6 @@
 //
 //  AuthRecoveryState.swift
-//  Vitis
+//  Pari
 //
 //  Tracks password-recovery flow from deep link. Handle vitis://auth/reset → show NewPasswordView.
 //

@@ -1,6 +1,6 @@
 //
 //  NewPasswordView.swift
-//  Vitis
+//  Pari
 //
 //  Set new password after recovery link. Min 8 chars, letters + numbers + special.
 //
@@ -19,7 +19,7 @@ struct NewPasswordView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
+            PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
             Group {
                 switch mode {
                 case .form:
@@ -42,8 +42,8 @@ struct NewPasswordView: View {
         VStack(alignment: .leading, spacing: 24) {
             SerifTitleText(title: "New password")
             Text("Choose a strong password: at least 8 characters, with letters, numbers, and a special character.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
 
             UnderlineTextField(
                 placeholder: "New password",
@@ -65,8 +65,8 @@ struct NewPasswordView: View {
 
             if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.dangerMuted(for: colorScheme))
             }
 
             PrimaryButton("Update password", enabled: canSubmit && !isLoading) {
@@ -81,13 +81,13 @@ struct NewPasswordView: View {
             Spacer(minLength: 40)
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                .foregroundStyle(PariTheme.accentWine(for: colorScheme))
             Text("Password updated")
                 .font(.system(.title2, design: .serif, weight: .semibold))
                 .foregroundStyle(.primary)
             Text("You can now log in with your new password.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
             Spacer(minLength: 24)
             PrimaryButton("Go to Log in", enabled: true) {

@@ -1,6 +1,6 @@
 //
 //  Follow.swift
-//  Vitis
+//  Pari
 //
 //  Matches follows table: follower_id, followed_id, created_at.
 //

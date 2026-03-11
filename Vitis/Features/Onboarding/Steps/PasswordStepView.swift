@@ -1,6 +1,6 @@
 //
 //  PasswordStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -25,17 +25,17 @@ struct PasswordStepView: View {
                 } label: {
                     Image(systemName: vm.showPassword ? "eye.slash" : "eye")
                         .font(.system(size: 16))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
             }
             .onChange(of: vm.password) { _, _ in vm.passwordError = nil }
             Text("8 to 20 characters. Letters, numbers, special characters.")
-                .font(VitisTheme.uiFont(size: 13))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             if let err = vm.passwordError {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
         }

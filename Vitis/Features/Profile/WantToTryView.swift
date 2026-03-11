@@ -1,6 +1,6 @@
 //
 //  WantToTryView.swift
-//  Vitis
+//  Pari
 //
 //  Wishlist screen: wines user wants to try. Search to add, Mark as Tasted or Remove.
 //
@@ -30,11 +30,11 @@ struct WantToTryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(spacing: 0) {
                     if isOwnList {
                         searchBar
-                        Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1)
+                        Rectangle().fill(PariTheme.border(for: colorScheme)).frame(height: 1)
                     }
                     content
                 }
@@ -42,7 +42,7 @@ struct WantToTryView: View {
                     Color.black.opacity(0.15).ignoresSafeArea()
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                         .scaleEffect(1.2)
                 }
             }
@@ -53,17 +53,17 @@ struct WantToTryView: View {
                     ToolbarItem(placement: .principal) {
                         VStack(spacing: 2) {
                             Text("Reserve List")
-                                .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                                .font(PariTheme.uiFont(size: 17, weight: .semibold))
                             Text(sub)
-                                .font(VitisTheme.uiFont(size: 12))
-                                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 12))
+                                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         }
                     }
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -92,11 +92,11 @@ struct WantToTryView: View {
         .overlay(alignment: .center) {
             if alreadyTastedToast {
                 Text("You've already tasted this wine")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(VitisTheme.secondaryElevated(for: colorScheme))
+                    .background(PariTheme.secondaryElevated(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
                     .transition(.opacity)
@@ -128,9 +128,9 @@ struct WantToTryView: View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             TextField("Search wines to add…", text: $searchViewModel.query)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .textFieldStyle(.plain)
                 .autocorrectionDisabled()
         }
@@ -148,13 +148,13 @@ struct WantToTryView: View {
             searchResultsContent
         } else if let err = errorMessage {
             Text(err)
-                .font(VitisTheme.uiFont(size: 14))
+                .font(PariTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if isLoading && items.isEmpty {
             ProgressView()
                 .progressViewStyle(.circular)
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if items.isEmpty {
             emptyState
@@ -169,13 +169,13 @@ struct WantToTryView: View {
             EmptyView()
         } else if searchViewModel.isLoading {
             Text("Locating...")
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if searchViewModel.results.isEmpty {
             Text("This vintage is not currently in our archives. Check back as our cellar grows.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -184,7 +184,7 @@ struct WantToTryView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(searchViewModel.results) { p in
                         searchResultRow(p)
-                        Rectangle().fill(VitisTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 24)
+                        Rectangle().fill(PariTheme.border(for: colorScheme)).frame(height: 1).padding(.leading, 24)
                     }
                     if searchViewModel.hasMorePages {
                         Button {
@@ -195,13 +195,13 @@ struct WantToTryView: View {
                                     ProgressView()
                                         .progressViewStyle(.circular)
                                         .scaleEffect(0.8)
-                                        .tint(VitisTheme.accent(for: colorScheme))
+                                        .tint(PariTheme.accent(for: colorScheme))
                                 } else {
                                     Text("Show more")
-                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                        .font(PariTheme.uiFont(size: 15, weight: .medium))
                                 }
                             }
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                         }
@@ -223,11 +223,11 @@ struct WantToTryView: View {
                 searchThumbnail(p.imageUrl)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(p.brands ?? "Unknown")
-                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                        .font(colorScheme == .dark ? PariTheme.uiFont(size: 13, weight: .regular) : PariTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                     Text(p.productName ?? "Unknown")
-                        .font(VitisTheme.wineNameFont(for: colorScheme))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
+                        .font(PariTheme.wineNameFont(for: colorScheme))
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wineName: p.productName))
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -257,7 +257,7 @@ struct WantToTryView: View {
     private var searchThumbnailPlaceholder: some View {
         RoundedRectangle(cornerRadius: 8)
             .fill(Color(white: 0.94))
-            .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(VitisTheme.secondaryText.opacity(0.6)))
+            .overlay(Image(systemName: "wineglass.fill").font(.system(size: 20)).foregroundStyle(PariTheme.secondaryText.opacity(0.6)))
     }
 
     private func addWineToWishlist(from p: OFFProduct) async {
@@ -282,8 +282,8 @@ struct WantToTryView: View {
             Text(isOwnList
                 ? "No wines saved yet. Search above or tap the bookmark on any feed post to add."
                 : "No wines in their list.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -296,7 +296,7 @@ struct WantToTryView: View {
                 wishlistRow(item)
                     .listRowInsets(EdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24))
                     .listRowSeparator(.visible)
-                    .listRowSeparatorTint(VitisTheme.border(for: colorScheme))
+                    .listRowSeparatorTint(PariTheme.border(for: colorScheme))
                     .listRowBackground(Color.clear)
                     .swipeActions(edge: .leading, allowsFullSwipe: false) {
                         if isOwnList {
@@ -305,7 +305,7 @@ struct WantToTryView: View {
                             } label: {
                                 Label("Tasted", systemImage: "checkmark.circle")
                             }
-                            .tint(VitisTheme.accent(for: colorScheme))
+                            .tint(PariTheme.accent(for: colorScheme))
                         }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -327,19 +327,19 @@ struct WantToTryView: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.wine.producer)
-                    .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
-                    .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                    .font(colorScheme == .dark ? PariTheme.uiFont(size: 13, weight: .regular) : PariTheme.producerSerifFont())
+                    .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                 Text(item.wine.name)
-                    .font(VitisTheme.wineNameFont(for: colorScheme))
-                    .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: item.wine))
+                    .font(PariTheme.wineNameFont(for: colorScheme))
+                    .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: item.wine))
                 if let r = item.wine.region, !r.isEmpty {
                     Text(r)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
-                Text(VitisTheme.compactTimestamp(item.createdAt))
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                Text(PariTheme.compactTimestamp(item.createdAt))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if !isOwnList, currentUserId != nil {
@@ -348,7 +348,7 @@ struct WantToTryView: View {
                 } label: {
                     Image(systemName: myWishlistWineIds.contains(item.wineId) ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 18))
-                        .foregroundStyle(myWishlistWineIds.contains(item.wineId) ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                        .foregroundStyle(myWishlistWineIds.contains(item.wineId) ? PariTheme.accent(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                 }
                 .buttonStyle(.plain)
             }

@@ -1,6 +1,6 @@
 //
 //  EditProfileView.swift
-//  Vitis
+//  Pari
 //
 //  Edit profile: photo, bio (0/140), Loves/Avoids/Mood, Weekly goal, Instagram handle.
 //
@@ -24,12 +24,12 @@ struct EditProfileView: View {
 
     var body: some View {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         if let e = viewModel.saveError {
                             Text(e)
-                                .font(VitisTheme.uiFont(size: 13))
+                                .font(PariTheme.uiFont(size: 13))
                                 .foregroundStyle(.red)
                         }
                         avatarSection
@@ -80,15 +80,15 @@ struct EditProfileView: View {
     private var avatarSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Profile photo")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                 ZStack(alignment: .bottomTrailing) {
                     avatarImage
                         .frame(width: 88, height: 88)
                         .clipShape(Circle())
                     Circle()
-                        .fill(VitisTheme.accent)
+                        .fill(PariTheme.accent)
                         .frame(width: 32, height: 32)
                         .overlay(
                             Image(systemName: "camera.fill")
@@ -127,7 +127,7 @@ struct EditProfileView: View {
             .overlay(
                 Image(systemName: "person.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .foregroundStyle(PariTheme.secondaryText)
             )
             .frame(width: 88, height: 88)
     }
@@ -155,8 +155,8 @@ struct EditProfileView: View {
     private var usernameSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Username")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             UnderlineTextField(
                 placeholder: "username",
                 text: $viewModel.username,
@@ -170,8 +170,8 @@ struct EditProfileView: View {
     private var fullNameSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Display Name")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             UnderlineTextField(
                 placeholder: "Full name (optional)",
                 text: $viewModel.fullName,
@@ -185,13 +185,13 @@ struct EditProfileView: View {
     private var bioSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Bio")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             TextEditor(text: $viewModel.bio)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .frame(minHeight: 80)
                 .padding(12)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(VitisTheme.border, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(PariTheme.border, lineWidth: 1))
                 .onChange(of: viewModel.bio) { _, _ in
                     if viewModel.bio.count > viewModel.bioLimit {
                         viewModel.bio = String(viewModel.bio.prefix(viewModel.bioLimit))
@@ -200,8 +200,8 @@ struct EditProfileView: View {
             HStack {
                 Spacer()
                 Text("\(viewModel.bioCount)/\(viewModel.bioLimit)")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(viewModel.bioOverLimit ? .red : VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(viewModel.bioOverLimit ? .red : PariTheme.secondaryText)
             }
         }
     }
@@ -209,8 +209,8 @@ struct EditProfileView: View {
     private var tasteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Taste Snapshot")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             VStack(alignment: .leading, spacing: 8) {
                 pickerRow("Loves", selection: $viewModel.lovesId, options: TasteSnapshotOptions.loves)
                 pickerRow("Avoids", selection: $viewModel.avoidsId, options: TasteSnapshotOptions.avoids)
@@ -222,7 +222,7 @@ struct EditProfileView: View {
     private func pickerRow(_ label: String, selection: Binding<String>, options: [(id: String, label: String)]) -> some View {
         HStack {
             Text(label)
-                .font(VitisTheme.uiFont(size: 15))
+                .font(PariTheme.uiFont(size: 15))
                 .foregroundStyle(.primary)
             Spacer()
             Picker("", selection: selection) {
@@ -231,7 +231,7 @@ struct EditProfileView: View {
                 }
             }
             .pickerStyle(.menu)
-            .tint(VitisTheme.accent)
+            .tint(PariTheme.accent)
         }
         .padding(.vertical, 8)
     }
@@ -239,8 +239,8 @@ struct EditProfileView: View {
     private var socialSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Instagram")
-                .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                .foregroundStyle(PariTheme.secondaryText)
             UnderlineTextField(
                 placeholder: "@username",
                 text: $viewModel.instagramHandleInput,

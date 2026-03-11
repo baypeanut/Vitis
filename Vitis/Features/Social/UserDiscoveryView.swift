@@ -27,7 +27,7 @@ struct UserDiscoveryView: View {
             }
             .padding(.top, 16)
         }
-        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.background(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find connoisseurs…")
@@ -58,14 +58,14 @@ struct UserDiscoveryView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Suggested for you")
-                    .font(VitisTheme.uiFont(size: 14, weight: .semibold))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14, weight: .semibold))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 Spacer()
                 if isLoadingSuggestions {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .scaleEffect(0.8)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                 }
             }
             .padding(.horizontal, 16)
@@ -100,10 +100,10 @@ struct UserDiscoveryView: View {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .scaleEffect(0.8)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                     Text("Searching…")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 }
                 .padding(.horizontal, 16)
             }
@@ -126,11 +126,11 @@ struct UserDiscoveryView: View {
     private var emptyState: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("No connoisseurs found")
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             Text("Try a different name or keep building your cellar\nand we’ll suggest people who match your taste.")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 14))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -140,11 +140,11 @@ struct UserDiscoveryView: View {
     private var searchEmptyState: some View {
         VStack(alignment: .center, spacing: 8) {
             Text("No connoisseurs found with this name.")
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             Text("Try a different spelling or discover people from your suggestions.")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 14))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -153,8 +153,8 @@ struct UserDiscoveryView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            .font(PariTheme.uiFont(size: 13, weight: .semibold))
+            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             .padding(.top, 8)
             .padding(.horizontal, 16)
     }
@@ -170,18 +170,18 @@ struct UserDiscoveryView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(user.displayName)
                         .font(.system(size: 16, weight: .semibold, design: .serif))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     Text("@\(user.username)")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 }
                 Spacer()
                 if let sim = user.similarity {
                     TasteTwinBadge(similarity: sim)
                 } else if user.source == .contacts {
                     Text("From contacts")
-                        .font(VitisTheme.uiFont(size: 11))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 11))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 }
             }
         }
@@ -203,11 +203,11 @@ struct UserDiscoveryView: View {
             },
             placeholder: {
                 Circle()
-                    .fill(VitisTheme.placeholderBackground(for: colorScheme))
+                    .fill(PariTheme.placeholderBackground(for: colorScheme))
                     .overlay(
                         Text(String(name.prefix(1)).uppercased())
-                            .font(VitisTheme.uiFont(size: 16, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 16, weight: .medium))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     )
             }
         )
@@ -215,7 +215,7 @@ struct UserDiscoveryView: View {
         .clipShape(Circle())
         .overlay(
             Circle()
-                .stroke(VitisTheme.borderSubtle(for: colorScheme), lineWidth: 1)
+                .stroke(PariTheme.borderSubtle(for: colorScheme), lineWidth: 1)
         )
     }
 
@@ -273,7 +273,7 @@ private struct MessageInviteView: UIViewControllerRepresentable {
         let vc = MFMessageComposeViewController()
         if MFMessageComposeViewController.canSendText() {
             vc.recipients = [phoneE164]
-            vc.body = "I started documenting my cellar on Vitis. You should join the club. [App Store Link]"
+            vc.body = "I started documenting my cellar on Pari. You should join the club. [App Store Link]"
             vc.messageComposeDelegate = context.coordinator
         }
         return vc

@@ -1,6 +1,6 @@
 //
 //  NotificationsSettingsView.swift
-//  Vitis
+//  Pari
 //
 //  Notifications: system permission status + in-app notification type preferences.
 //
@@ -21,11 +21,11 @@ struct NotificationsSettingsView: View {
             Section {
                 HStack {
                     Text("Status")
-                        .font(VitisTheme.uiFont(size: 16))
+                        .font(PariTheme.uiFont(size: 16))
                     Spacer()
                     Text(authStatusText)
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
                 .padding(.vertical, 4)
 
@@ -36,12 +36,12 @@ struct NotificationsSettingsView: View {
                 } label: {
                     HStack {
                         Text("Open system settings")
-                            .font(VitisTheme.uiFont(size: 16))
+                            .font(PariTheme.uiFont(size: 16))
                             .foregroundStyle(.primary)
                         Spacer()
                         Image(systemName: "arrow.up.forward")
                             .font(.system(size: 14))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     }
                     .padding(.vertical, 4)
                     .contentShape(Rectangle())
@@ -49,39 +49,39 @@ struct NotificationsSettingsView: View {
                 .buttonStyle(.plain)
             } header: {
                 Text("System")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
                 Toggle(isOn: $notifyLikes) {
                     Text("Likes")
-                        .font(VitisTheme.uiFont(size: 16))
+                        .font(PariTheme.uiFont(size: 16))
                 }
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
                 Toggle(isOn: $notifyComments) {
                     Text("Comments")
-                        .font(VitisTheme.uiFont(size: 16))
+                        .font(PariTheme.uiFont(size: 16))
                 }
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
                 Toggle(isOn: $notifyFollows) {
                     Text("New followers")
-                        .font(VitisTheme.uiFont(size: 16))
+                        .font(PariTheme.uiFont(size: 16))
                 }
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
             } header: {
                 Text("Preferences")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             } footer: {
                 Text("Choose which activity appears in your notifications tab.")
-                    .font(VitisTheme.uiFont(size: 12))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 12))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.background(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .task {
