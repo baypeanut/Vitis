@@ -1,6 +1,6 @@
 //
 //  ProfileService.swift
-//  Vitis
+//  Pari
 //
 //  Username availability, taste profile (grapes/regions/styles), streak placeholder.
 //

@@ -1,6 +1,6 @@
 //
 //  OnboardingViewModel.swift
-//  Vitis
+//  Pari
 //
 //  State, validation, and completion for onboarding. MVVM.
 //

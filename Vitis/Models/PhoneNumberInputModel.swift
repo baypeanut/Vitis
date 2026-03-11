@@ -1,6 +1,6 @@
 //
 //  PhoneNumberInputModel.swift
-//  Vitis
+//  Pari
 //
 //  Shared phone number state for entry flows.
 //

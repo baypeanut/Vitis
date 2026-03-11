@@ -1,6 +1,6 @@
 //
 //  RankingItem.swift
-//  Vitis
+//  Pari
 //
 //  User's ranked wine (rankings + wine details). Cellar "My Ranking" list.
 //

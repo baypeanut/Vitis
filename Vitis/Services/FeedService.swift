@@ -1,6 +1,6 @@
 //
 //  FeedService.swift
-//  Vitis
+//  Pari
 //
 //  Fetch feed (Global / Following), cache for instant load, Realtime updates.
 //

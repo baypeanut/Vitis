@@ -1,6 +1,6 @@
 //
 //  ChangePhoneNumberView.swift
-//  Vitis
+//  Pari
 //
 //  Two-step flow: enter new phone, verify via OTP.
 //
@@ -25,7 +25,7 @@ struct ChangePhoneNumberView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
+                PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 if step == .enterPhone {
                     enterPhoneContent
                 } else {
@@ -46,8 +46,8 @@ struct ChangePhoneNumberView: View {
                         authStore.cancelPhoneNumberChange()
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -66,11 +66,11 @@ struct ChangePhoneNumberView: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Change phone number")
-                        .font(VitisTheme.titleFont())
+                        .font(PariTheme.titleFont())
                         .foregroundStyle(.primary)
                     Text("Enter your new phone number. We will send a verification code.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
 
                 PhoneNumberField(
@@ -82,7 +82,7 @@ struct ChangePhoneNumberView: View {
 
                 if let err = authStore.lastError {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                 }
 
@@ -101,31 +101,31 @@ struct ChangePhoneNumberView: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Enter code")
-                        .font(VitisTheme.titleFont())
+                        .font(PariTheme.titleFont())
                         .foregroundStyle(.primary)
                     Text("We sent a 6-digit code to \(authStore.pendingPhoneChangeDisplay ?? "your new number")")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("6-digit code")
-                        .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13, weight: .medium))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     TextField("••••••", text: $code)
-                        .font(VitisTheme.uiFont(size: 20, weight: .semibold))
+                        .font(PariTheme.uiFont(size: 20, weight: .semibold))
                         .keyboardType(.numberPad)
                         .textContentType(.oneTimeCode)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 16)
-                        .background(VitisTheme.placeholderBackground(for: colorScheme))
+                        .background(PariTheme.placeholderBackground(for: colorScheme))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
                 if let err = authStore.lastError {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                 }
 
@@ -142,8 +142,8 @@ struct ChangePhoneNumberView: View {
                         Text("Resend in \(remainingSeconds)s")
                     }
                 }
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(canResend ? VitisTheme.accent(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(canResend ? PariTheme.accent(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                 .disabled(!canResend || authStore.isProcessing)
                 .buttonStyle(.plain)
             }

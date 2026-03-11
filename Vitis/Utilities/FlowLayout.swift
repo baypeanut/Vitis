@@ -1,6 +1,6 @@
 //
 //  FlowLayout.swift
-//  Vitis
+//  Pari
 //
 //  Reusable wrapping flow layout for tag chips.
 //

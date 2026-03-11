@@ -1,6 +1,6 @@
 //
 //  FeedItemView.swift
-//  Vitis
+//  Pari
 //
 //  Two Column Classic feed item: editorial layout.
 //
@@ -72,15 +72,15 @@ struct FeedItemView: View {
                 legacyContent
             }
         }
-        .padding(.vertical, VitisTheme.cardPaddingVertical)
-        .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+        .padding(.vertical, PariTheme.cardPaddingVertical)
+        .padding(.horizontal, PariTheme.cardPaddingHorizontal)
         .background(
-            RoundedRectangle(cornerRadius: VitisTheme.cardCornerRadius)
-                .fill(VitisTheme.surface(for: colorScheme))
+            RoundedRectangle(cornerRadius: PariTheme.cardCornerRadius)
+                .fill(PariTheme.surface(for: colorScheme))
         )
-        .clipShape(RoundedRectangle(cornerRadius: VitisTheme.cardCornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: PariTheme.cardCornerRadius))
         .shadow(
-            color: VitisTheme.shadowColor(for: colorScheme),
+            color: PariTheme.shadowColor(for: colorScheme),
             radius: colorScheme == .dark ? 0 : 6,
             x: 0,
             y: colorScheme == .dark ? 0 : 2
@@ -137,8 +137,8 @@ struct FeedItemView: View {
                 HStack(spacing: 8) {
                     avatar
                     Text("@\(item.username)")
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -179,11 +179,11 @@ struct FeedItemView: View {
     
     private var avatarPlaceholder: some View {
         Circle()
-            .fill(VitisTheme.placeholderBackground(for: colorScheme))
+            .fill(PariTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String(item.username.prefix(1)).uppercased())
-                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -192,14 +192,14 @@ struct FeedItemView: View {
             Image(systemName: "sparkles")
                 .font(.system(size: 9))
             Text("Taste Twin")
-                .font(VitisTheme.uiFont(size: 11, weight: .medium))
+                .font(PariTheme.uiFont(size: 11, weight: .medium))
         }
-        .foregroundStyle(VitisTheme.accentEmerald(for: colorScheme))
+        .foregroundStyle(PariTheme.accentEmerald(for: colorScheme))
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
-        .background(VitisTheme.accentEmerald(for: colorScheme).opacity(0.10))
+        .background(PariTheme.accentEmerald(for: colorScheme).opacity(0.10))
         .overlay(
-            Capsule().stroke(VitisTheme.accentEmerald(for: colorScheme).opacity(0.35), lineWidth: 0.75)
+            Capsule().stroke(PariTheme.accentEmerald(for: colorScheme).opacity(0.35), lineWidth: 0.75)
         )
         .clipShape(Capsule())
     }
@@ -207,19 +207,19 @@ struct FeedItemView: View {
     private func trustHintBadge(fullText: String) -> some View {
         HStack(spacing: 4) {
             Text("Often saved")
-                .font(VitisTheme.uiFont(size: 11, weight: .medium))
-                .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 11, weight: .medium))
+                .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             Button {
                 showTrustHintPopover = true
             } label: {
                 Image(systemName: "info.circle")
                     .font(.system(size: 11))
-                    .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+                    .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             }
             .buttonStyle(.plain)
             .popover(isPresented: $showTrustHintPopover) {
                 Text(fullText)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.primary)
                     .padding(12)
                     .frame(maxWidth: 240)
@@ -246,22 +246,22 @@ struct FeedItemView: View {
                 // Wine info + rating
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.wineProducer)
-                        .font(VitisTheme.uiFont(size: 11, weight: .regular))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 11, weight: .regular))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                         .lineLimit(1)
 
-                    Text(VitisTheme.displayWineName(item.wineName))
-                        .font(VitisTheme.wineNameFont(for: colorScheme))
+                    Text(PariTheme.displayWineName(item.wineName))
+                        .font(PariTheme.wineNameFont(for: colorScheme))
                         .foregroundStyle(colorScheme == .dark
-                                         ? VitisTheme.wineNameColor(for: colorScheme)
+                                         ? PariTheme.wineNameColor(for: colorScheme)
                                          : WineColorResolver.resolveWineDisplayColor(category: item.wineCategory, wineName: item.wineName, variety: item.wineVariety, debugPostId: item.id))
                         .lineLimit(2)
                         .minimumScaleFactor(0.88)
 
                     if let vintage = item.wineVintage {
                         Text(String(vintage))
-                            .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.detailFont())
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     }
 
                     Spacer(minLength: 6)
@@ -271,16 +271,16 @@ struct FeedItemView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
                             Text(String(Int(rating.rounded())))
                                 .font(colorScheme == .dark
-                                      ? VitisTheme.ratingFont()
+                                      ? PariTheme.ratingFont()
                                       : .system(size: 20, weight: .semibold))
-                                .foregroundStyle(VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
+                                .foregroundStyle(PariTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
                             Text("/ 10")
-                                .font(VitisTheme.uiFont(size: 11))
-                                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 11))
+                                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                             if hasAlsoRated {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 13))
-                                    .foregroundStyle(VitisTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
+                                    .foregroundStyle(PariTheme.ratingColorAdaptive(rating: rating, for: colorScheme))
                             }
                         }
                     }
@@ -295,16 +295,16 @@ struct FeedItemView: View {
                             img.resizable().aspectRatio(contentMode: .fill)
                         case .failure, .empty:
                             Circle()
-                                .fill(VitisTheme.placeholderBackground(for: colorScheme))
-                                .overlay(Image(systemName: "photo").font(.system(size: 14)).foregroundStyle(VitisTheme.textTertiary(for: colorScheme)))
+                                .fill(PariTheme.placeholderBackground(for: colorScheme))
+                                .overlay(Image(systemName: "photo").font(.system(size: 14)).foregroundStyle(PariTheme.textTertiary(for: colorScheme)))
                         @unknown default:
                             Circle()
-                                .fill(VitisTheme.placeholderBackground(for: colorScheme))
+                                .fill(PariTheme.placeholderBackground(for: colorScheme))
                         }
                     }
                     .frame(width: 44, height: 44)
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(VitisTheme.divider(for: colorScheme), lineWidth: 1))
+                    .overlay(Circle().stroke(PariTheme.divider(for: colorScheme), lineWidth: 1))
                     .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.06), radius: 3, x: 0, y: 1)
                 }
             }
@@ -316,16 +316,16 @@ struct FeedItemView: View {
             // Row 2: Comment + timestamp (full width below image)
             if let comment = item.tastingComment, !comment.isEmpty {
                 Text(comment)
-                    .font(VitisTheme.uiFont(size: 13).italic())
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13).italic())
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     .lineLimit(2)
                     .truncationMode(.tail)
                     .padding(.leading, 58 + 12) // align with wine info column
             }
 
-            Text(VitisTheme.compactTimestamp(item.createdAt))
-                .font(VitisTheme.uiFont(size: 12))
-                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+            Text(PariTheme.compactTimestamp(item.createdAt))
+                .font(PariTheme.uiFont(size: 12))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 .padding(.leading, 58 + 12)
         }
     }
@@ -349,7 +349,7 @@ struct FeedItemView: View {
         let r: CGFloat = 6
         return ZStack {
             RoundedRectangle(cornerRadius: r)
-                .fill(VitisTheme.backgroundSecondary(for: colorScheme))
+                .fill(PariTheme.backgroundSecondary(for: colorScheme))
             if let urlString = labelURL, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -397,11 +397,11 @@ struct FeedItemView: View {
                 HStack(spacing: 4) {
                     Image(systemName: item.hasCheered ? "wineglass.fill" : "wineglass")
                         .font(.system(size: 13))
-                        .foregroundStyle(item.hasCheered ? VitisTheme.accent(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
+                        .foregroundStyle(item.hasCheered ? PariTheme.accent(for: colorScheme) : PariTheme.textTertiary(for: colorScheme))
                     if item.cheersCount > 0 {
                         Text("\(item.cheersCount)")
-                            .font(VitisTheme.uiFont(size: 12))
-                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 12))
+                            .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     }
                 }
                 .contentShape(Rectangle())
@@ -418,7 +418,7 @@ struct FeedItemView: View {
                 } label: {
                     Image(systemName: hasWishlisted ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 13))
-                        .foregroundStyle(hasWishlisted ? VitisTheme.accentWine(for: colorScheme) : VitisTheme.textTertiary(for: colorScheme))
+                        .foregroundStyle(hasWishlisted ? PariTheme.accentWine(for: colorScheme) : PariTheme.textTertiary(for: colorScheme))
                         .contentShape(Rectangle())
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -437,13 +437,13 @@ struct FeedItemView: View {
             avatar
             VStack(alignment: .leading, spacing: 12) {
                 (Text(parts.before)
-                    .font(VitisTheme.uiFont(size: 15))
+                    .font(PariTheme.uiFont(size: 15))
                     .foregroundStyle(.primary)
                 + Text(parts.name)
                     .font(.system(size: 15, weight: .medium, design: .serif))
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                 + Text(parts.after)
-                    .font(VitisTheme.uiFont(size: 15))
+                    .font(PariTheme.uiFont(size: 15))
                     .foregroundStyle(.primary))
                 .fixedSize(horizontal: false, vertical: true)
                 .contentShape(Rectangle())

@@ -1,6 +1,6 @@
 //
 //  ClaudeVisionService.swift
-//  Vitis
+//  Pari
 //
 //  Sends a wine label image to Claude Vision (haiku-4-5) and returns structured extraction.
 //  Stateless enum — matches WineService / TastingService pattern.

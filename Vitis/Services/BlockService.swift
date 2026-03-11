@@ -1,6 +1,6 @@
 //
 //  BlockService.swift
-//  Vitis
+//  Pari
 //
 //  Block/unblock users. Blocked users are hidden from feed and profile.
 //  Apple App Store Section 1.2 requirement for UGC apps.

@@ -1,8 +1,8 @@
 //
 //  SupportService.swift
-//  Vitis
+//  Pari
 //
-//  Vitis Concierge: submit support tickets to Supabase. No third-party SDKs.
+//  Pari Concierge: submit support tickets to Supabase. No third-party SDKs.
 //
 
 import Foundation

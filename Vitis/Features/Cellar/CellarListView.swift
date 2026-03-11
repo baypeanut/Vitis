@@ -1,6 +1,6 @@
 //
 //  CellarListView.swift
-//  Vitis
+//  Pari
 //
 //  Reusable cellar list component with category tabs and tasting rows
 //
@@ -20,7 +20,7 @@ struct CellarListView: View {
         VStack(spacing: 0) {
             if groupedTastings.count > 1 {
                 categoryTabs
-                Rectangle().fill(VitisTheme.divider(for: colorScheme)).frame(height: 1)
+                Rectangle().fill(PariTheme.divider(for: colorScheme)).frame(height: 1)
             }
             categoryContent
         }
@@ -40,8 +40,8 @@ struct CellarListView: View {
                         selectedCategory = group.category
                     } label: {
                         Text(group.category)
-                            .font(VitisTheme.uiFont(size: 15, weight: selectedCategory == group.category ? .semibold : .regular))
-                            .foregroundStyle(selectedCategory == group.category ? VitisTheme.accentWine(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme)))
+                            .font(PariTheme.uiFont(size: 15, weight: selectedCategory == group.category ? .semibold : .regular))
+                            .foregroundStyle(selectedCategory == group.category ? PariTheme.accentWine(for: colorScheme) : (colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.textSecondary(for: colorScheme)))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                     }
@@ -58,7 +58,7 @@ struct CellarListView: View {
             List {
                 ForEach(currentGroup.tastings) { tasting in
                     tastingRow(tasting)
-                        .listRowInsets(EdgeInsets(top: VitisTheme.cardSpacingVertical / 2, leading: 16, bottom: VitisTheme.cardSpacingVertical / 2, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: PariTheme.cardSpacingVertical / 2, leading: 16, bottom: PariTheme.cardSpacingVertical / 2, trailing: 16))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                         .listRowSpacing(0)
@@ -75,11 +75,11 @@ struct CellarListView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(VitisTheme.backgroundPrimary(for: colorScheme))
+            .background(PariTheme.backgroundPrimary(for: colorScheme))
         } else {
             Text("No wines in this category.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -94,33 +94,33 @@ struct CellarListView: View {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(tasting.wine.producer)
-                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 12, weight: .regular) : VitisTheme.producerSerifFont())
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.textSecondary(for: colorScheme))
+                        .font(colorScheme == .dark ? PariTheme.uiFont(size: 12, weight: .regular) : PariTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.textSecondary(for: colorScheme))
                     HStack(alignment: .center) {
                         Text(tasting.wine.name)
-                            .font(VitisTheme.wineNameFont(for: colorScheme))
-                            .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
+                            .font(PariTheme.wineNameFont(for: colorScheme))
+                            .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine))
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(String(Int(tasting.rating.rounded())))
-                            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 20, weight: .medium))
-                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                            .font(colorScheme == .dark ? PariTheme.ratingFont() : PariTheme.uiFont(size: 20, weight: .medium))
+                            .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     }
                     if let comment = tasting.comment, !comment.isEmpty {
                         Text(comment)
-                            .font(VitisTheme.uiFont(size: 12).italic())
-                            .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 12).italic())
+                            .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                             .lineLimit(2)
                     }
-                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                        .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    Text(PariTheme.compactTimestamp(tasting.createdAt))
+                        .font(PariTheme.uiFont(size: 12))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 }
             }
-            .padding(.vertical, VitisTheme.cardPaddingVertical)
-            .padding(.horizontal, VitisTheme.cardPaddingHorizontal)
+            .padding(.vertical, PariTheme.cardPaddingVertical)
+            .padding(.horizontal, PariTheme.cardPaddingHorizontal)
             .background(
-                RoundedRectangle(cornerRadius: VitisTheme.cardCornerRadius)
-                    .fill(VitisTheme.surface(for: colorScheme))
+                RoundedRectangle(cornerRadius: PariTheme.cardCornerRadius)
+                    .fill(PariTheme.surface(for: colorScheme))
             )
         }
     }

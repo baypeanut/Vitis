@@ -1,6 +1,6 @@
 //
 //  ExpertiseTier.swift
-//  Vitis
+//  Pari
 //
 //  Expertise-adaptive UI density: novice/intermediate/expert tiers
 //  based on tasting count. Controls note palette complexity and UI guidance.

@@ -1,6 +1,6 @@
 //
 //  CellarService.swift
-//  Vitis
+//  Pari
 //
 //  Cellar Had | Wishlist (cellar_items).
 //  TODO: When implementing duel/compare UI, draw candidates from Had cellar items

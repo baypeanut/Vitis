@@ -1,6 +1,6 @@
 //
 //  CommentCheers.swift
-//  Vitis
+//  Pari
 //
 //  comments_cheers: comment_body null => Cheer; non-null => Comment.
 //

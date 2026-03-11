@@ -1,6 +1,6 @@
 //
 //  WineService.swift
-//  Vitis
+//  Pari
 //
 //  Upsert wine from Open Food Facts. Uses upsert_wine_from_off RPC.
 //

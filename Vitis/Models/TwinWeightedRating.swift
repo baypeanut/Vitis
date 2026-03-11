@@ -1,6 +1,6 @@
 //
 //  TwinWeightedRating.swift
-//  Vitis
+//  Pari
 //
 //  Twin-weighted rating for a wine: personalized score from taste twins + community average.
 //

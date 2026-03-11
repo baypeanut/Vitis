@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pari P — Variants</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,200;1,300&family=DM+Sans:wght@300&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#0D0A09; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:44px; padding:64px 24px;
+}
+.sup { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:rgba(237,228,213,.22); }
+.row { display:flex; gap:36px; flex-wrap:wrap; justify-content:center; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:14px; }
+.shell {
+  width:200px; height:200px; border-radius:44px; position:relative; overflow:hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,.6), 0 14px 44px rgba(0,0,0,.55),
+              0 28px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.shell::after {
+  content:''; position:absolute; inset:0; border-radius:44px; pointer-events:none; z-index:20;
+  background:linear-gradient(148deg, rgba(255,255,255,.085) 0%, rgba(255,255,255,.01) 40%, transparent 62%);
+}
+.lbl { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:rgba(237,228,213,.3); }
+</style>
+</head>
+<body>
+<div class="sup">Pari · Monogramme · 3 Variants</div>
+<div class="row">
+
+<!-- ════════════════════════════════════
+     SHARED DEFS — referenced in all 3
+     ════════════════════════════════════ -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <!-- Ruby grape — realistic 3D light from top-left -->
+    <radialGradient id="ruby" cx="30%" cy="22%" r="72%" fx="30%" fy="22%">
+      <stop offset="0%"   stop-color="#F09090"/>
+      <stop offset="8%"   stop-color="#D04060"/>
+      <stop offset="38%"  stop-color="#901828"/>
+      <stop offset="75%"  stop-color="#400810"/>
+      <stop offset="100%" stop-color="#180306"/>
+    </radialGradient>
+    <!-- Darker ruby for back/upper berries -->
+    <radialGradient id="ruby_dk" cx="30%" cy="22%" r="72%" fx="30%" fy="22%">
+      <stop offset="0%"   stop-color="#D07080"/>
+      <stop offset="8%"   stop-color="#A82840"/>
+      <stop offset="38%"  stop-color="#700E1C"/>
+      <stop offset="75%"  stop-color="#300608"/>
+      <stop offset="100%" stop-color="#100204"/>
+    </radialGradient>
+    <!-- Gold grape (twin) -->
+    <radialGradient id="gold" cx="30%" cy="22%" r="72%" fx="30%" fy="22%">
+      <stop offset="0%"   stop-color="#F0D890"/>
+      <stop offset="8%"   stop-color="#C89838"/>
+      <stop offset="38%"  stop-color="#886010"/>
+      <stop offset="75%"  stop-color="#3C2806"/>
+      <stop offset="100%" stop-color="#160E02"/>
+    </radialGradient>
+    <!-- Leaf gradient -->
+    <linearGradient id="leaf_gr" x1=".4" y1="0" x2=".6" y2="1">
+      <stop offset="0%"   stop-color="#B89840"/>
+      <stop offset="100%" stop-color="#7A6020"/>
+    </linearGradient>
+    <!-- Stem/tendril -->
+    <linearGradient id="stm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#D4B060"/>
+      <stop offset="100%" stop-color="#8A6828"/>
+    </linearGradient>
+    <!-- Drop shadow for cluster -->
+    <filter id="bshadow" x="-20%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="3" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ══════════════════════════════════════════════════
+  A — 14 berries, small tight leaf, classic shape
+  ══════════════════════════════════════════════════ -->
+<div class="cell">
+<div class="shell" style="background:linear-gradient(150deg,#161008,#0C0907);">
+<svg viewBox="0 0 200 200" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+
+  <!-- P -->
+  <text x="52" y="168" font-family="'Cormorant Garamond',Georgia,serif"
+    font-style="italic" font-weight="300" font-size="164" fill="#EDE4D5" opacity=".92">P</text>
+  <rect x="32" y="174" width="134" height="2.5" rx="1.2" fill="#B84A58" opacity=".52"/>
+
+  <!-- Vine tendril: P foot (~67,162) → cluster stem (~34,96) -->
+  <path d="M 67 160 C 60 146 50 130 44 116 C 40 106 36 100 34 96"
+    stroke="url(#stm)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Tendril curl at tip -->
+  <path d="M 34 96 C 28 90 22 91 22 97"
+    stroke="#C8A97E" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".5"/>
+
+  <!-- Branch to leaf -->
+  <path d="M 34 98 C 44 90 58 84 68 78"
+    stroke="url(#stm)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+  <!-- Vine leaf (5-lobe, filled) -->
+  <path d="
+    M 68 78
+    C 62 72 52 70 50 76
+    C 48 82 54 88 60 86
+    C 58 92 60 98 64 98
+    C 68 102 72 98 74 94
+    C 78 98 84 100 86 96
+    C 90 92 88 86 84 84
+    C 88 80 90 74 86 72
+    C 82 68 76 70 74 76
+    C 72 70 70 72 68 78 Z"
+    fill="url(#leaf_gr)" opacity=".85"/>
+  <!-- Leaf veins -->
+  <line x1="68" y1="78" x2="70" y2="98" stroke="rgba(50,30,0,.4)" stroke-width=".8"/>
+  <line x1="68" y1="84" x2="58" y2="92" stroke="rgba(50,30,0,.3)" stroke-width=".6"/>
+  <line x1="70" y1="84" x2="80" y2="90" stroke="rgba(50,30,0,.3)" stroke-width=".6"/>
+  <line x1="68" y1="90" x2="62" y2="98" stroke="rgba(50,30,0,.25)" stroke-width=".5"/>
+  <line x1="70" y1="90" x2="76" y2="97" stroke="rgba(50,30,0,.25)" stroke-width=".5"/>
+
+  <!-- Cluster main stem -->
+  <line x1="34" y1="96" x2="34" y2="106"
+    stroke="url(#stm)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- ── 14 berries, r=7.5, classic cone shape ──
+       Draw rows back-to-front (top = back, bottom = front)
+       Row spacing: 12px. Each row offset so they nestle between upper row. -->
+
+  <!-- Row 1 — top, back — 3 berries -->
+  <g filter="url(#bshadow)">
+    <circle cx="22" cy="114" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="34" cy="114" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="46" cy="114" r="7.5" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="18.5" cy="110" rx="2.5" ry="2.8" fill="white" opacity=".5" transform="rotate(-15,18.5,110)"/>
+  <ellipse cx="30.5" cy="110" rx="2.5" ry="2.8" fill="white" opacity=".5" transform="rotate(-15,30.5,110)"/>
+  <ellipse cx="42.5" cy="110" rx="2.5" ry="2.8" fill="white" opacity=".5" transform="rotate(-15,42.5,110)"/>
+
+  <!-- Row 2 — 4 berries (widest) -->
+  <g filter="url(#bshadow)">
+    <circle cx="16" cy="126" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="28" cy="126" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="40" cy="126" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="52" cy="126" r="7.5" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="12.5" cy="122" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,12.5,122)"/>
+  <ellipse cx="24.5" cy="122" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,24.5,122)"/>
+  <ellipse cx="36.5" cy="122" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,36.5,122)"/>
+  <ellipse cx="48.5" cy="122" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,48.5,122)"/>
+
+  <!-- Row 3 — 3 berries -->
+  <g filter="url(#bshadow)">
+    <circle cx="22" cy="138" r="7.5" fill="url(#ruby)"/>
+    <circle cx="34" cy="138" r="7.5" fill="url(#ruby)"/>
+    <circle cx="46" cy="138" r="7.5" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="18.5" cy="134" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,18.5,134)"/>
+  <ellipse cx="30.5" cy="134" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,30.5,134)"/>
+  <ellipse cx="42.5" cy="134" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,42.5,134)"/>
+
+  <!-- Row 4 — 2 berries -->
+  <g filter="url(#bshadow)">
+    <circle cx="28" cy="150" r="7.5" fill="url(#ruby)"/>
+    <circle cx="40" cy="150" r="7.5" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="24.5" cy="146" rx="2.5" ry="2.8" fill="white" opacity=".55" transform="rotate(-15,24.5,146)"/>
+  <ellipse cx="36.5" cy="146" rx="2.5" ry="2.8" fill="white" opacity=".55" transform="rotate(-15,36.5,146)"/>
+
+  <!-- Row 5 — 1 berry (tip) -->
+  <g filter="url(#bshadow)">
+    <circle cx="34" cy="162" r="7.5" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="30.5" cy="158" rx="2.5" ry="2.8" fill="white" opacity=".56" transform="rotate(-15,30.5,158)"/>
+
+</svg>
+</div>
+<span class="lbl">A — 14 berry</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+  B — 19 berries, prominent leaf, full lush cluster
+  ══════════════════════════════════════════════════ -->
+<div class="cell">
+<div class="shell" style="background:linear-gradient(150deg,#140F08,#0B0806);">
+<svg viewBox="0 0 200 200" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+
+  <!-- P -->
+  <text x="52" y="168" font-family="'Cormorant Garamond',Georgia,serif"
+    font-style="italic" font-weight="300" font-size="164" fill="#EDE4D5" opacity=".92">P</text>
+  <rect x="32" y="174" width="134" height="2.5" rx="1.2" fill="#B84A58" opacity=".52"/>
+
+  <!-- Tendril -->
+  <path d="M 67 160 C 58 144 48 124 42 108 C 38 98 36 92 36 88"
+    stroke="url(#stm)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 36 88 C 30 82 24 83 24 89"
+    stroke="#C8A97E" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".45"/>
+
+  <!-- Branch to larger leaf -->
+  <path d="M 36 90 C 48 82 64 74 76 68"
+    stroke="url(#stm)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+
+  <!-- Larger vine leaf -->
+  <path d="
+    M 76 68
+    C 68 60 56 58 54 66
+    C 52 74 60 80 66 78
+    C 64 86 66 94 72 94
+    C 76 98 80 94 82 90
+    C 88 96 96 96 98 90
+    C 100 84 96 78 90 78
+    C 96 72 96 64 90 62
+    C 84 58 78 62 78 68
+    C 78 62 76 62 76 68 Z"
+    fill="url(#leaf_gr)" opacity=".9"/>
+  <!-- Leaf veins -->
+  <line x1="76" y1="68" x2="78" y2="92" stroke="rgba(40,24,0,.45)" stroke-width=".9"/>
+  <line x1="76" y1="74" x2="64" y2="82" stroke="rgba(40,24,0,.3)" stroke-width=".65"/>
+  <line x1="78" y1="74" x2="90" y2="80" stroke="rgba(40,24,0,.3)" stroke-width=".65"/>
+  <line x1="76" y1="82" x2="66" y2="92" stroke="rgba(40,24,0,.25)" stroke-width=".55"/>
+  <line x1="78" y1="82" x2="88" y2="90" stroke="rgba(40,24,0,.25)" stroke-width=".55"/>
+
+  <!-- Cluster stem -->
+  <line x1="36" y1="88" x2="36" y2="100"
+    stroke="url(#stm)" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- ── 19 berries — lush full cluster ──
+       Rows: 2+3+4+4+3+2+1 = 19 -->
+
+  <!-- Row 1 — 2 berries (very top, back) -->
+  <g filter="url(#bshadow)">
+    <circle cx="30" cy="106" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="42" cy="106" r="7" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="26.8" cy="102.2" rx="2.3" ry="2.6" fill="white" opacity=".48" transform="rotate(-15,26.8,102.2)"/>
+  <ellipse cx="38.8" cy="102.2" rx="2.3" ry="2.6" fill="white" opacity=".48" transform="rotate(-15,38.8,102.2)"/>
+
+  <!-- Row 2 — 3 -->
+  <g filter="url(#bshadow)">
+    <circle cx="22" cy="117" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="34" cy="117" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="46" cy="117" r="7" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="18.8" cy="113.2" rx="2.3" ry="2.6" fill="white" opacity=".5" transform="rotate(-15,18.8,113.2)"/>
+  <ellipse cx="30.8" cy="113.2" rx="2.3" ry="2.6" fill="white" opacity=".5" transform="rotate(-15,30.8,113.2)"/>
+  <ellipse cx="42.8" cy="113.2" rx="2.3" ry="2.6" fill="white" opacity=".5" transform="rotate(-15,42.8,113.2)"/>
+
+  <!-- Row 3 — 4 (widest) -->
+  <g filter="url(#bshadow)">
+    <circle cx="16" cy="128" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="28" cy="128" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="40" cy="128" r="7" fill="url(#ruby_dk)"/>
+    <circle cx="52" cy="128" r="7" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="12.8" cy="124.2" rx="2.3" ry="2.6" fill="white" opacity=".51" transform="rotate(-15,12.8,124.2)"/>
+  <ellipse cx="24.8" cy="124.2" rx="2.3" ry="2.6" fill="white" opacity=".51" transform="rotate(-15,24.8,124.2)"/>
+  <ellipse cx="36.8" cy="124.2" rx="2.3" ry="2.6" fill="white" opacity=".51" transform="rotate(-15,36.8,124.2)"/>
+  <ellipse cx="48.8" cy="124.2" rx="2.3" ry="2.6" fill="white" opacity=".51" transform="rotate(-15,48.8,124.2)"/>
+
+  <!-- Row 4 — 4 -->
+  <g filter="url(#bshadow)">
+    <circle cx="16" cy="139" r="7" fill="url(#ruby)"/>
+    <circle cx="28" cy="139" r="7" fill="url(#ruby)"/>
+    <circle cx="40" cy="139" r="7" fill="url(#ruby)"/>
+    <circle cx="52" cy="139" r="7" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="12.8" cy="135.2" rx="2.3" ry="2.6" fill="white" opacity=".53" transform="rotate(-15,12.8,135.2)"/>
+  <ellipse cx="24.8" cy="135.2" rx="2.3" ry="2.6" fill="white" opacity=".53" transform="rotate(-15,24.8,135.2)"/>
+  <ellipse cx="36.8" cy="135.2" rx="2.3" ry="2.6" fill="white" opacity=".53" transform="rotate(-15,36.8,135.2)"/>
+  <ellipse cx="48.8" cy="135.2" rx="2.3" ry="2.6" fill="white" opacity=".53" transform="rotate(-15,48.8,135.2)"/>
+
+  <!-- Row 5 — 3 -->
+  <g filter="url(#bshadow)">
+    <circle cx="22" cy="150" r="7" fill="url(#ruby)"/>
+    <circle cx="34" cy="150" r="7" fill="url(#ruby)"/>
+    <circle cx="46" cy="150" r="7" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="18.8" cy="146.2" rx="2.3" ry="2.6" fill="white" opacity=".54" transform="rotate(-15,18.8,146.2)"/>
+  <ellipse cx="30.8" cy="146.2" rx="2.3" ry="2.6" fill="white" opacity=".54" transform="rotate(-15,30.8,146.2)"/>
+  <ellipse cx="42.8" cy="146.2" rx="2.3" ry="2.6" fill="white" opacity=".54" transform="rotate(-15,42.8,146.2)"/>
+
+  <!-- Row 6 — 2 -->
+  <g filter="url(#bshadow)">
+    <circle cx="28" cy="161" r="7" fill="url(#ruby)"/>
+    <circle cx="40" cy="161" r="7" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="24.8" cy="157.2" rx="2.3" ry="2.6" fill="white" opacity=".55" transform="rotate(-15,24.8,157.2)"/>
+  <ellipse cx="36.8" cy="157.2" rx="2.3" ry="2.6" fill="white" opacity=".55" transform="rotate(-15,36.8,157.2)"/>
+
+  <!-- Row 7 — 1 (tip) -->
+  <g filter="url(#bshadow)">
+    <circle cx="34" cy="172" r="7" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="30.8" cy="168.2" rx="2.3" ry="2.6" fill="white" opacity=".56" transform="rotate(-15,30.8,168.2)"/>
+
+</svg>
+</div>
+<span class="lbl">B — 19 berry</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+  C — 16 berries, ruby + altın (twin), same shape
+  ══════════════════════════════════════════════════ -->
+<div class="cell">
+<div class="shell" style="background:linear-gradient(150deg,#131008,#0B0806);">
+<svg viewBox="0 0 200 200" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+
+  <!-- P -->
+  <text x="52" y="168" font-family="'Cormorant Garamond',Georgia,serif"
+    font-style="italic" font-weight="300" font-size="164" fill="#EDE4D5" opacity=".92">P</text>
+  <rect x="32" y="174" width="134" height="2.5" rx="1.2" fill="#B84A58" opacity=".52"/>
+
+  <!-- Tendril -->
+  <path d="M 67 160 C 60 146 50 130 44 116 C 40 106 38 100 36 96"
+    stroke="url(#stm)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 36 96 C 30 90 24 91 24 97"
+    stroke="#C8A97E" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".45"/>
+
+  <!-- Branch to leaf -->
+  <path d="M 36 98 C 46 90 62 82 72 76"
+    stroke="url(#stm)" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+
+  <!-- Leaf -->
+  <path d="
+    M 72 76
+    C 64 68 54 66 52 74
+    C 50 82 58 88 64 86
+    C 62 92 64 98 70 98
+    C 74 102 78 98 80 94
+    C 86 98 94 98 96 92
+    C 98 86 94 80 88 80
+    C 94 74 94 66 88 64
+    C 82 60 76 64 76 70
+    C 74 64 72 66 72 76 Z"
+    fill="url(#leaf_gr)" opacity=".88"/>
+  <line x1="72" y1="76" x2="74" y2="98" stroke="rgba(40,24,0,.42)" stroke-width=".85"/>
+  <line x1="72" y1="82" x2="62" y2="90" stroke="rgba(40,24,0,.28)" stroke-width=".6"/>
+  <line x1="74" y1="82" x2="84" y2="88" stroke="rgba(40,24,0,.28)" stroke-width=".6"/>
+  <line x1="72" y1="88" x2="64" y2="96" stroke="rgba(40,24,0,.22)" stroke-width=".5"/>
+  <line x1="74" y1="88" x2="82" y2="96" stroke="rgba(40,24,0,.22)" stroke-width=".5"/>
+
+  <!-- Cluster stem -->
+  <line x1="36" y1="96" x2="36" y2="106"
+    stroke="url(#stm)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- ── 16 berries — ruby + gold interleaved ──
+       Pattern: ruby rows at top+bottom, gold mixed in middle rows
+       Rows: 3+4+4+3+1+1 = 16 -->
+
+  <!-- Row 1 — 3 ruby (back) -->
+  <g filter="url(#bshadow)">
+    <circle cx="24" cy="113" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="36" cy="113" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="48" cy="113" r="7.5" fill="url(#ruby_dk)"/>
+  </g>
+  <ellipse cx="20.5" cy="109" rx="2.5" ry="2.8" fill="white" opacity=".48" transform="rotate(-15,20.5,109)"/>
+  <ellipse cx="32.5" cy="109" rx="2.5" ry="2.8" fill="white" opacity=".48" transform="rotate(-15,32.5,109)"/>
+  <ellipse cx="44.5" cy="109" rx="2.5" ry="2.8" fill="white" opacity=".48" transform="rotate(-15,44.5,109)"/>
+
+  <!-- Row 2 — 4, alternating ruby/gold -->
+  <g filter="url(#bshadow)">
+    <circle cx="18" cy="125" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="30" cy="125" r="7.5" fill="url(#gold)"/>
+    <circle cx="42" cy="125" r="7.5" fill="url(#ruby_dk)"/>
+    <circle cx="54" cy="125" r="7.5" fill="url(#gold)"/>
+  </g>
+  <ellipse cx="14.5" cy="121" rx="2.5" ry="2.8" fill="white" opacity=".5" transform="rotate(-15,14.5,121)"/>
+  <ellipse cx="26.5" cy="121" rx="2.5" ry="2.8" fill="white" opacity=".46" transform="rotate(-15,26.5,121)"/>
+  <ellipse cx="38.5" cy="121" rx="2.5" ry="2.8" fill="white" opacity=".5" transform="rotate(-15,38.5,121)"/>
+  <ellipse cx="50.5" cy="121" rx="2.5" ry="2.8" fill="white" opacity=".46" transform="rotate(-15,50.5,121)"/>
+
+  <!-- Row 3 — 4, gold/ruby/gold/ruby -->
+  <g filter="url(#bshadow)">
+    <circle cx="18" cy="137" r="7.5" fill="url(#gold)"/>
+    <circle cx="30" cy="137" r="7.5" fill="url(#ruby)"/>
+    <circle cx="42" cy="137" r="7.5" fill="url(#gold)"/>
+    <circle cx="54" cy="137" r="7.5" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="14.5" cy="133" rx="2.5" ry="2.8" fill="white" opacity=".46" transform="rotate(-15,14.5,133)"/>
+  <ellipse cx="26.5" cy="133" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,26.5,133)"/>
+  <ellipse cx="38.5" cy="133" rx="2.5" ry="2.8" fill="white" opacity=".46" transform="rotate(-15,38.5,133)"/>
+  <ellipse cx="50.5" cy="133" rx="2.5" ry="2.8" fill="white" opacity=".52" transform="rotate(-15,50.5,133)"/>
+
+  <!-- Row 4 — 3 ruby -->
+  <g filter="url(#bshadow)">
+    <circle cx="24" cy="149" r="7.5" fill="url(#ruby)"/>
+    <circle cx="36" cy="149" r="7.5" fill="url(#ruby)"/>
+    <circle cx="48" cy="149" r="7.5" fill="url(#ruby)"/>
+  </g>
+  <ellipse cx="20.5" cy="145" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,20.5,145)"/>
+  <ellipse cx="32.5" cy="145" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,32.5,145)"/>
+  <ellipse cx="44.5" cy="145" rx="2.5" ry="2.8" fill="white" opacity=".54" transform="rotate(-15,44.5,145)"/>
+
+  <!-- Row 5 — 1 gold -->
+  <g filter="url(#bshadow)">
+    <circle cx="36" cy="161" r="7.5" fill="url(#gold)"/>
+  </g>
+  <ellipse cx="32.5" cy="157" rx="2.5" ry="2.8" fill="white" opacity=".48" transform="rotate(-15,32.5,157)"/>
+
+</svg>
+</div>
+<span class="lbl">C — Ruby + Altın (twin)</span>
+</div>
+
+</div><!-- /row -->
+</body>
+</html>

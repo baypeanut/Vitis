@@ -1,6 +1,6 @@
 //
 //  CachedAsyncImage.swift
-//  Vitis
+//  Pari
 //
 //  Drop-in AsyncImage replacement with URLCache disk caching.
 //  Avoids repeated network fetches for avatars, wine labels, etc.

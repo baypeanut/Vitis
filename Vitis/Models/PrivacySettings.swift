@@ -1,6 +1,6 @@
 //
 //  PrivacySettings.swift
-//  Vitis
+//  Pari
 //
 //  Visibility policy: Everyone vs Friends (mutual follow).
 //

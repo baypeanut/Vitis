@@ -1,6 +1,6 @@
 //
 //  CountriesStore.swift
-//  Vitis
+//  Pari
 //
 //  Loads country metadata used for phone number entry.
 //

@@ -1,6 +1,6 @@
 //
-//  VitisApp.swift
-//  Vitis
+//  PariApp.swift
+//  Pari
 //
 //  Created by Noah Ahmet Dericioglu on 1/25/26.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct VitisApp: App {
+struct PariApp: App {
     init() {
         _ = SupabaseManager.shared
         AnalyticsService.setup()

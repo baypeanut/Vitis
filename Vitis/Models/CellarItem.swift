@@ -1,6 +1,6 @@
 //
 //  CellarItem.swift
-//  Vitis
+//  Pari
 //
 //  Had | Wishlist cellar entry. Joins wines for display.
 //

@@ -1,6 +1,6 @@
 //
 //  CellarView.swift
-//  Vitis
+//  Pari
 //
 //  My Cellar: tasting history with rating and notes. Add wines via +.
 //
@@ -15,7 +15,7 @@ struct CellarView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
@@ -56,8 +56,8 @@ struct CellarView: View {
     private var header: some View {
         HStack(alignment: .center) {
             Text("My Cellar")
-                .font(VitisTheme.titleFont())
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .font(PariTheme.titleFont())
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             Spacer()
             if !viewModel.needsAuth, let _ = viewModel.currentUserId {
                 HStack(spacing: 12) {
@@ -67,7 +67,7 @@ struct CellarView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal.decrease.circle")
                                 .font(.system(size: 22))
-                                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                                .foregroundStyle(PariTheme.accent(for: colorScheme))
                         }
                         .buttonStyle(.plain)
                     }
@@ -76,7 +76,7 @@ struct CellarView: View {
                     } label: {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 22))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                     }
                     .buttonStyle(.plain)
                 }
@@ -92,12 +92,12 @@ struct CellarView: View {
     private var content: some View {
         if viewModel.needsAuth {
             Text("Sign in to see your cellar.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let err = viewModel.errorMessage, viewModel.tastings.isEmpty {
             Text(err)
-                .font(VitisTheme.uiFont(size: 14))
+                .font(PariTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
                 .multilineTextAlignment(.center)
                 .padding()
@@ -105,7 +105,7 @@ struct CellarView: View {
         } else if viewModel.isLoading && viewModel.tastings.isEmpty {
             ProgressView()
                 .progressViewStyle(.circular)
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.tastings.isEmpty {
             emptyState
@@ -119,16 +119,16 @@ struct CellarView: View {
         VStack(spacing: 20) {
             Image(systemName: "wineglass")
                 .font(.system(size: 44, weight: .ultraLight))
-                .foregroundStyle(VitisTheme.accentWine(for: colorScheme).opacity(0.25))
+                .foregroundStyle(PariTheme.accentWine(for: colorScheme).opacity(0.25))
                 .padding(.top, 48)
             VStack(spacing: 8) {
                 Text("Your cellar awaits its first bottle.")
                     .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     .multilineTextAlignment(.center)
                 Text("Every great collection begins with one glass.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -136,11 +136,11 @@ struct CellarView: View {
                 showAddWine = true
             } label: {
                 Text("Add a wine you've tasted")
-                    .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                    .font(PariTheme.uiFont(size: 15, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 28)
                     .padding(.vertical, 13)
-                    .background(VitisTheme.accent(for: colorScheme))
+                    .background(PariTheme.accent(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
@@ -173,8 +173,8 @@ struct CellarFilterSheet: View {
                     // Sort Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Sort By")
-                            .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15, weight: .semibold))
+                            .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         
                         ForEach(CellarViewModel.SortOption.allCases, id: \.self) { option in
                             Button {
@@ -182,17 +182,17 @@ struct CellarFilterSheet: View {
                             } label: {
                                 HStack {
                                     Text(option.rawValue)
-                                        .font(VitisTheme.uiFont(size: 15))
-                                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                                        .font(PariTheme.uiFont(size: 15))
+                                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                                     Spacer()
                                     if sortOption == option {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                                     }
                                 }
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
-                                .background(sortOption == option ? VitisTheme.surfaceSelected(for: colorScheme) : Color.clear)
+                                .background(sortOption == option ? PariTheme.surfaceSelected(for: colorScheme) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -205,8 +205,8 @@ struct CellarFilterSheet: View {
                     // Rating Filter Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Rating Filter")
-                            .font(VitisTheme.uiFont(size: 15, weight: .semibold))
-                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15, weight: .semibold))
+                            .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         
                         ForEach(CellarViewModel.RatingFilter.allCases, id: \.self) { filter in
                             Button {
@@ -214,17 +214,17 @@ struct CellarFilterSheet: View {
                             } label: {
                                 HStack {
                                     Text(filter.rawValue)
-                                        .font(VitisTheme.uiFont(size: 15))
-                                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                                        .font(PariTheme.uiFont(size: 15))
+                                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                                     Spacer()
                                     if ratingFilter == filter {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                                     }
                                 }
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
-                                .background(ratingFilter == filter ? VitisTheme.surfaceSelected(for: colorScheme) : Color.clear)
+                                .background(ratingFilter == filter ? PariTheme.surfaceSelected(for: colorScheme) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
                             .buttonStyle(.plain)
@@ -235,7 +235,7 @@ struct CellarFilterSheet: View {
                 }
                 .padding(24)
             }
-            .background(VitisTheme.backgroundPrimary(for: colorScheme))
+            .background(PariTheme.backgroundPrimary(for: colorScheme))
             .navigationTitle("Filter & Sort")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -243,7 +243,7 @@ struct CellarFilterSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
-                    .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
         }

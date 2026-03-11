@@ -1,6 +1,6 @@
 //
 //  ZoomableImageCropView.swift
-//  Vitis
+//  Pari
 //
 //  UIKit zoom/pan crop. Aspect-fill so image overflows → always scrollable. Output: JPEG for avatar.
 //

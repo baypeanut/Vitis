@@ -1,6 +1,6 @@
 //
 //  FeedCache.swift
-//  Vitis
+//  Pari
 //
 //  Persist feed items to disk for instant load; fetch fresh in background.
 //

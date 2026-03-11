@@ -1,6 +1,6 @@
 //
 //  CellarViewModel.swift
-//  Vitis
+//  Pari
 //
 //  My Cellar: tasting history (wine logs with rating + notes).
 //

@@ -1,6 +1,6 @@
 //
 //  OnboardingFlowView.swift
-//  Vitis
+//  Pari
 //
 //  Container: back arrow, optional progress, step content, primary CTA.
 //
@@ -14,7 +14,7 @@ struct OnboardingFlowView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     toolbar
@@ -58,8 +58,8 @@ struct OnboardingFlowView: View {
             Spacer()
             if let label = viewModel.currentStep.progressLabel {
                 Text(label)
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.secondaryText)
             }
         }
         .padding(.horizontal, 20)
@@ -96,7 +96,7 @@ struct OnboardingFlowView: View {
         VStack(spacing: 12) {
             if let err = viewModel.completionError {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
 
@@ -109,8 +109,8 @@ struct OnboardingFlowView: View {
                     Button("Not now") {
                         viewModel.skipPhoto()
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.secondaryText)
                 }
             default:
                 PrimaryButton("Continue", enabled: viewModel.canContinueForCurrentStep && !viewModel.isLoading) {
@@ -122,8 +122,8 @@ struct OnboardingFlowView: View {
                 Button("Already have an account? Log in") {
                     showDevLogin = true
                 }
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.accent)
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.accent)
                 .padding(.top, 8)
             }
         }

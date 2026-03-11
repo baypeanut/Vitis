@@ -1,6 +1,6 @@
 //
 //  ProfileStats.swift
-//  Vitis
+//  Pari
 //
 //  Taste Analytics from ranking history: Style Preference, Avg Vintage Age, Top Region.
 //

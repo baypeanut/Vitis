@@ -1,6 +1,6 @@
 //
 //  AuthService.swift
-//  Vitis
+//  Pari
 //
 //  Supabase Auth (email/password) + profile creation. Connection check, errors.
 //
@@ -78,7 +78,7 @@ enum AuthService {
                 NotificationCenter.default.post(name: .vitisSessionReady, object: nil)
                 return
             } catch {
-                if attempt == 5 { print("[Vitis] ensureGuestSessionIfNeeded failed: \(error)") }
+                if attempt == 5 { print("[Pari] ensureGuestSessionIfNeeded failed: \(error)") }
                 try? await Task.sleep(for: .milliseconds(400 * attempt))
             }
         }

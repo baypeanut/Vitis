@@ -1,6 +1,6 @@
 //
 //  OnboardingStep.swift
-//  Vitis
+//  Pari
 //
 
 import Foundation

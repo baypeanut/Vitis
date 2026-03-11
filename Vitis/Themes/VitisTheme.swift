@@ -1,7 +1,7 @@
 import SwiftUI
 import Foundation
 
-enum VitisTheme {
+enum PariTheme {
     // MARK: - Semantic Color Tokens (Light + Dark)
     // Dark mode is intentional, layered — not a dimmed overlay.
 

@@ -1,6 +1,6 @@
 //
 //  ContentModeration.swift
-//  Vitis
+//  Pari
 //
 //  App Store Guideline 1.2: method for filtering objectionable material before posting.
 //  Simple client-side keyword check for tasting notes and comments.

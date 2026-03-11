@@ -1,6 +1,6 @@
 //
 //  MomentStorageService.swift
-//  Vitis
+//  Pari
 //
 //  Upload "wine night" photo for feed. Path: moment_images/{userId}/{uuid}.jpg
 //

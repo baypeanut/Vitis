@@ -1,6 +1,6 @@
 //
 //  PhoneNumberField.swift
-//  Vitis
+//  Pari
 //
 //  Reusable phone input with country picker and helper text.
 //
@@ -22,8 +22,8 @@ struct PhoneNumberField: View {
         VStack(alignment: .leading, spacing: 12) {
             if let label {
                 Text(label)
-                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Button {
@@ -34,16 +34,16 @@ struct PhoneNumberField: View {
                         Text(selectedCountry.flagEmoji)
                         Text("\(selectedCountry.name) (\(selectedCountry.displayCallingCode))")
                     }
-                    .font(VitisTheme.uiFont(size: 16))
+                    .font(PariTheme.uiFont(size: 16))
                     .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.down")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(VitisTheme.placeholderBackground(for: colorScheme))
+                .background(PariTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
@@ -54,16 +54,16 @@ struct PhoneNumberField: View {
             TextField(placeholder, text: sanitizedBinding)
                 .keyboardType(.numberPad)
                 .textContentType(.telephoneNumber)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(VitisTheme.placeholderBackground(for: colorScheme))
+                .background(PariTheme.placeholderBackground(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             if let helperText {
                 Text(helperText)
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
         }
     }
@@ -134,12 +134,12 @@ private struct CountryPickerView: View {
                     Text(country.name)
                         .foregroundStyle(.primary)
                     Text(country.isoCode)
-                        .font(VitisTheme.uiFont(size: 12))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 12))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 }
                 Spacer()
                 Text(country.displayCallingCode)
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
         }
         .buttonStyle(.plain)

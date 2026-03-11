@@ -1,6 +1,6 @@
 //
 //  PrivacySettingsView.swift
-//  Vitis
+//  Pari
 //
 //  Privacy settings: Cellar, Wishlist, Activity visibility (Everyone vs Friends).
 //
@@ -32,21 +32,21 @@ struct PrivacySettingsView: View {
             }
             Section {
                 Text("Friends are people who follow you and you follow back.")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     .padding(.vertical, 4)
             }
             if let err = errorMessage {
                 Section {
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                 }
             }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.background(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -64,7 +64,7 @@ struct PrivacySettingsView: View {
     private func policyRow(title: String, value: PrivacyVisibility, onSelect: @escaping (PrivacyVisibility) -> Void) -> some View {
         HStack {
             Text(title)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
             Spacer()
             Picker("", selection: Binding(get: { value }, set: { onSelect($0) })) {
                 ForEach(PrivacyVisibility.allCases, id: \.self) { v in

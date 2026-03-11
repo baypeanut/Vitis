@@ -1,6 +1,6 @@
 //
 //  TasteSimilarityService.swift
-//  Vitis
+//  Pari
 //
 //  Taste Twin Engine: computes and fetches pairwise taste similarity via Supabase RPCs.
 //  Hybrid blend: α × Pearson collaborative + (1-α) × cosine content-based.

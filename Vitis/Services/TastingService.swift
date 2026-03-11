@@ -1,6 +1,6 @@
 //
 //  TastingService.swift
-//  Vitis
+//  Pari
 //
 //  Create tastings (wine logs with rating + notes), fetch user's tasting history.
 //

@@ -1,6 +1,6 @@
 //
 //  DevLoginView.swift
-//  Vitis
+//  Pari
 //
 //  Dev-only login: username or email → find dev account → set dev user id, enter app.
 //
@@ -14,12 +14,12 @@ struct DevLoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     SerifTitleText(title: "Log in")
                     Text("Enter your username or email.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText)
 
                     UnderlineTextField(
                         placeholder: "Username or email",
@@ -31,7 +31,7 @@ struct DevLoginView: View {
 
                     if let err = viewModel.errorMessage {
                         Text(err)
-                            .font(VitisTheme.uiFont(size: 13))
+                            .font(PariTheme.uiFont(size: 13))
                             .foregroundStyle(.red)
                     }
 
@@ -54,8 +54,8 @@ struct DevLoginView: View {
                     Button("Cancel") {
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accent)
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accent)
                 }
             }
         }

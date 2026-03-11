@@ -1,6 +1,6 @@
 //
 //  WineGlassRatingView.swift
-//  Vitis
+//  Pari
 //
 //  5-glass rating system. Each glass = 2 points. Half-fill = 1 point.
 //  Rating range: 1.0 – 10.0 (integer steps only).
@@ -17,7 +17,7 @@ import UIKit
 
 struct WineGlassRatingView: View {
     @Binding var rating: Double   // 1.0 – 10.0 integer steps
-    var accentColor: Color = VitisTheme.accentWine(for: .light)
+    var accentColor: Color = PariTheme.accentWine(for: .light)
     var size: CGFloat = 36
 
     var body: some View {

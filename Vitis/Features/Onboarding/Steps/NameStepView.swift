@@ -1,6 +1,6 @@
 //
 //  NameStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -13,8 +13,8 @@ struct NameStepView: View {
         VStack(alignment: .leading, spacing: 24) {
             SerifTitleText(title: "What's your name?")
             Text("This is how your friends will see you!")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             UnderlineTextField(
                 placeholder: "First name",
                 text: $vm.firstName,

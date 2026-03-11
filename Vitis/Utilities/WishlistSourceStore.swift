@@ -1,6 +1,6 @@
 //
 //  WishlistSourceStore.swift
-//  Vitis
+//  Pari
 //
 //  Constants for trust hint: window size and threshold.
 //

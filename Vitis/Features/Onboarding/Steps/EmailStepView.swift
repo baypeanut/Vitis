@@ -1,6 +1,6 @@
 //
 //  EmailStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -21,7 +21,7 @@ struct EmailStepView: View {
             .onChange(of: vm.email) { _, _ in vm.emailError = nil }
             if let err = vm.emailError {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
         }

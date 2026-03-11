@@ -1,6 +1,6 @@
 //
 //  ActivityFeedEntry.swift
-//  Vitis
+//  Pari
 //
 //  API model for activity_feed with nested profile, wine, target_wine.
 //  Used for Global / Following feed and Realtime payloads.

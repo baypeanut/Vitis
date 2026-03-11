@@ -1,6 +1,6 @@
 //
 //  DevAccount.swift
-//  Vitis
+//  Pari
 //
 //  Mirrors dev_accounts table. Used by DevLoginService.
 //

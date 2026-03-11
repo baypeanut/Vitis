@@ -1,6 +1,6 @@
 //
 //  PhoneValidator.swift
-//  Vitis
+//  Pari
 //
 //  Validate phone for onboarding. +1 → 10 digits; E.164 normalized.
 //

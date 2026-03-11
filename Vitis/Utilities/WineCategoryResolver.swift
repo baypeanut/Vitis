@@ -1,6 +1,6 @@
 //
 //  WineCategoryResolver.swift
-//  Vitis
+//  Pari
 //
 //  Centralized category resolution: API type, grape/variety, name heuristics.
 //  Prevents red/white/rose/sparkling from falling into "Other".

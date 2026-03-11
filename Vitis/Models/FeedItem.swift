@@ -1,6 +1,6 @@
 //
 //  FeedItem.swift
-//  Vitis
+//  Pari
 //
 //  Display model for feed: statement, user, wines, cheers/comments.
 //

@@ -1,6 +1,6 @@
 //
 //  ProfileSettingsView.swift
-//  Vitis
+//  Pari
 //
 //  Settings: Profile, Account, Privacy, Preferences, Danger zone.
 //
@@ -44,8 +44,8 @@ struct ProfileSettingsView: View {
                 )
             } header: {
                 Text("Profile")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
@@ -65,8 +65,8 @@ struct ProfileSettingsView: View {
                 )
             } header: {
                 Text("Account")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
@@ -78,8 +78,8 @@ struct ProfileSettingsView: View {
                 )
             } header: {
                 Text("Privacy")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
@@ -97,8 +97,8 @@ struct ProfileSettingsView: View {
                 )
             } header: {
                 Text("Preferences")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
@@ -124,8 +124,8 @@ struct ProfileSettingsView: View {
                 )
             } header: {
                 Text("Legal")
-                    .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             Section {
@@ -151,7 +151,7 @@ struct ProfileSettingsView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(VitisTheme.background(for: colorScheme).ignoresSafeArea())
+        .background(PariTheme.background(for: colorScheme).ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showEditProfile) {
@@ -261,16 +261,16 @@ struct ProfileSettingsView: View {
             HStack(spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundStyle(isDestructive ? VitisTheme.dangerMuted(for: colorScheme) : VitisTheme.accent(for: colorScheme))
+                    .foregroundStyle(isDestructive ? PariTheme.dangerMuted(for: colorScheme) : PariTheme.accent(for: colorScheme))
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(VitisTheme.uiFont(size: 16))
-                        .foregroundStyle(isDestructive ? VitisTheme.dangerMuted(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textPrimary(for: colorScheme) : Color.primary))
+                        .font(PariTheme.uiFont(size: 16))
+                        .foregroundStyle(isDestructive ? PariTheme.dangerMuted(for: colorScheme) : (colorScheme == .dark ? PariTheme.textPrimary(for: colorScheme) : Color.primary))
                     if let subtitle {
                         Text(subtitle)
-                            .font(VitisTheme.uiFont(size: 13))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
+                            .font(PariTheme.uiFont(size: 13))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -278,12 +278,12 @@ struct ProfileSettingsView: View {
                 Spacer()
                 if let actionText = trailingAction, !isDestructive {
                     Text(actionText)
-                        .font(VitisTheme.uiFont(size: 14, weight: .medium))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14, weight: .medium))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14))
-                    .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
+                    .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme).opacity(subtitleOpacity))
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())

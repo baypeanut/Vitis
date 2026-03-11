@@ -1,6 +1,6 @@
 //
 //  ProfileStore.swift
-//  Vitis
+//  Pari
 //
 //  Global @Observable current user profile. Updates propagate to Feed and Comments.
 //

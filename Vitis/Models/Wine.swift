@@ -1,6 +1,6 @@
 //
 //  Wine.swift
-//  Vitis
+//  Pari
 //
 //  Domain model matching wines table: id, name, producer, vintage, variety, region.
 //

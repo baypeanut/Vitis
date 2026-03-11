@@ -1,6 +1,6 @@
 //
 //  TasteProfileDrillDownView.swift
-//  Vitis
+//  Pari
 //
 //  Drill-down list of tastings for a grape or region. Cellar-style rows.
 //
@@ -40,13 +40,13 @@ struct TasteProfileDrillDownView: View {
                 drillDownRow(tasting)
                     .listRowInsets(EdgeInsets(top: 14, leading: 24, bottom: 14, trailing: 24))
                     .listRowSeparator(.visible)
-                    .listRowSeparatorTint(VitisTheme.divider(for: colorScheme))
+                    .listRowSeparatorTint(PariTheme.divider(for: colorScheme))
                     .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(VitisTheme.background(for: colorScheme))
+        .background(PariTheme.background(for: colorScheme))
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -56,25 +56,25 @@ struct TasteProfileDrillDownView: View {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(tasting.wine.producer)
-                        .font(colorScheme == .dark ? VitisTheme.uiFont(size: 13, weight: .regular) : VitisTheme.producerSerifFont())
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                        .font(colorScheme == .dark ? PariTheme.uiFont(size: 13, weight: .regular) : PariTheme.producerSerifFont())
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                     HStack(alignment: .center) {
                         Text(tasting.wine.name)
-                            .font(VitisTheme.wineNameFont(for: colorScheme))
-                            .foregroundStyle(colorScheme == .dark ? VitisTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine, colorScheme: colorScheme))
+                            .font(PariTheme.wineNameFont(for: colorScheme))
+                            .foregroundStyle(colorScheme == .dark ? PariTheme.wineNameColor(for: colorScheme) : WineColorResolver.resolveWineDisplayColor(wine: tasting.wine, colorScheme: colorScheme))
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text(String(format: "%.1f", tasting.rating))
-                            .font(colorScheme == .dark ? VitisTheme.ratingFont() : VitisTheme.uiFont(size: 24, weight: .semibold))
-                            .foregroundStyle(VitisTheme.ratingColor(for: colorScheme))
+                            .font(colorScheme == .dark ? PariTheme.ratingFont() : PariTheme.uiFont(size: 24, weight: .semibold))
+                            .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     }
                     if let v = tasting.wine.vintage {
                         Text(String(v))
-                            .font(VitisTheme.detailFont())
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.detailFont())
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     }
-                    Text(VitisTheme.compactTimestamp(tasting.createdAt))
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(colorScheme == .dark ? VitisTheme.tertiaryText(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme))
+                    Text(PariTheme.compactTimestamp(tasting.createdAt))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(colorScheme == .dark ? PariTheme.tertiaryText(for: colorScheme) : PariTheme.secondaryText(for: colorScheme))
                 }
             }
         }

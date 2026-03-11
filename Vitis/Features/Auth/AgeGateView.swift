@@ -1,6 +1,6 @@
 //
 //  AgeGateView.swift
-//  Vitis
+//  Pari
 //
 //  Apple App Store requirement: alcohol apps must verify user age before entry.
 //  Shown once on first launch. Stores gate result in UserDefaults.
@@ -21,14 +21,14 @@ struct AgeGateView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(spacing: 32) {
                 Spacer()
                 headerSection
                 dateSection
                 if showUnderageMessage {
-                    Text("You must be at least \(minimumAge) years old to use Vitis.")
-                        .font(VitisTheme.uiFont(size: 14))
+                    Text("You must be at least \(minimumAge) years old to use Pari.")
+                        .font(PariTheme.uiFont(size: 14))
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
@@ -47,13 +47,13 @@ struct AgeGateView: View {
         VStack(spacing: 12) {
             Image(systemName: "wineglass")
                 .font(.system(size: 48))
-                .foregroundStyle(VitisTheme.accent(for: colorScheme))
-            Text("Welcome to Vitis")
-                .font(VitisTheme.titleFont())
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
-            Text("Vitis is an alcohol-related app. Please confirm you are of legal drinking age to continue.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .foregroundStyle(PariTheme.accent(for: colorScheme))
+            Text("Welcome to Pari")
+                .font(PariTheme.titleFont())
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+            Text("Pari is an alcohol-related app. Please confirm you are of legal drinking age to continue.")
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
         }
     }
@@ -61,8 +61,8 @@ struct AgeGateView: View {
     private var dateSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Date of Birth")
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             DatePicker(
                 "",
                 selection: $birthDate,
@@ -89,11 +89,11 @@ struct AgeGateView: View {
             }
         } label: {
             Text("Enter")
-                .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                .font(PariTheme.uiFont(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(VitisTheme.accent(for: colorScheme))
+                .background(PariTheme.accent(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
@@ -101,8 +101,8 @@ struct AgeGateView: View {
 
     private var legalFooter: some View {
         Text("By entering, you confirm you are of legal drinking age in your country and agree to drink responsibly.")
-            .font(VitisTheme.uiFont(size: 12))
-            .foregroundStyle(VitisTheme.tertiaryText(for: colorScheme))
+            .font(PariTheme.uiFont(size: 12))
+            .foregroundStyle(PariTheme.tertiaryText(for: colorScheme))
             .multilineTextAlignment(.center)
     }
 }

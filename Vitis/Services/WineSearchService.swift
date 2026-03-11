@@ -1,6 +1,6 @@
 //
 //  WineSearchService.swift
-//  Vitis
+//  Pari
 //
 //  Open Food Facts API: search Wines, map to Wine. Debounce in caller (e.g. ViewModel).
 //
@@ -10,7 +10,7 @@ import Foundation
 enum WineSearchService {
     private static let base = "https://world.openfoodfacts.org/cgi/search.pl"
     private static let pageSize = 20
-    private static let userAgent = "VitisApp - iOS - Version 1.0 - CSProject"
+    private static let userAgent = "PariApp - iOS - Version 1.0 - CSProject"
     private static let timeout: TimeInterval = 4
     private static let retryDelay: UInt64 = 500_000_000  // 0.5s
 

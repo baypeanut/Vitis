@@ -1,6 +1,6 @@
 //
 //  ChangeEmailView.swift
-//  Vitis
+//  Pari
 //
 //  Change email flow: enter new email, confirm via link.
 //
@@ -19,22 +19,22 @@ struct ChangeEmailView: View {
     @State private var canResend = false
     @State private var timerRemaining = 30
     @State private var resendTask: Task<Void, Never>?
-    private var subduedAccent: Color { VitisTheme.accent(for: colorScheme).opacity(0.7) }
+    private var subduedAccent: Color { PariTheme.accent(for: colorScheme).opacity(0.7) }
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
 
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Change email")
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text("We will send you a link to confirm your new email.")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     }
 
                     if didSendLink {
@@ -62,7 +62,7 @@ struct ChangeEmailView: View {
                     Button("Close") {
                         dismissSheet()
                     }
-                    .font(VitisTheme.uiFont(size: 15))
+                    .font(PariTheme.uiFont(size: 15))
                     .foregroundStyle(subduedAccent)
                 }
             }
@@ -82,10 +82,10 @@ struct ChangeEmailView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Email address")
-                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 13, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 TextField("you@example.com", text: $email)
-                    .font(VitisTheme.uiFont(size: 16))
+                    .font(PariTheme.uiFont(size: 16))
                     .foregroundStyle(.primary)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
@@ -95,13 +95,13 @@ struct ChangeEmailView: View {
                     .accentColor(subduedAccent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(VitisTheme.placeholderBackground(for: colorScheme))
+                    .background(PariTheme.placeholderBackground(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
             if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
 
@@ -115,16 +115,16 @@ struct ChangeEmailView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Check your email")
-                    .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                    .font(PariTheme.uiFont(size: 17, weight: .semibold))
                     .foregroundStyle(subduedAccent)
                 Text("Open the link to confirm and finish updating your email.")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             }
 
             if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
 
@@ -137,16 +137,16 @@ struct ChangeEmailView: View {
                     Text("Resend in \(timerRemaining)s")
                 }
             }
-            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-            .foregroundStyle(canResend ? subduedAccent : VitisTheme.secondaryText(for: colorScheme))
+            .font(PariTheme.uiFont(size: 15, weight: .medium))
+            .foregroundStyle(canResend ? subduedAccent : PariTheme.secondaryText(for: colorScheme))
             .disabled(!canResend || isLoading)
             .buttonStyle(.plain)
 
             Button("Change email") {
                 resetToInput()
             }
-            .font(VitisTheme.uiFont(size: 14))
-            .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+            .font(PariTheme.uiFont(size: 14))
+            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             .buttonStyle(.plain)
         }
     }

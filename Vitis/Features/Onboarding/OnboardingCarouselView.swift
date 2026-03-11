@@ -1,6 +1,6 @@
 //
 //  OnboardingCarouselView.swift
-//  Vitis
+//  Pari
 //
 //  2-3 screen value prop carousel: Log wines, Discover via friends, Build palate.
 //  Final CTA: Add your first tasting -> opens AddWineSheet.
@@ -22,7 +22,7 @@ struct OnboardingCarouselView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            PariTheme.background.ignoresSafeArea()
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
@@ -31,8 +31,8 @@ struct OnboardingCarouselView: View {
                             hasSeenCarousel = true
                             onComplete()
                         }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.secondaryText)
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.secondaryText)
                         .padding(.trailing, 24)
                         .padding(.top, 12)
                     }
@@ -69,15 +69,15 @@ struct OnboardingCarouselView: View {
             Spacer(minLength: 60)
             Image(systemName: icon)
                 .font(.system(size: 56))
-                .foregroundStyle(VitisTheme.accent)
+                .foregroundStyle(PariTheme.accent)
             VStack(spacing: 12) {
                 Text(title)
-                    .font(VitisTheme.uiFont(size: 24, weight: .semibold))
+                    .font(PariTheme.uiFont(size: 24, weight: .semibold))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                 Text(subtitle)
-                    .font(VitisTheme.uiFont(size: 16))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 16))
+                    .foregroundStyle(PariTheme.secondaryText)
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 32)
@@ -89,7 +89,7 @@ struct OnboardingCarouselView: View {
         HStack(spacing: 8) {
             ForEach(0..<pages.count, id: \.self) { i in
                 Circle()
-                    .fill(i == page ? VitisTheme.accent : Color(white: 0.85))
+                    .fill(i == page ? PariTheme.accent : Color(white: 0.85))
                     .frame(width: 8, height: 8)
             }
         }

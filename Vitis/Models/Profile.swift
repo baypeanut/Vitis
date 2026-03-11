@@ -1,6 +1,6 @@
 //
 //  Profile.swift
-//  Vitis
+//  Pari
 //
 //  User profile model: id, username, full_name, avatar_url, bio, social, taste snapshot, weekly goal.
 //

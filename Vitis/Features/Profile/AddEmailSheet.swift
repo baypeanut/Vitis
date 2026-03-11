@@ -1,6 +1,6 @@
 //
 //  AddEmailSheet.swift
-//  Vitis
+//  Pari
 //
 //  Attach email to an existing account.
 //
@@ -15,22 +15,22 @@ struct AddEmailSheet: View {
     @State private var errorMessage: String?
     @State private var isLoading = false
     @State private var didSendLink = false
-    private let subduedAccent = VitisTheme.accent.opacity(0.7)
+    private let subduedAccent = PariTheme.accent.opacity(0.7)
 
     private let emailPredicate = NSPredicate(format: "SELF MATCHES %@", #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#)
 
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Add email")
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                         Text("We will send you a link to confirm this email.")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.secondaryText)
                     }
 
                     if didSendLink {
@@ -58,7 +58,7 @@ struct AddEmailSheet: View {
                     Button("Close") {
                         dismissSheet()
                     }
-                    .font(VitisTheme.uiFont(size: 15))
+                    .font(PariTheme.uiFont(size: 15))
                     .foregroundStyle(subduedAccent)
                 }
             }
@@ -75,10 +75,10 @@ struct AddEmailSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Email address")
-                    .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 13, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText)
                 TextField("you@example.com", text: $email)
-                    .font(VitisTheme.uiFont(size: 16))
+                    .font(PariTheme.uiFont(size: 16))
                     .foregroundStyle(.primary)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
@@ -94,7 +94,7 @@ struct AddEmailSheet: View {
 
             if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
             }
 
@@ -108,17 +108,17 @@ struct AddEmailSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Check your email")
-                    .font(VitisTheme.uiFont(size: 17, weight: .semibold))
+                    .font(PariTheme.uiFont(size: 17, weight: .semibold))
                     .foregroundStyle(subduedAccent)
                 Text("Open the link to confirm and finish linking this email.")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.secondaryText)
             }
 
             Button("Done") {
                 dismissSheet()
             }
-            .font(VitisTheme.uiFont(size: 15, weight: .medium))
+            .font(PariTheme.uiFont(size: 15, weight: .medium))
             .foregroundStyle(subduedAccent)
             .buttonStyle(.plain)
         }

@@ -1,6 +1,6 @@
 //
 //  FeedViewModel.swift
-//  Vitis
+//  Pari
 //
 //  MVVM for feed: load from cache, fetch + enrich with likes/comments from DB, update state only after confirm.
 //

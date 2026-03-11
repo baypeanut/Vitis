@@ -1,6 +1,6 @@
 //
 //  FeedView.swift
-//  Vitis
+//  Pari
 //
 //  Global / Following tabs, LazyVStack feed, minimalist header.
 //
@@ -52,7 +52,7 @@ struct FeedView: View {
 
     private var mainContent: some View {
         ZStack {
-            VitisTheme.background(for: colorScheme).ignoresSafeArea()
+            PariTheme.background(for: colorScheme).ignoresSafeArea()
             VStack(spacing: 0) {
                 tabBar
                 feedContent
@@ -92,11 +92,11 @@ struct FeedView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(VitisTheme.surfaceElevated(for: colorScheme))
+                        .fill(PariTheme.surfaceElevated(for: colorScheme))
                         .shadow(color: .black.opacity(colorScheme == .dark ? 0 : 0.06), radius: 10, x: 0, y: 4)
                     Image(systemName: "person.fill.badge.plus")
                         .font(.system(size: 17, weight: .regular))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
                 .frame(width: 34, height: 34)
                 .accessibilityLabel("Discover people")
@@ -114,10 +114,10 @@ struct FeedView: View {
         } label: {
             VStack(spacing: 6) {
                 Text(label)
-                    .font(VitisTheme.uiFont(size: 15, weight: isActive ? .medium : .regular))
-                    .foregroundStyle(isActive ? VitisTheme.accent(for: colorScheme) : (colorScheme == .dark ? VitisTheme.textTertiary(for: colorScheme) : VitisTheme.secondaryText(for: colorScheme)))
+                    .font(PariTheme.uiFont(size: 15, weight: isActive ? .medium : .regular))
+                    .foregroundStyle(isActive ? PariTheme.accent(for: colorScheme) : (colorScheme == .dark ? PariTheme.textTertiary(for: colorScheme) : PariTheme.secondaryText(for: colorScheme)))
                 Rectangle()
-                    .fill(isActive ? VitisTheme.accentWine(for: colorScheme) : Color.clear)
+                    .fill(isActive ? PariTheme.accentWine(for: colorScheme) : Color.clear)
                     .frame(height: 2)
                     .clipShape(Capsule())
             }
@@ -131,14 +131,14 @@ struct FeedView: View {
     private var feedContent: some View {
         if let err = viewModel.errorMessage {
             Text(err)
-                .font(VitisTheme.uiFont(size: 14))
+                .font(PariTheme.uiFont(size: 14))
                 .foregroundStyle(.red)
                 .padding()
                 .frame(maxWidth: .infinity)
         } else if viewModel.isRefreshing && viewModel.items.isEmpty {
             ProgressView()
                 .progressViewStyle(.circular)
-                .tint(VitisTheme.accent(for: colorScheme))
+                .tint(PariTheme.accent(for: colorScheme))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.tab == .following && viewModel.items.isEmpty {
             followingEmptyState
@@ -154,15 +154,15 @@ struct FeedView: View {
             VStack(spacing: 12) {
                 Image(systemName: "wineglass")
                     .font(.system(size: 40, weight: .ultraLight))
-                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme).opacity(0.25))
+                    .foregroundStyle(PariTheme.accentWine(for: colorScheme).opacity(0.25))
                     .padding(.top, 64)
                 Text("The evening hasn't started yet.")
                     .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     .multilineTextAlignment(.center)
                 Text("Be the first to open a bottle.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 32)
@@ -176,21 +176,21 @@ struct FeedView: View {
                 VStack(spacing: 6) {
                     Text("The best conversations about wine")
                         .font(.system(.body, design: .serif, weight: .regular))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     Text("haven't started yet.")
                         .font(.system(.body, design: .serif, weight: .regular))
-                        .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                     Text("Follow someone with your taste.")
-                        .font(VitisTheme.uiFont(size: 14))
-                        .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 14))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                         .padding(.top, 4)
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
                 if !viewModel.suggestedUsers.isEmpty {
                     Text("People you might like")
-                        .font(VitisTheme.uiFont(size: 13, weight: .semibold))
-                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                     ForEach(viewModel.suggestedUsers) { u in
                         Button {
                             profileSheetItem = ProfileSheetItem(userId: u.id, username: u.username)
@@ -212,20 +212,20 @@ struct FeedView: View {
                                 .clipShape(Circle())
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(u.fullName ?? u.username)
-                                        .font(VitisTheme.uiFont(size: 15, weight: .medium))
+                                        .font(PariTheme.uiFont(size: 15, weight: .medium))
                                         .foregroundStyle(.primary)
                                     Text("@\(u.username)")
-                                        .font(VitisTheme.uiFont(size: 13))
-                                        .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                                        .font(PariTheme.uiFont(size: 13))
+                                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                             }
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(VitisTheme.elevatedSurface(for: colorScheme))
+                            .background(PariTheme.elevatedSurface(for: colorScheme))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
@@ -240,11 +240,11 @@ struct FeedView: View {
 
     private func avatarPlaceholder(_ u: SocialService.FollowListUser) -> some View {
         Circle()
-            .fill(VitisTheme.placeholderBackground(for: colorScheme))
+            .fill(PariTheme.placeholderBackground(for: colorScheme))
             .overlay(
                 Text(String((u.fullName ?? u.username).prefix(1)).uppercased())
-                    .font(VitisTheme.uiFont(size: 18, weight: .medium))
-                    .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 18, weight: .medium))
+                    .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
             )
     }
 
@@ -276,8 +276,8 @@ struct FeedView: View {
                         isTasteTwin: viewModel.isTwin(userId: item.userId)
                     )
                     .padding(.horizontal, 16)
-                    .padding(.top, index > 0 && index % 5 == 0 ? 0 : VitisTheme.cardSpacingVertical / 2)
-                    .padding(.bottom, VitisTheme.cardSpacingVertical / 2)
+                    .padding(.top, index > 0 && index % 5 == 0 ? 0 : PariTheme.cardSpacingVertical / 2)
+                    .padding(.bottom, PariTheme.cardSpacingVertical / 2)
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
@@ -292,7 +292,7 @@ struct FeedView: View {
     private var editorialPause: some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(VitisTheme.border(for: colorScheme))
+                .fill(PariTheme.border(for: colorScheme))
                 .frame(height: 1)
                 .padding(.horizontal, 24)
             Spacer()

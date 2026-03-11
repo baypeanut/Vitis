@@ -1,6 +1,6 @@
 //
 //  PhoneFormatter.swift
-//  Vitis
+//  Pari
 //
 //  Lightweight E.164 normalization. Default +1, US 10 digits. No third‑party libs.
 //

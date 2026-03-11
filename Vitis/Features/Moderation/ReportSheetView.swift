@@ -1,6 +1,6 @@
 //
 //  ReportSheetView.swift
-//  Vitis
+//  Pari
 //
 //  Generic report sheet. Accepts content type + IDs; submits via ReportService.
 //  Used from FeedItemView (post reports), CommentSheetView (comment reports),
@@ -24,7 +24,7 @@ struct ReportSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 if didSubmit {
                     successView
                 } else {
@@ -36,8 +36,8 @@ struct ReportSheetView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -46,12 +46,12 @@ struct ReportSheetView: View {
     private var reasonList: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Why are you reporting this?")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
 
-            Divider().background(VitisTheme.border(for: colorScheme))
+            Divider().background(PariTheme.border(for: colorScheme))
 
             ForEach(ReportReason.allCases) { reason in
                 Button {
@@ -60,8 +60,8 @@ struct ReportSheetView: View {
                 } label: {
                     HStack {
                         Text(reason.displayName)
-                            .font(VitisTheme.uiFont(size: 16))
-                            .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 16))
+                            .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                         Spacer()
                         if isSubmitting && selectedReason == reason {
                             ProgressView()
@@ -70,7 +70,7 @@ struct ReportSheetView: View {
                         } else {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 14))
-                                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                         }
                     }
                     .padding(.horizontal, 24)
@@ -81,13 +81,13 @@ struct ReportSheetView: View {
                 .disabled(isSubmitting)
 
                 Divider()
-                    .background(VitisTheme.border(for: colorScheme))
+                    .background(PariTheme.border(for: colorScheme))
                     .padding(.leading, 24)
             }
 
             if let err = errorMessage {
                 Text(err)
-                    .font(VitisTheme.uiFont(size: 13))
+                    .font(PariTheme.uiFont(size: 13))
                     .foregroundStyle(.red)
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
@@ -100,18 +100,18 @@ struct ReportSheetView: View {
         VStack(spacing: 16) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                .foregroundStyle(PariTheme.accent(for: colorScheme))
             Text("Report submitted")
-                .font(VitisTheme.uiFont(size: 18, weight: .semibold))
-                .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 18, weight: .semibold))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             Text("Thank you. We will review this report and take appropriate action.")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button("Done") { isPresented = false }
-                .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                .font(PariTheme.uiFont(size: 15, weight: .medium))
+                .foregroundStyle(PariTheme.accent(for: colorScheme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -1,6 +1,6 @@
 //
 //  DevLoginViewModel.swift
-//  Vitis
+//  Pari
 //
 //  Dev-only login: find by username or email, set dev user id on success.
 //

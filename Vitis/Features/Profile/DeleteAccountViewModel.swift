@@ -1,6 +1,6 @@
 //
 //  DeleteAccountViewModel.swift
-//  Vitis
+//  Pari
 //
 //  Two-step typed confirmation + re-auth for account deletion.
 //

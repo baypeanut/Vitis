@@ -1,6 +1,6 @@
 //
 //  SocialView.swift
-//  Vitis
+//  Pari
 //
 //  Community feed: Global / Following, statements, Cheers & Comments.
 //

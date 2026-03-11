@@ -1,6 +1,6 @@
 //
 //  PhotoStepView.swift
-//  Vitis
+//  Pari
 //
 
 import SwiftUI
@@ -33,11 +33,11 @@ struct PhotoStepView: View {
                             .overlay(
                                 Image(systemName: "camera")
                                     .font(.system(size: 32))
-                                    .foregroundStyle(VitisTheme.secondaryText)
+                                    .foregroundStyle(PariTheme.secondaryText)
                             )
                     }
                     Circle()
-                        .fill(VitisTheme.accent)
+                        .fill(PariTheme.accent)
                         .frame(width: 32, height: 32)
                         .overlay(
                             Image(systemName: "plus")

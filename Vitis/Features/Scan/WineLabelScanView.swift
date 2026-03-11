@@ -1,6 +1,6 @@
 //
 //  WineLabelScanView.swift
-//  Vitis
+//  Pari
 //
 //  Full-screen label scan flow: camera → processing → result → rating → save.
 //  Self-contained; embeds TastingRateView for the rating step.
@@ -29,13 +29,13 @@ struct WineLabelScanView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background(for: colorScheme).ignoresSafeArea()
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
                 contentForStep
                 if isSaving {
                     Color.black.opacity(0.15).ignoresSafeArea()
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .tint(VitisTheme.accent(for: colorScheme))
+                        .tint(PariTheme.accent(for: colorScheme))
                         .scaleEffect(1.2)
                 }
             }
@@ -44,8 +44,8 @@ struct WineLabelScanView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.accent(for: colorScheme))
                 }
             }
         }
@@ -110,14 +110,14 @@ struct WineLabelScanView: View {
         VStack(spacing: 28) {
             Image(systemName: "camera.viewfinder")
                 .font(.system(size: 72, weight: .ultraLight))
-                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                .foregroundStyle(PariTheme.accentWine(for: colorScheme))
             VStack(spacing: 8) {
                 Text("Point at a wine label")
                     .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 Text("Make sure the label is well-lit and in focus")
-                    .font(VitisTheme.uiFont(size: 14))
-                    .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 14))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -125,11 +125,11 @@ struct WineLabelScanView: View {
                 showImagePicker = true
             } label: {
                 Text("Open Camera")
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                    .font(PariTheme.uiFont(size: 16, weight: .medium))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(VitisTheme.accentWine(for: colorScheme))
+                    .background(PariTheme.accentWine(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal, 40)
             }
@@ -167,7 +167,7 @@ struct WineLabelScanView: View {
             VStack(spacing: 32) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 52))
-                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                    .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                     .padding(.top, 40)
 
                 VStack(alignment: .leading, spacing: 20) {
@@ -194,7 +194,7 @@ struct WineLabelScanView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(VitisTheme.surface(for: colorScheme))
+                .background(PariTheme.surface(for: colorScheme))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 24)
 
@@ -204,19 +204,19 @@ struct WineLabelScanView: View {
                             viewModel.proceedToRating(wine)
                         } label: {
                             Text("Rate This Wine")
-                                .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                                .font(PariTheme.uiFont(size: 16, weight: .medium))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(VitisTheme.accentWine(for: colorScheme))
+                                .background(PariTheme.accentWine(for: colorScheme))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         .padding(.horizontal, 24)
                     } else {
                         // Upsert failed — encourage manual search
                         Text("We couldn't match this label to our catalog. Try searching manually.")
-                            .font(VitisTheme.uiFont(size: 14))
-                            .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
@@ -225,8 +225,8 @@ struct WineLabelScanView: View {
                         showImagePicker = true
                     } label: {
                         Text("Scan Again")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
                     }
                 }
                 .padding(.bottom, 48)
@@ -237,18 +237,18 @@ struct WineLabelScanView: View {
     private func scanField(label: String, value: String, large: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(VitisTheme.uiFont(size: 11, weight: .medium))
-                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                .font(PariTheme.uiFont(size: 11, weight: .medium))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 .textCase(.uppercase)
                 .tracking(1.2)
             if large {
                 Text(value)
-                    .font(VitisTheme.wineNameFont(for: colorScheme))
-                    .foregroundStyle(VitisTheme.wineNameColor(for: colorScheme))
+                    .font(PariTheme.wineNameFont(for: colorScheme))
+                    .foregroundStyle(PariTheme.wineNameColor(for: colorScheme))
             } else {
                 Text(value)
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
             }
         }
     }
@@ -277,15 +277,15 @@ struct WineLabelScanView: View {
         VStack(spacing: 24) {
             Image(systemName: "xmark.circle")
                 .font(.system(size: 60, weight: .thin))
-                .foregroundStyle(VitisTheme.textTertiary(for: colorScheme))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 .padding(.top, 48)
             VStack(spacing: 10) {
                 Text("Not a Wine Label")
                     .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 Text("This doesn't appear to be a wine bottle. Try scanning a wine label.")
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
@@ -294,11 +294,11 @@ struct WineLabelScanView: View {
                 showImagePicker = true
             } label: {
                 Text("Try Another Label")
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                    .font(PariTheme.uiFont(size: 16, weight: .medium))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(VitisTheme.accent(for: colorScheme))
+                    .background(PariTheme.accent(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal, 40)
             }
@@ -313,15 +313,15 @@ struct WineLabelScanView: View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 52, weight: .thin))
-                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                 .padding(.top, 48)
             VStack(spacing: 10) {
                 Text("Scan Failed")
                     .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(VitisTheme.textPrimary(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
                 Text(message)
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
@@ -330,11 +330,11 @@ struct WineLabelScanView: View {
                 showImagePicker = true
             } label: {
                 Text("Try Again")
-                    .font(VitisTheme.uiFont(size: 16, weight: .medium))
+                    .font(PariTheme.uiFont(size: 16, weight: .medium))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(VitisTheme.accent(for: colorScheme))
+                    .background(PariTheme.accent(for: colorScheme))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal, 40)
             }

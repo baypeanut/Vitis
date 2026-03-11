@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Vitis
+//  Pari
 //
 //  Created by Noah Ahmet Dericioglu on 1/25/26.
 //
@@ -17,7 +17,7 @@ struct ContentView: View {
             ProfileView(onSignOut: {})
                 .tabItem { Label("Profile", systemImage: "person") }
         }
-        .tint(VitisTheme.accent)
+        .tint(PariTheme.accent)
     }
 }
 

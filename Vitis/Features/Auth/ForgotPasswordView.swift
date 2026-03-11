@@ -1,6 +1,6 @@
 //
 //  ForgotPasswordView.swift
-//  Vitis
+//  Pari
 //
 //  Reset password sheet: email → send reset link.
 //
@@ -20,19 +20,19 @@ struct ForgotPasswordView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
+                PariTheme.backgroundPrimary(for: colorScheme).ignoresSafeArea()
                 VStack(alignment: .leading, spacing: 24) {
                     SerifTitleText(title: "Reset password")
                     Text("Enter your email and we'll send you a reset link.")
-                        .font(VitisTheme.uiFont(size: 15))
-                        .foregroundStyle(VitisTheme.textSecondary(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
 
                     if didSucceed {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                                .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                             Text("Check your email")
-                                .font(VitisTheme.uiFont(size: 15))
+                                .font(PariTheme.uiFont(size: 15))
                                 .foregroundStyle(.primary)
                         }
                         .padding(.vertical, 8)
@@ -50,8 +50,8 @@ struct ForgotPasswordView: View {
 
                         if let err = errorMessage {
                             Text(err)
-                                .font(VitisTheme.uiFont(size: 13))
-                                .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
+                                .font(PariTheme.uiFont(size: 13))
+                                .foregroundStyle(PariTheme.dangerMuted(for: colorScheme))
                         }
 
                         PrimaryButton("Send reset link", enabled: canSubmit && !isLoading) {
@@ -62,8 +62,8 @@ struct ForgotPasswordView: View {
                     Button("Back to log in") {
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 24)
@@ -81,8 +81,8 @@ struct ForgotPasswordView: View {
                     Button("Cancel") {
                         isPresented = false
                     }
-                    .font(VitisTheme.uiFont(size: 15))
-                    .foregroundStyle(VitisTheme.accentWine(for: colorScheme))
+                    .font(PariTheme.uiFont(size: 15))
+                    .foregroundStyle(PariTheme.accentWine(for: colorScheme))
                 }
             }
         }

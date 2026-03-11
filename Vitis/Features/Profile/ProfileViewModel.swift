@@ -1,6 +1,6 @@
 //
 //  ProfileViewModel.swift
-//  Vitis
+//  Pari
 //
 //  Beli-style profile data: profile, stats, recent activity, taste profile, streak.
 //  Keyed by userId; never overrides with current user. All fetches use self.userId only.

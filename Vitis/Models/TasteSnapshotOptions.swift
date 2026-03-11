@@ -1,6 +1,6 @@
 //
 //  TasteSnapshotOptions.swift
-//  Vitis
+//  Pari
 //
 //  Predefined options for Taste Snapshot (Loves, Avoids, Mood) and Weekly goal.
 //  Stored as option id (string) in profiles.

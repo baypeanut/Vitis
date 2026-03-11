@@ -1,6 +1,6 @@
 //
 //  FeedRowPayload.swift
-//  Vitis
+//  Pari
 //
 //  Decodes feed_with_details view rows.
 //

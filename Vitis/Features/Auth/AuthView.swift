@@ -1,6 +1,6 @@
 //
 //  AuthView.swift
-//  Vitis
+//  Pari
 //
 //  Login / Sign up. Validated, connection check, loading.
 //
@@ -26,7 +26,7 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            VitisTheme.background.ignoresSafeArea()
+            PariTheme.background.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 28) {
@@ -59,12 +59,12 @@ struct AuthView: View {
 
     private var header: some View {
         VStack(spacing: 8) {
-            Text("Vitis")
-                .font(VitisTheme.titleFont())
+            Text("Pari")
+                .font(PariTheme.titleFont())
                 .foregroundStyle(.primary)
             Text(mode == .signIn ? "Sign in to continue" : "Create an account")
-                .font(VitisTheme.uiFont(size: 15))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .padding(.bottom, 4)
@@ -75,10 +75,10 @@ struct AuthView: View {
         switch connectionStatus {
         case .checking:
             HStack(spacing: 8) {
-                ProgressView().scaleEffect(0.8).tint(VitisTheme.secondaryText)
+                ProgressView().scaleEffect(0.8).tint(PariTheme.secondaryText)
                 Text("Checking connection…")
-                    .font(VitisTheme.uiFont(size: 13))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 13))
+                    .foregroundStyle(PariTheme.secondaryText)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
@@ -89,20 +89,20 @@ struct AuthView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "wifi.exclamationmark")
                         .font(.system(size: 14))
-                        .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
+                        .foregroundStyle(PariTheme.dangerMuted(for: colorScheme))
                     Text(msg)
-                        .font(VitisTheme.uiFont(size: 13))
-                        .foregroundStyle(VitisTheme.dangerMuted(for: colorScheme))
+                        .font(PariTheme.uiFont(size: 13))
+                        .foregroundStyle(PariTheme.dangerMuted(for: colorScheme))
                 }
                 Button("Retry connection") {
                     Task { await checkConnection() }
                 }
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.accent(for: colorScheme))
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.accent(for: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(VitisTheme.dangerMuted(for: colorScheme).opacity(0.15))
+            .background(PariTheme.dangerMuted(for: colorScheme).opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
@@ -130,7 +130,7 @@ struct AuthView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.red)
                     Text(err)
-                        .font(VitisTheme.uiFont(size: 13))
+                        .font(PariTheme.uiFont(size: 13))
                         .foregroundStyle(.red)
                 }
             }
@@ -143,7 +143,7 @@ struct AuthView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(canSubmit ? VitisTheme.accent : Color(white: 0.9))
+                    .background(canSubmit ? PariTheme.accent : Color(white: 0.9))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .disabled(isLoading || !canSubmit)
@@ -154,10 +154,10 @@ struct AuthView: View {
     private var passwordField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Password")
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText)
             SecureField("", text: $password)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .textContentType(mode == .signIn ? .password : .newPassword)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -165,8 +165,8 @@ struct AuthView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             if mode == .signUp {
                 Text("At least 6 characters")
-                    .font(VitisTheme.uiFont(size: 11))
-                    .foregroundStyle(VitisTheme.secondaryText)
+                    .font(PariTheme.uiFont(size: 11))
+                    .foregroundStyle(PariTheme.secondaryText)
             }
         }
     }
@@ -174,10 +174,10 @@ struct AuthView: View {
     private func labeledField(_ label: String, text: Binding<String>, placeholder: String = "") -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText)
             TextField(placeholder, text: text)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(Color(white: 0.97))
@@ -201,8 +201,8 @@ struct AuthView: View {
             errorMessage = nil
         } label: {
             Text(mode == .signIn ? "Need an account? Sign up" : "Have an account? Sign in")
-                .font(VitisTheme.uiFont(size: 14))
-                .foregroundStyle(VitisTheme.accent)
+                .font(PariTheme.uiFont(size: 14))
+                .foregroundStyle(PariTheme.accent)
         }
         .buttonStyle(.plain)
         .padding(.top, 4)

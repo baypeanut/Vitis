@@ -1,6 +1,6 @@
 //
 //  Tasting.swift
-//  Vitis
+//  Pari
 //
 //  Wine tasting log: rating (1.0-10.0), optional notes, created_at.
 //

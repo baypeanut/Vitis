@@ -1,6 +1,6 @@
 //
 //  AuditService.swift
-//  Vitis
+//  Pari
 //
 //  Server-side audit trail. Inserts via RPC; table is server-only readable.
 //

@@ -1,6 +1,6 @@
 //
 //  SupabaseManager.swift
-//  Vitis
+//  Pari
 //
 //  Shared singleton for Supabase connection. Uses SupabaseConfig for credentials.
 //

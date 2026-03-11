@@ -1,6 +1,6 @@
 //
 //  ProfileSetupView.swift
-//  Vitis
+//  Pari
 //
 //  Collect username + display name after OTP verification.
 //
@@ -20,7 +20,7 @@ struct ProfileSetupView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VitisTheme.background.ignoresSafeArea()
+                PariTheme.background.ignoresSafeArea()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -31,20 +31,20 @@ struct ProfileSetupView: View {
                                 Image(systemName: "chevron.left")
                                 Text("Back")
                             }
-                            .font(VitisTheme.uiFont(size: 15, weight: .medium))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .font(PariTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(PariTheme.secondaryText)
                         }
                         .buttonStyle(.plain)
                         .padding(.bottom, 6)
 
                         Text("Set up your profile")
-                            .font(VitisTheme.titleFont())
+                            .font(PariTheme.titleFont())
                             .foregroundStyle(.primary)
                             .padding(.bottom, 4)
 
                         Text("Choose a username and how you want to appear.")
-                            .font(VitisTheme.uiFont(size: 15))
-                            .foregroundStyle(VitisTheme.secondaryText)
+                            .font(PariTheme.uiFont(size: 15))
+                            .foregroundStyle(PariTheme.secondaryText)
 
                         VStack(alignment: .leading, spacing: 16) {
                             labeledField("Username", text: $username, placeholder: "e.g. wine_lover")
@@ -57,7 +57,7 @@ struct ProfileSetupView: View {
 
                         if let err = errorMessage {
                             Text(err)
-                                .font(VitisTheme.uiFont(size: 13))
+                                .font(PariTheme.uiFont(size: 13))
                                 .foregroundStyle(.red)
                         }
 
@@ -87,10 +87,10 @@ struct ProfileSetupView: View {
     private func labeledField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(VitisTheme.uiFont(size: 13, weight: .medium))
-                .foregroundStyle(VitisTheme.secondaryText)
+                .font(PariTheme.uiFont(size: 13, weight: .medium))
+                .foregroundStyle(PariTheme.secondaryText)
             TextField(placeholder, text: text)
-                .font(VitisTheme.uiFont(size: 16))
+                .font(PariTheme.uiFont(size: 16))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(Color(white: 0.97))

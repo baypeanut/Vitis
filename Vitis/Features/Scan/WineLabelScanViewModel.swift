@@ -1,6 +1,6 @@
 //
 //  WineLabelScanViewModel.swift
-//  Vitis
+//  Pari
 //
 //  State machine for the wine label scan flow.
 //

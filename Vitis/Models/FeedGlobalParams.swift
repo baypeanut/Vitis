@@ -1,6 +1,6 @@
 //
 //  FeedGlobalParams.swift
-//  Vitis
+//  Pari
 //
 //  RPC params for feed_global. viewer_id can be nil for anonymous (shows only everyone-visible activity).
 //

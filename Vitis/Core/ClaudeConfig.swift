@@ -1,6 +1,6 @@
 //
 //  ClaudeConfig.swift
-//  Vitis
+//  Pari
 //
 //  Claude Vision API key. Read from Info.plist (injected via Secrets.xcconfig at build time).
 //  Never hardcode the key — keep it in xcconfig and gitignore the file.
