@@ -1,4 +1,4 @@
--- Vitis Community & Social Feed
+-- Pari Community & Social Feed
 -- Tables: follows, activity_feed, comments_cheers
 -- Prerequisites: public.profiles (id -> auth.users), public.wines (id).
 -- Run in Supabase SQL Editor or via CLI: supabase db push

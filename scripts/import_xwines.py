@@ -20,8 +20,8 @@ import csv
 import sys
 from pathlib import Path
 
-# Map X-Wines "Type" values to Vitis category CHECK constraint values.
-# Vitis schema: category IN ('Red', 'White', 'Sparkling', 'Rose') OR NULL
+# Map X-Wines "Type" values to Pari category CHECK constraint values.
+# Pari schema: category IN ('Red', 'White', 'Sparkling', 'Rose') OR NULL
 # Empty string in CSV must be imported as NULL in Supabase (Table Editor usually does this).
 CATEGORY_MAP = {
     "Red":          "Red",

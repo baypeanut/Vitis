@@ -1,4 +1,4 @@
--- Vitis Duel & Rankings (Beli-style pairwise comparison + personal list)
+-- Pari Duel & Rankings (Beli-style pairwise comparison + personal list)
 -- comparisons: each duel; rankings: user's ordered list (Bradley–Terry / Elo).
 
 -- Profiles RLS (if not already present). Required for app-created profiles on signup.

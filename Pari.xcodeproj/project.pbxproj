@@ -16,9 +16,23 @@
 		E3595A012F26E1000010DFC1 /* Pari.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Pari.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E35954732F29AA4C0010DFC1 /* Exceptions for "Pari" folder in "Pari" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/SupabaseConfig.example.swift,
+				Info.plist,
+			);
+			target = E35950682F26D4010010DFC1 /* Pari */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E359506B2F26D4010010DFC1 /* Pari */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E35954732F29AA4C0010DFC1 /* Exceptions for "Pari" folder in "Pari" target */,
+			);
 			path = Pari;
 			sourceTree = "<group>";
 		};
@@ -105,7 +119,7 @@
 					};
 				};
 			};
-			buildConfigurationList = E35950642F26D4010010DFC1 /* Build configuration list for PBXProject "Vitis" */;
+			buildConfigurationList = E35950642F26D4010010DFC1 /* Build configuration list for PBXProject "Pari" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -353,7 +367,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E35950642F26D4010010DFC1 /* Build configuration list for PBXProject "Vitis" */ = {
+		E35950642F26D4010010DFC1 /* Build configuration list for PBXProject "Pari" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E35950722F26D4020010DFC1 /* Debug */,

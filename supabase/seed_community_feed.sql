@@ -1,4 +1,4 @@
--- Vitis Community Feed – Seed Script
+-- Pari Community Feed – Seed Script
 -- Run in Supabase SQL Editor.
 --
 -- Order:
@@ -60,11 +60,11 @@ BEGIN
     '00000000-0000-0000-0000-000000000000',
     'authenticated',
     'authenticated',
-    'seed@vitis.app',
+    'seed@pari.app',
     v_encrypted_pw,
     NOW(),
     '{"provider":"email","providers":["email"]}',
-    '{"name":"Vitis Curator"}',
+    '{"name":"Pari Curator"}',
     NOW(),
     NOW()
   ) ON CONFLICT (id) DO NOTHING;
@@ -75,7 +75,7 @@ BEGIN
     ) VALUES (
       v_user_id,
       v_user_id,
-      format('{"sub":"%s","email":"seed@vitis.app"}', v_user_id)::jsonb,
+      format('{"sub":"%s","email":"seed@pari.app"}', v_user_id)::jsonb,
       'email',
       v_user_id,
       NOW(),
@@ -85,7 +85,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.profiles (id, username, bio) VALUES
-    (v_user_id, 'Vitis Curator', 'Curated by the house.')
+    (v_user_id, 'Pari Curator', 'Curated by the house.')
   ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username, bio = EXCLUDED.bio;
 END $$;
 
