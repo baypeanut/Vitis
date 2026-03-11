@@ -1,12 +1,12 @@
 //
 //  TrustHintThresholdTests.swift
-//  VitisTests
+//  PariTests
 //
 //  Trust hint threshold logic: >= 3 in last 20.
 //
 
 import XCTest
-@testable import Vitis
+@testable import Pari
 
 final class TrustHintThresholdTests: XCTestCase {
 

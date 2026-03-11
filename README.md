@@ -1,4 +1,4 @@
-# Vitis
+# Pari
 
 A wine logging and rating iOS app built with SwiftUI and Supabase. Users search for wines, rate them, add optional tasting notes, and share their tastings in a social feed.
 
@@ -6,7 +6,7 @@ A wine logging and rating iOS app built with SwiftUI and Supabase. Users search 
 
 ## Table of Contents
 
-1. [What is Vitis?](#what-is-vitis)
+1. [What is Pari?](#what-is-pari)
 2. [Tech Stack](#tech-stack)
 3. [Architecture Overview](#architecture-overview)
 4. [Project Structure](#project-structure)
@@ -20,9 +20,9 @@ A wine logging and rating iOS app built with SwiftUI and Supabase. Users search 
 
 ---
 
-## What is Vitis?
+## What is Pari?
 
-Vitis is an iOS app for wine enthusiasts to:
+Pari is an iOS app for wine enthusiasts to:
 - **Log wines**: Search for wines (via Open Food Facts API), rate them 1.0-10.0, add optional tasting notes
 - **Track history**: View your tasting history in "My Cellar" with ratings, notes, and timestamps
 - **Social feed**: See what wines others have tasted, cheer (like) and comment on their posts
@@ -47,10 +47,10 @@ Vitis is an iOS app for wine enthusiasts to:
 
 ### MVVM Pattern
 
-- **Models** (`Vitis/Models/`): Data structures (Wine, Tasting, Profile, FeedItem, etc.)
-- **Views** (`Vitis/Features/`): SwiftUI views (CellarView, FeedView, ProfileView, etc.)
+- **Models** (`Pari/Models/`): Data structures (Wine, Tasting, Profile, FeedItem, etc.)
+- **Views** (`Pari/Features/`): SwiftUI views (CellarView, FeedView, ProfileView, etc.)
 - **ViewModels** (`*ViewModel.swift`): Business logic, state management, API calls
-- **Services** (`Vitis/Services/`): API clients (TastingService, FeedService, AuthService, etc.)
+- **Services** (`Pari/Services/`): API clients (TastingService, FeedService, AuthService, etc.)
 
 ### Data Flow
 
@@ -74,8 +74,8 @@ User Action → View → ViewModel → Service → Supabase API → Database
 ## Project Structure
 
 ```
-Vitis/
-├── Vitis/
+Pari/
+├── Pari/
 │   ├── Core/                    # App-wide config
 │   │   ├── AppConstants.swift   # Bundle ID, auth flags, debug UUIDs
 │   │   └── SupabaseConfig.swift  # Supabase URL + anon key (gitignored)
@@ -119,9 +119,9 @@ Vitis/
 │   │       └── RootView.swift   # Auth gate + TabView
 │   │
 │   ├── Themes/                  # Design system
-│   │   └── VitisTheme.swift     # Colors, fonts, timestamps
+│   │   └── PariTheme.swift     # Colors, fonts, timestamps
 │   │
-│   └── VitisApp.swift           # App entry point
+│   └── PariApp.swift           # App entry point
 │
 ├── supabase/
 │   ├── setup_schema.sql         # Complete database schema (run once)
@@ -151,7 +151,7 @@ cd Vitis
 
 ### Step 2: Open in Xcode
 
-1. Open `Vitis.xcodeproj` in Xcode
+1. Open `Pari.xcodeproj` in Xcode
 2. Wait for Swift Package Manager to resolve dependencies (Supabase SDK, etc.)
    - If it doesn't auto-resolve: **File → Packages → Resolve Package Versions**
 
@@ -163,7 +163,7 @@ cd Vitis
 
 2. **Set up config file**:
    ```bash
-   cd Vitis/Core
+   cd Pari/Core
    cp SupabaseConfig.example.swift SupabaseConfig.swift
    ```
    Open `SupabaseConfig.swift` and replace:
@@ -174,9 +174,9 @@ cd Vitis
 
 3. **PostHog (analytics)**:
    ```bash
-   cp Vitis/Config/Secrets.xcconfig.example Vitis/Config/Secrets.xcconfig
+   cp Pari/Config/Secrets.xcconfig.example Pari/Config/Secrets.xcconfig
    ```
-   Paste your PostHog API key in `Vitis/Config/Secrets.xcconfig` (replace `phc_replace_me`).
+   Paste your PostHog API key in `Pari/Config/Secrets.xcconfig` (replace `phc_replace_me`).
    This file is gitignored. Analytics events will be sent when the key is configured.
 
 ### Step 4: Set Up Database
@@ -191,7 +191,7 @@ cd Vitis
 
 ### Step 5: Run the App
 
-1. In Xcode, select **Vitis** scheme and **iPhone Simulator** (e.g., iPhone 17)
+1. In Xcode, select **Pari** scheme and **iPhone Simulator** (e.g., iPhone 17)
 2. Press **Cmd+R** (or click Run)
 3. App should launch and show main tabs (Cellar, Social, Profile)
 
@@ -484,7 +484,7 @@ struct Wine: Identifiable {
 
 ### Run in Simulator
 
-1. Open Xcode → Select **Vitis** scheme
+1. Open Xcode → Select **Pari** scheme
 2. Select simulator (e.g., **iPhone 17**)
 3. Press **Cmd+R** or click **Run**
 
@@ -535,8 +535,8 @@ struct Wine: Identifiable {
 ### Add a New Feature
 
 1. **Database**: Add table/column in `setup_schema.sql` + migration
-2. **Model**: Create model in `Vitis/Models/`
-3. **Service**: Create service in `Vitis/Services/` (API calls)
+2. **Model**: Create model in `Pari/Models/`
+3. **Service**: Create service in `Pari/Services/` (API calls)
 4. **ViewModel**: Create ViewModel (state + business logic)
 5. **View**: Create SwiftUI view
 6. **Wire up**: Add to navigation/routing
@@ -603,12 +603,12 @@ PostgreSQL feature enforced by Supabase:
 ### Date/Time Formatting
 
 - **Format**: "MMM d · h:mm a" (e.g., "Jan 28 · 9:42 PM")
-- **Function**: `VitisTheme.compactTimestamp(_ date: Date)`
+- **Function**: `PariTheme.compactTimestamp(_ date: Date)`
 - **Used in**: Comments, Cellar rows, Profile activity
 
 ### Design System
 
-- **Colors**: `VitisTheme.accent` (#4A0E0E burgundy), `background` (white), `secondaryText` (gray)
+- **Colors**: `PariTheme.accent` (#4A0E0E burgundy), `background` (white), `secondaryText` (gray)
 - **Fonts**: 
   - Serif for wine names (`wineNameFont()`) - used in Cellar, Feed thumbnails
   - Serif for producers (`producerSerifFont()`) - subtle gray
@@ -623,7 +623,7 @@ PostgreSQL feature enforced by Supabase:
 
 | File | Purpose |
 |------|---------|
-| `VitisApp.swift` | App entry point, initializes Supabase |
+| `PariApp.swift` | App entry point, initializes Supabase |
 | `RootView.swift` | Auth gate, shows TabView or Onboarding |
 | `ContentView.swift` | Main TabView (Cellar, Social, Profile) |
 | `CellarView.swift` | My Cellar - tasting history list |
@@ -636,7 +636,7 @@ PostgreSQL feature enforced by Supabase:
 | `FeedService.swift` | Fetch feed (global/following) |
 | `WineService.swift` | Upsert wines from OFF |
 | `AuthService.swift` | Authentication, profile management |
-| `VitisTheme.swift` | Design system (colors, fonts, timestamps) |
+| `PariTheme.swift` | Design system (colors, fonts, timestamps) |
 | `TastingNotes.swift` | Category-based tasting notes (Red/White/Rose/Sparkling) |
 | `setup_schema.sql` | Complete database schema |
 
@@ -667,6 +667,6 @@ PostgreSQL feature enforced by Supabase:
 - **Database issues**: Check `supabase/setup_schema.sql` and Supabase Dashboard
 - **Build errors**: Clean build folder, reset packages
 - **API errors**: Check Supabase Dashboard → Logs
-- **UI questions**: Check `VitisTheme.swift` for design system
+- **UI questions**: Check `PariTheme.swift` for design system
 
 ---

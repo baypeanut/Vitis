@@ -1,12 +1,12 @@
 //
 //  WantToTryChipTests.swift
-//  VitisTests
+//  PariTests
 //
 //  Sanity check: WantToTryChip compiles and can be instantiated.
 //
 
 import XCTest
-@testable import Vitis
+@testable import Pari
 
 final class WantToTryChipTests: XCTestCase {
 

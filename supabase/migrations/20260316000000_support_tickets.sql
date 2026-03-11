@@ -1,4 +1,4 @@
--- Vitis Concierge: in-app support tickets (no third-party SDKs).
+-- Pari Concierge: in-app support tickets (no third-party SDKs).
 CREATE TABLE IF NOT EXISTS public.support_tickets (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,

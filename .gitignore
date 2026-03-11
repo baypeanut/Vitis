@@ -5,7 +5,7 @@ DerivedData/
 xcuserdata/
 
 # Supabase credentials (each dev uses own). Copy from SupabaseConfig.example.swift.
-Vitis/Core/SupabaseConfig.swift
+Pari/Core/SupabaseConfig.swift
 
 # macOS
 .DS_Store
@@ -30,7 +30,7 @@ Vitis/Core/SupabaseConfig.swift
 # Env / secrets
 .env
 .env.*
-Vitis/Config/Secrets.xcconfig
+Pari/Config/Secrets.xcconfig
 # cursor ai workspace
 .claude/
 

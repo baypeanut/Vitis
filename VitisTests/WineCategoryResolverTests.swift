@@ -1,12 +1,12 @@
 //
 //  WineCategoryResolverTests.swift
-//  VitisTests
+//  PariTests
 //
 //  Unit tests for WineCategoryResolver determinism.
 //
 
 import XCTest
-@testable import Vitis
+@testable import Pari
 
 final class WineCategoryResolverTests: XCTestCase {
 

@@ -1,0 +1,288 @@
+//
+//  ProfileView.swift
+//  Pari
+//
+//  My profile tab. Beli-style layout via ProfileContentView. Edit → EditProfileView page.
+//
+
+import SwiftUI
+
+private struct DrillDownTarget: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let filterType: TasteProfileDrillDownView.FilterType
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: DrillDownTarget, rhs: DrillDownTarget) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+struct ProfileView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    var onSignOut: () -> Void
+
+    @State private var viewModel: ProfileViewModel?
+    @State private var currentUserId: UUID?
+    @State private var didRunEnsure = false
+    @State private var showFollowersFollowing = false
+    @State private var followersFollowingInitialTab: FollowersFollowingView.Tab = .followers
+    @State private var drillDownTarget: DrillDownTarget?
+    @State private var showSettings = false
+    @State private var showEditProfile = false
+    @State private var editVM = EditProfileViewModel()
+    @State private var showWantToTry = false
+    @State private var showAddWishlistSheet = false
+    @State private var markAsTastedItem: CellarItem?
+    @State private var showErrorAfterDelay = false
+    @State private var tasteTwins: [TasteTwin] = []
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PariTheme.background(for: colorScheme).ignoresSafeArea()
+                if !didRunEnsure {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(PariTheme.accent(for: colorScheme))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let vm = viewModel, (vm.isLoadingInitial || vm.isRefreshing || vm.profile == nil && !showErrorAfterDelay) {
+                    ProfileSkeletonView()
+                } else if let vm = viewModel, vm.profile != nil {
+                    ProfileContentView(
+                        viewModel: vm,
+                        isOwn: true,
+                        isFollowing: false,
+                        tasteTwins: tasteTwins,
+                        onEdit: { showEditProfile = true },
+                        onSignOut: { Task { await signOut() } },
+                        onFollowersTap: { followersFollowingInitialTab = .followers; showFollowersFollowing = true },
+                        onFollowingTap: { followersFollowingInitialTab = .following; showFollowersFollowing = true },
+                        onRegionTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .region($0)) },
+                        onGrapeTap: { drillDownTarget = DrillDownTarget(title: $0, filterType: .grape($0)) },
+                        onRatedTap: { NotificationCenter.default.post(name: .pariSwitchToCellarTab, object: nil) },
+                        onWantToTryTap: { showWantToTry = true },
+                        onAddWishlistSearch: { showAddWishlistSheet = true },
+                        onWantToTryToggle: nil,
+                        onRemoveWishlistItem: { item in await vm.removeFromWishlist(item) },
+                        onMarkAsTasted: { markAsTastedItem = $0 }
+                    )
+                    .onAppear { AnalyticsService.profileView(userId: vm.userId) }
+                } else if let vm = viewModel, !vm.isLoading && !vm.isRefreshing && showErrorAfterDelay {
+                    VStack(spacing: 16) {
+                        Text(vm.errorMessage ?? "Could not load profile.")
+                            .font(PariTheme.uiFont(size: 14))
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                        Button("Sign out") { Task { await signOut() } }
+                            .font(PariTheme.uiFont(size: 15, weight: .medium))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .navigationTitle(viewModel?.profile?.displayName ?? "Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 18))
+                            .foregroundStyle(PariTheme.accent(for: colorScheme))
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                ProfileSettingsView(
+                    profile: viewModel?.profile,
+                    userId: currentUserId,
+                    onSignOut: { Task { await signOut() } },
+                    onProfileUpdated: {
+                        Task {
+                            await viewModel?.load()
+                            await ProfileStore.shared.load()
+                            NotificationCenter.default.post(name: .pariProfileUpdated, object: nil)
+                        }
+                    }
+                )
+            }
+            .navigationDestination(item: $drillDownTarget) { target in
+                TasteProfileDrillDownView(
+                    title: target.title,
+                    filterType: target.filterType,
+                    tastings: viewModel?.allTastings ?? [],
+                    currentUserId: currentUserId
+                )
+            }
+            .sheet(isPresented: $showWantToTry) {
+                if let uid = viewModel?.userId {
+                    WantToTryView(userId: uid, onDismiss: { showWantToTry = false })
+                }
+            }
+            .sheet(isPresented: $showEditProfile) {
+                if let p = viewModel?.profile, let uid = currentUserId {
+                    EditProfileView(
+                        viewModel: editVM,
+                        profile: p,
+                        userId: uid,
+                        onSaved: {
+                            showEditProfile = false
+                            Task {
+                                await viewModel?.load()
+                                await ProfileStore.shared.load()
+                                NotificationCenter.default.post(name: .pariProfileUpdated, object: nil)
+                            }
+                        },
+                        onCancel: { showEditProfile = false }
+                    )
+                }
+            }
+            .sheet(isPresented: $showAddWishlistSheet) {
+                if let vm = viewModel {
+                    AddWineSheet(
+                        isPresented: $showAddWishlistSheet,
+                        wishlistOnlyMode: true,
+                        wishlistWineIds: vm.myWishlistWineIds,
+                        tastedWineIds: Set(vm.allTastings.map(\.wineId)),
+                        onWineAdded: {
+                            showAddWishlistSheet = false
+                            Task { await vm.load() }
+                        }
+                    )
+                }
+            }
+            .sheet(item: $markAsTastedItem) { item in
+                AddWineSheet(
+                    isPresented: Binding(get: { markAsTastedItem != nil }, set: { if !$0 { markAsTastedItem = nil } }),
+                    initialWine: item.wine,
+                    wineIdToRemoveFromWishlist: item.wineId,
+                    onWineAdded: {
+                        markAsTastedItem = nil
+                        Task { await viewModel?.load() }
+                    }
+                )
+            }
+            .navigationDestination(isPresented: $showFollowersFollowing) {
+                if let vm = viewModel, let uid = currentUserId {
+                    FollowersFollowingViewContent(
+                        userId: vm.userId,
+                        currentUserId: uid,
+                        initialTab: followersFollowingInitialTab
+                    ) {
+                        Task { await vm.load() }
+                    }
+                }
+            }
+        }
+        .task { await ensureAndLoad() }
+        .onChange(of: viewModel?.isLoadingInitial) { _, newValue in
+            handleLoadingStateChange()
+        }
+        .onChange(of: viewModel?.isRefreshing) { _, newValue in
+            handleLoadingStateChange()
+        }
+        .onChange(of: viewModel?.profile?.id) { _, _ in
+            if viewModel?.profile != nil {
+                showErrorAfterDelay = false
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pariSessionReady)) { _ in
+            Task { await ensureAndLoad() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pariTastingCreated)) { _ in
+            Task {
+                await viewModel?.load()
+                if let uid = currentUserId {
+                    tasteTwins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 10)
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pariWishlistUpdated)) { _ in
+            Task { await viewModel?.load() }
+        }
+        .refreshable { await ensureAndLoad() }
+    }
+
+    private func ensureAndLoad() async {
+        let uid = await AuthService.currentUserId()
+        currentUserId = uid
+        didRunEnsure = true
+        guard let uid else {
+            await ProfileStore.shared.load()
+            viewModel = nil
+            return
+        }
+        if viewModel?.userId != uid {
+            viewModel = ProfileViewModel(userId: uid)
+        }
+        await viewModel?.load()
+        tasteTwins = await TasteSimilarityService.fetchTasteTwins(userId: uid, limit: 10)
+    }
+    
+    private func handleLoadingStateChange() {
+        if let vm = viewModel {
+            if vm.isLoadingInitial || vm.isRefreshing {
+                showErrorAfterDelay = false
+            } else if vm.profile == nil && vm.errorMessage != nil {
+                // Delay showing error by 800ms after loading completes
+                Task {
+                    try? await Task.sleep(for: .milliseconds(800))
+                    if let vm = viewModel, !vm.isLoadingInitial && !vm.isRefreshing && vm.profile == nil && vm.errorMessage != nil {
+                        showErrorAfterDelay = true
+                    }
+                }
+            }
+        }
+    }
+
+    private func signOut() async { onSignOut() }
+}
+
+// MARK: - Profile loading skeleton
+
+private struct ProfileSkeletonView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    var body: some View {
+        let placeholder = PariTheme.placeholderBackground(for: colorScheme)
+        let card = PariTheme.elevatedSurface(for: colorScheme)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 12) {
+                    Circle()
+                        .fill(placeholder)
+                        .frame(width: 88, height: 88)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(placeholder)
+                        .frame(width: 100, height: 14)
+                    HStack(spacing: 16) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(placeholder)
+                                    .frame(width: 36, height: 14)
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(card)
+                                    .frame(width: 50, height: 12)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(card)
+                    .frame(height: 100)
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(card)
+                    .frame(height: 200)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+        }
+    }
+}

@@ -1,4 +1,4 @@
--- Vitis – Supabase schema setup (single file, includes all migrations)
+-- Pari – Supabase schema setup (single file, includes all migrations)
 -- Run this entire script in Supabase Dashboard → SQL Editor → New query.
 -- Fresh setup: no need to run individual migrations. This file is the full schema.
 
@@ -1435,7 +1435,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_taste_twins(uuid, int) TO authenticated;
 
 -- -----------------------------------------------------------------------------
--- 13. Support tickets (Vitis Concierge — in-app contact, no third-party SDKs)
+-- 13. Support tickets (Pari Concierge — in-app contact, no third-party SDKs)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.support_tickets (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,

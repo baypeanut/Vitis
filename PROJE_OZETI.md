@@ -1,12 +1,12 @@
-# Vitis — Proje Özeti (Baştan Sona)
+# Pari — Proje Özeti (Baştan Sona)
 
-Bu doküman, **Vitis** iOS uygulamasının amacını, mimarisini ve şu ana kadar eklenen tüm fonksiyonları, projeyi hiç bilmeyen biri için adım adım anlatır.
+Bu doküman, **Pari** iOS uygulamasının amacını, mimarisini ve şu ana kadar eklenen tüm fonksiyonları, projeyi hiç bilmeyen biri için adım adım anlatır.
 
 ---
 
 ## 1. Projenin Amacı
 
-**Vitis**, şarap severler için tasarlanmış **topluluk odaklı bir şarap sıralama uygulamasıdır**. Temel fikir:
+**Pari**, şarap severler için tasarlanmış **topluluk odaklı bir şarap sıralama uygulamasıdır**. Temel fikir:
 
 - Kullanıcılar **iki şarap arasında tercih yapar** (ör. “Hangisini tercih edersin?”).
 - Bu tercihler **Elo benzeri bir puanlama sistemi** ile kişisel bir **sıralama listesi** oluşturur.
@@ -29,7 +29,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 ## 3. Uygulama Giriş Noktası ve Kök Yapı
 
-### 3.1 `VitisApp.swift`
+### 3.1 `PariApp.swift`
 
 - `@main` ile uygulama girişi.
 - Uygulama açılırken `SupabaseManager.shared` oluşturulur (Supabase bağlantısı ilk kez burada hazırlanır).
@@ -47,7 +47,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 - `.task` içinde:
   - Auth açıksa oturum kontrolü,
   - Kapalıysa `AuthService.ensureGuestSessionIfNeeded()` + `ProfileStore.shared.load()` çalışır.
-- `vitisSessionReady` bildirimi gelince `ProfileStore` tekrar yüklenir.
+- `pariSessionReady` bildirimi gelince `ProfileStore` tekrar yüklenir.
 - Çıkışta `didSignOut` → auth ekranına dönülür.
 
 ### 3.3 `ContentView.swift`
@@ -60,20 +60,20 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 ### 4.1 `AppConstants.swift`
 
-- **`bundleID`:** `com.ahmet.vitis`
+- **`bundleID`:** `com.ahmet.pari`
 - **`authRequired`:** `false` → giriş zorunlu değil; `true` yapılırsa giriş zorunlu.
-- **`Cache`:** Feed önbellek anahtarları (`vitis_feed_global`, `vitis_feed_following`).
+- **`Cache`:** Feed önbellek anahtarları (`pari_feed_global`, `pari_feed_following`).
 - **DEBUG:** `debugMockUserId` — geliştirme için sabit bir kullanıcı UUID’si. Auth kapalıyken bu kullanıcı “mevcut kullanıcı” gibi kullanılır.
 - **Bildirimler:**
-  - `vitisSessionReady`: Oturum / mock kullanıcı hazır; Duel, Cellar, Profile yenilenir.
-  - `vitisProfileUpdated`: Profil (ad, avatar) güncellendi; Feed ve yorumlarda anında yansısı için.
+  - `pariSessionReady`: Oturum / mock kullanıcı hazır; Duel, Cellar, Profile yenilenir.
+  - `pariProfileUpdated`: Profil (ad, avatar) güncellendi; Feed ve yorumlarda anında yansısı için.
 
 ### 4.2 `SupabaseConfig.swift`
 
 - Supabase **Project URL** ve **anon key** burada.
 - `isValid`: URL ve key’in dolu olduğunu kontrol eder (ağ testi yapmaz).
 
-### 4.3 `VitisTheme.swift`
+### 4.3 `PariTheme.swift`
 
 - **Renkler:** `accent` (#4A0E0E burgundy), `background` (beyaz), `secondaryText`, `border`.
 - **Tipografi:**
@@ -98,7 +98,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 - `id`, `username`, `fullName`, `avatarURL`, `bio`, `createdAt`.
 - **`displayName`:** `fullName` doluysa onu, değilse `username` döner. Feed, yorumlar ve profil ekranında hep bu kullanılır.
-- **`memberSinceYear`:** `createdAt` yılı (örn. “Vitis Member Since 2026”).
+- **`memberSinceYear`:** `createdAt` yılı (örn. “Pari Member Since 2026”).
 
 ### 5.3 `RankingItem`
 
@@ -143,7 +143,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 - **`currentUserId()`:** Girişli kullanıcı UUID. DEBUG + auth kapalıyken `debugMockUserId` döner.
 - **`ensureGuestSessionIfNeeded()`:**  
-  - Auth kapalıyken: sign out, mock kullanıcı için profil upsert (“Dev”), `vitisSessionReady` post edilir.  
+  - Auth kapalıyken: sign out, mock kullanıcı için profil upsert (“Dev”), `pariSessionReady` post edilir.  
   - Auth açıksa: anonim giriş + “Guest” profil oluşturma denemesi.
 - **`signUp` / `signIn`:** E‑posta + şifre; profil oluşturma veya oturum açma.
 - **`signOut`:** Çıkış.
@@ -155,7 +155,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 
 - **`@Observable`** global singleton; **mevcut kullanıcı profilini** tutar.
 - **`load()`:** `AuthService.currentUserId` + `getProfile` ile profili çeker. DEBUG + mock user’da API hata verirse “Dev” fallback.
-- **`updateLocal(_:)`:** Profil düzenleme / avatar güncelleme sonrası store güncellenir; Feed ve Comment ekranları `vitisProfileUpdated` ile kendi kullanıcı adı/avatarını buna göre override eder.
+- **`updateLocal(_:)`:** Profil düzenleme / avatar güncelleme sonrası store güncellenir; Feed ve Comment ekranları `pariProfileUpdated` ile kendi kullanıcı adı/avatarını buna göre override eder.
 
 ### 6.4 `DuelService`
 
@@ -253,7 +253,7 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
   - `refreshable` → `viewModel.refresh()`. **CancellationError / URLError.cancelled / “cancelled”** ile biten hatalar kullanıcıya gösterilmez (pull-to-refresh iptalinde “cancelled” hatası çıkmaz).
   - Feed listesi: **FeedItemView** × N; Cheers, Comment, kullanıcı adına tıklayınca **UserProfileView** sheet.
   - Yorum ikonuna tıklayınca **CommentSheetView** açılır (`.medium` / `.large` detent).
-  - `vitisProfileUpdated` → `patchCurrentUserOverrides`: Feed’deki **kendi** gönderilerinde isim/avatar `ProfileStore`’dan güncellenir.
+  - `pariProfileUpdated` → `patchCurrentUserOverrides`: Feed’deki **kendi** gönderilerinde isim/avatar `ProfileStore`’dan güncellenir.
 
 ### 7.5 FeedItemView
 
@@ -286,8 +286,8 @@ Uygulama **dört ana sekme**den oluşur: **Duel**, **Cellar**, **Social**, **Pro
 - **ProfileView:**
   - **NavigationStack:** Başlık “Profile”, sağ üst **Edit** (düzenleme modunda **Cancel** sol, **Save** sağ).
   - **Edit modu:** İsim yerinde `TextField`; avatar tıklanınca **PhotosPicker** → “Choose from gallery” → **AvatarCropSheet** (zoom/pan crop) → “Use Photo” ile `editAvatarImage` set edilir. **Save** ile hem isim hem avatar (değiştiyse) Supabase’e yazılır.
-  - **Save:** Sadece değişiklik varsa aktif. Avatar değiştiyse `AvatarStorageService.uploadAvatar` → `updateProfile(avatarURL:)`; isim de `updateProfile(fullName:)`. Sonra `ProfileStore.updateLocal`, `vitisProfileUpdated` post, `load()` ile yeniden çekilir.
-  - **Vitis Member Since:** Yıl `NumberFormatter` ile virgülsüz (örn. 2026).
+  - **Save:** Sadece değişiklik varsa aktif. Avatar değiştiyse `AvatarStorageService.uploadAvatar` → `updateProfile(avatarURL:)`; isim de `updateProfile(fullName:)`. Sonra `ProfileStore.updateLocal`, `pariProfileUpdated` post, `load()` ile yeniden çekilir.
+  - **Pari Member Since:** Yıl `NumberFormatter` ile virgülsüz (örn. 2026).
   - **Taste Analytics:** `ProfileStats` (Style, Avg Vintage Age, Top Region).
   - **The Top 10:** İlk 10 `RankingItem`; yoksa “Rank wines in Duel to build your list.”
   - **Label Gallery** kaldırıldı.
