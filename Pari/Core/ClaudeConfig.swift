@@ -2,18 +2,14 @@
 //  ClaudeConfig.swift
 //  Pari
 //
-//  Claude Vision API key. Read from Info.plist (injected via Secrets.xcconfig at build time).
-//  Never hardcode the key — keep it in xcconfig and gitignore the file.
+//  Claude Vision is proxied through the claude-vision Supabase Edge Function.
+//  The Anthropic API key is stored as a Supabase secret (server-side only).
+//  Run: supabase secrets set CLAUDE_API_KEY=sk-ant-...
 //
 
 import Foundation
 
 enum ClaudeConfig {
-    static var apiKey: String? {
-        guard let key = Bundle.main.infoDictionary?["CLAUDE_API_KEY"] as? String,
-              !key.isEmpty, !key.hasPrefix("$(") else { return nil }
-        return key
-    }
-
-    static var isEnabled: Bool { apiKey != nil }
+    /// Label scanning is available whenever Supabase is reachable.
+    static var isEnabled: Bool { SupabaseConfig.isValid }
 }

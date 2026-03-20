@@ -65,8 +65,6 @@
 	<string>$(POSTHOG_API_KEY)</string>
 	<key>PostHogHost</key>
 	<string>$(POSTHOG_HOST)</string>
-	<key>CLAUDE_API_KEY</key>
-	<string>$(CLAUDE_API_KEY)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pari uses your camera to scan wine labels and capture moments with your wine.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
