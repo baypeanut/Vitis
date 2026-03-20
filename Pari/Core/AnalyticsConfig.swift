@@ -2,8 +2,8 @@
 //  AnalyticsConfig.swift
 //  Pari
 //
-//  Reads PostHog keys from Info.plist (injected from Config/Secrets.xcconfig).
-//  Paste your PostHog API key in Config/Secrets.xcconfig.
+//  PostHog is currently disabled. Re-enable when ready by setting isPostHogEnabled = true
+//  and providing keys in Config/Secrets.xcconfig.
 //
 
 import Foundation
@@ -17,8 +17,6 @@ enum AnalyticsConfig {
         (Bundle.main.infoDictionary?["PostHogHost"] as? String).flatMap { URL(string: $0)?.absoluteString }
     }
 
-    static var isPostHogEnabled: Bool {
-        guard let key = postHogAPIKey, !key.isEmpty, key != "phc_replace_me" else { return false }
-        return true
-    }
+    // PostHog disabled — set to true when ready to enable analytics.
+    static var isPostHogEnabled: Bool { false }
 }

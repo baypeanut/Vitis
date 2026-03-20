@@ -15,7 +15,7 @@ struct PrivacyPolicyView: View {
             VStack(alignment: .leading, spacing: 28) {
                 legalHeader(
                     title: "Privacy Policy",
-                    effectiveDate: "Effective: March 1, 2025"
+                    effectiveDate: "Effective: March 11, 2026"
                 )
 
                 intro
@@ -116,7 +116,7 @@ struct PrivacyPolicyView: View {
                 Divider()
                     .padding(.top, 8)
 
-                Text("This Privacy Policy was last updated March 1, 2025.")
+                Text("This Privacy Policy was last updated March 11, 2026.")
                     .font(PariTheme.uiFont(size: 12))
                     .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .padding(.bottom, 40)

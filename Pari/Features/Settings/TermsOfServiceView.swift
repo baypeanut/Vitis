@@ -16,7 +16,7 @@ struct TermsOfServiceView: View {
             VStack(alignment: .leading, spacing: 28) {
                 legalHeader(
                     title: "Terms of Service",
-                    effectiveDate: "Effective: March 1, 2025"
+                    effectiveDate: "Effective: March 11, 2026"
                 )
 
                 section("1. About Pari") {
@@ -51,6 +51,7 @@ struct TermsOfServiceView: View {
                 section("7. Intellectual Property") {
                     body("The Pari name, logo, design, and proprietary algorithms are owned by Pari and protected by applicable intellectual property law. You may not use our trademarks without written permission.")
                     body("Wine names, producer names, labels, and vintage information are the property of their respective owners. We display this information for informational and personal logging purposes only.")
+                    body("Wine search data is sourced from Open Food Facts (openfoodfacts.org), an open, collaborative, and free food products database available under the Open Database License (ODbL). Individual data is available under the Database Contents License (DbCL).")
                 }
 
                 section("8. Disclaimers") {
@@ -85,7 +86,7 @@ struct TermsOfServiceView: View {
                 Divider()
                     .padding(.top, 8)
 
-                Text("These Terms were last updated March 1, 2025.")
+                Text("These Terms were last updated March 11, 2026.")
                     .font(PariTheme.uiFont(size: 12))
                     .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                     .padding(.bottom, 40)
