@@ -34,26 +34,26 @@ final class FeedService {
 
     // MARK: - Fetch
 
-    func fetchGlobal(limit: Int? = nil, offset: Int = 0) async throws -> [FeedItem] {
+    func fetchGlobal(limit: Int? = nil, cursor: Date? = nil) async throws -> [FeedItem] {
         let client = SupabaseManager.shared.supabase
         let uid = await AuthService.currentUserId()
         let params = FeedGlobalParams(
             pViewerId: uid,
             pLimit: limit ?? pageSize,
-            pOffset: offset
+            pCursor: cursor
         )
         let rows: [FeedRowPayload] = try await client.rpc("feed_global", params: params).execute().value
         return rows.map { FeedItem.from(row: $0) }
     }
 
-    func fetchFollowing(limit: Int? = nil, offset: Int = 0) async throws -> [FeedItem] {
+    func fetchFollowing(limit: Int? = nil, cursor: Date? = nil) async throws -> [FeedItem] {
         let client = SupabaseManager.shared.supabase
         guard let uid = await AuthService.currentUserId() else { return [] }
 
         let params = FeedFollowingParams(
             pViewerId: uid,
             pLimit: limit ?? pageSize,
-            pOffset: offset
+            pCursor: cursor
         )
         let rows: [FeedRowPayload] = try await client.rpc("feed_following", params: params).execute().value
         // Filter to only had_wine activities

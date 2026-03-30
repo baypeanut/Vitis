@@ -2,16 +2,16 @@
 //  OnboardingStep.swift
 //  Pari
 //
+//  Condensed onboarding: Phone → Account (email+password) → Identity (name+username)
+//  Photo is deferred to profile settings to reduce signup friction.
+//
 
 import Foundation
 
 enum OnboardingStep: Int, CaseIterable {
     case phone = 0
-    case email
-    case password
-    case name
-    case username
-    case photo
+    case account      // email + password
+    case identity     // first name, last name, username
 
     var progressLabel: String? {
         let n = rawValue + 1

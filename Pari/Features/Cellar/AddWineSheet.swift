@@ -202,6 +202,14 @@ struct AddWineSheet: View {
                     .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = viewModel.errorMessage, !error.isEmpty {
+            Text(error)
+                .font(PariTheme.uiFont(size: 15))
+                .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity)
         } else if viewModel.searchCompletedForCurrentQuery && viewModel.dbSearchResults.isEmpty {
             Text("No wines found. Try another search or add the wine from our catalog.")
                 .font(PariTheme.uiFont(size: 15))

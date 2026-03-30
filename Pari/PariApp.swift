@@ -23,11 +23,17 @@ struct PariApp: App {
         WindowGroup {
             RootView()
                 .onOpenURL { url in
+                    // 1. Auth callbacks (Supabase magic link / OAuth)
                     Task {
                         let handled = await AuthStore.shared.handleIncomingURL(url)
-                        if !handled {
+                        if handled { return }
+                        // 2. Password recovery deep link
+                        if url.absoluteString.contains("auth/reset") {
                             AuthRecoveryState.shared.handleIncomingURL(url)
+                            return
                         }
+                        // 3. Universal Links / app routes (wine, profile)
+                        _ = DeepLinkRouter.shared.handle(url)
                     }
                 }
         }

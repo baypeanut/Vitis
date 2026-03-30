@@ -39,6 +39,7 @@ struct ProfileView: View {
     @State private var markAsTastedItem: CellarItem?
     @State private var showErrorAfterDelay = false
     @State private var tasteTwins: [TasteTwin] = []
+    @State private var showTasteDNA = false
 
     var body: some View {
         NavigationStack {
@@ -88,6 +89,17 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if let vm = viewModel, !vm.allTastings.isEmpty {
+                        Button {
+                            showTasteDNA = true
+                        } label: {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 16))
+                                .foregroundStyle(PariTheme.accentWine(for: colorScheme))
+                        }
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showSettings = true
@@ -96,6 +108,17 @@ struct ProfileView: View {
                             .font(.system(size: 18))
                             .foregroundStyle(PariTheme.accent(for: colorScheme))
                     }
+                }
+            }
+            .sheet(isPresented: $showTasteDNA) {
+                if let vm = viewModel, let profile = vm.profile {
+                    TasteDNAShareSheet(dna: TasteDNA.compute(
+                        profile: profile,
+                        tastings: vm.allTastings,
+                        grapes: vm.tasteGrapes,
+                        regions: vm.tasteRegions,
+                        styles: vm.tasteStyles
+                    ))
                 }
             }
             .navigationDestination(isPresented: $showSettings) {

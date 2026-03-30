@@ -114,6 +114,7 @@ final class AddWineViewModel {
 
     private func performSearch(term: String, page: Int = 1) async {
         errorMessage = nil
+        lastSearchTerm = term
         if term.count < minQueryLengthForSearch {
             dbSearchResults = []
             hasMorePages = false
@@ -121,18 +122,19 @@ final class AddWineViewModel {
         }
 
         isLoading = true
+        defer {
+            isLoading = false
+            isLoadingMore = false
+        }
         do {
             let wines = try await WineService.searchCatalog(query: term, limit: 50)
             dbSearchResults = wines
-            lastSearchTerm = term
             currentSearchPage = 1
             hasMorePages = false
         } catch {
             dbSearchResults = []
             errorMessage = ErrorMessage.userFacing(for: error)
         }
-        isLoading = false
-        isLoadingMore = false
     }
 
     func loadMoreSearchResults() {

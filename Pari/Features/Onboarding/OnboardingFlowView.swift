@@ -74,16 +74,10 @@ struct OnboardingFlowView: View {
                 switch viewModel.currentStep {
                 case .phone:
                     PhoneStepView(vm: viewModel)
-                case .email:
-                    EmailStepView(vm: viewModel)
-                case .password:
-                    PasswordStepView(vm: viewModel)
-                case .name:
-                    NameStepView(vm: viewModel)
-                case .username:
-                    UsernameStepView(vm: viewModel)
-                case .photo:
-                    PhotoStepView(vm: viewModel)
+                case .account:
+                    AccountStepView(vm: viewModel)
+                case .identity:
+                    IdentityStepView(vm: viewModel)
                 }
             }
             .padding(.horizontal, 24)
@@ -101,16 +95,9 @@ struct OnboardingFlowView: View {
             }
 
             switch viewModel.currentStep {
-            case .photo:
-                PrimaryButton("Continue", enabled: !viewModel.isLoading) {
-                    viewModel.submitPhotoAndContinue()
-                }
-                if !viewModel.isLoading {
-                    Button("Not now") {
-                        viewModel.skipPhoto()
-                    }
-                    .font(PariTheme.uiFont(size: 15))
-                    .foregroundStyle(PariTheme.secondaryText)
+            case .identity:
+                PrimaryButton("Create account", enabled: viewModel.canContinueForCurrentStep && !viewModel.isLoading) {
+                    viewModel.continueToNext()
                 }
             default:
                 PrimaryButton("Continue", enabled: viewModel.canContinueForCurrentStep && !viewModel.isLoading) {

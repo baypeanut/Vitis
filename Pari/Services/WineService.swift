@@ -64,23 +64,37 @@ enum WineService {
         return nil
     }
 
-    /// Escape ILIKE special characters (%, _, \) so the query is treated as literal.
-    private static func escapeIlikePattern(_ s: String) -> String {
-        s.replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "%", with: "\\%")
-            .replacingOccurrences(of: "_", with: "\\_")
-    }
-
-    /// Full-text search across the wines catalog (name + producer). Used to surface X-Wines imports.
+    /// Full-text search via RPC. Uses GIN index + tsquery prefix matching with
+    /// trigram similarity fallback. Replaces ILIKE for scalability.
     static func searchCatalog(query: String, limit: Int = 30) async throws -> [Wine] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return [] }
-        let pattern = "%\(escapeIlikePattern(q))%"
-        let rows: [WineRow] = try await supabase
-            .from("wines")
-            .select("id, name, producer, vintage, variety, region, label_image_url, category")
-            .or("name.ilike.\(pattern),producer.ilike.\(pattern)")
-            .limit(limit)
+
+        struct SearchParams: Encodable, Sendable {
+            let p_query: String
+            let p_limit: Int
+            nonisolated func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(p_query, forKey: .p_query)
+                try c.encode(p_limit, forKey: .p_limit)
+            }
+            enum CodingKeys: String, CodingKey { case p_query, p_limit }
+        }
+
+        struct SearchRow: Decodable {
+            let id: UUID
+            let name: String
+            let producer: String
+            let vintage: Int?
+            let variety: String?
+            let region: String?
+            let label_image_url: String?
+            let category: String?
+            let rank: Float
+        }
+
+        let rows: [SearchRow] = try await supabase
+            .rpc("search_wines", params: SearchParams(p_query: q, p_limit: limit))
             .execute()
             .value
         return rows.map { r in
@@ -138,6 +152,20 @@ enum WineService {
             throw NSError(domain: "WineService", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Upsert returned no row"])
         }
+        return Wine(id: r.id, name: r.name, producer: r.producer, vintage: r.vintage,
+                    variety: r.variety, region: r.region, labelImageURL: r.label_image_url, category: r.category)
+    }
+
+    /// Fetch a single wine by ID. Returns nil if not found.
+    static func fetchWine(id: UUID) async throws -> Wine? {
+        let rows: [WineRow] = try await supabase
+            .from("wines")
+            .select("id, name, producer, vintage, variety, region, label_image_url, category")
+            .eq("id", value: id)
+            .limit(1)
+            .execute()
+            .value
+        guard let r = rows.first else { return nil }
         return Wine(id: r.id, name: r.name, producer: r.producer, vintage: r.vintage,
                     variety: r.variety, region: r.region, labelImageURL: r.label_image_url, category: r.category)
     }

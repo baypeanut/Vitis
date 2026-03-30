@@ -151,23 +151,119 @@ struct FeedView: View {
 
     private var globalEmptyState: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                Image(systemName: "wineglass")
-                    .font(.system(size: 40, weight: .ultraLight))
-                    .foregroundStyle(PariTheme.accentWine(for: colorScheme).opacity(0.25))
-                    .padding(.top, 64)
-                Text("The evening hasn't started yet.")
-                    .font(.system(.title3, design: .serif, weight: .regular))
-                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
-                    .multilineTextAlignment(.center)
-                Text("Be the first to open a bottle.")
-                    .font(PariTheme.uiFont(size: 15))
-                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
-                    .multilineTextAlignment(.center)
+            VStack(spacing: 24) {
+                // Hero message
+                VStack(spacing: 8) {
+                    Image(systemName: "wineglass")
+                        .font(.system(size: 40, weight: .ultraLight))
+                        .foregroundStyle(PariTheme.accentWine(for: colorScheme).opacity(0.25))
+                        .padding(.top, 32)
+                    Text("The evening hasn't started yet.")
+                        .font(.system(.title3, design: .serif, weight: .regular))
+                        .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+                        .multilineTextAlignment(.center)
+                    Text("Be the first to open a bottle.")
+                        .font(PariTheme.uiFont(size: 15))
+                        .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+                        .multilineTextAlignment(.center)
+                }
+
+                // Staff Picks
+                if !viewModel.staffPicks.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Staff picks")
+                            .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                            .padding(.horizontal, 24)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(viewModel.staffPicks) { wine in
+                                    NavigationLink {
+                                        WineCardView(wine: wine, activityId: nil, currentUserId: currentUserId)
+                                    } label: {
+                                        staffPickCard(wine)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                        }
+                    }
+                }
+
+                // Suggested people
+                if !viewModel.suggestedUsers.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("People to follow")
+                            .font(PariTheme.uiFont(size: 13, weight: .semibold))
+                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                            .padding(.horizontal, 24)
+                        ForEach(viewModel.suggestedUsers) { u in
+                            Button {
+                                profileSheetItem = ProfileSheetItem(userId: u.id, username: u.username)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Group {
+                                        if let s = u.avatarUrl, let url = URL(string: s) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
+                                                default: avatarPlaceholder(u)
+                                                }
+                                            }
+                                        } else {
+                                            avatarPlaceholder(u)
+                                        }
+                                    }
+                                    .frame(width: 40, height: 40)
+                                    .clipShape(Circle())
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(u.fullName ?? u.username)
+                                            .font(PariTheme.uiFont(size: 15, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                        Text("@\(u.username)")
+                                            .font(PariTheme.uiFont(size: 13))
+                                            .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(PariTheme.secondaryText(for: colorScheme))
+                                }
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
             }
-            .padding(.horizontal, 32)
+            .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func staffPickCard(_ wine: Wine) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(PariTheme.elevatedSurface(for: colorScheme))
+                .frame(width: 120, height: 120)
+                .overlay(
+                    Image(systemName: "wineglass")
+                        .font(.system(size: 28, weight: .ultraLight))
+                        .foregroundStyle(PariTheme.accentWine(for: colorScheme).opacity(0.3))
+                )
+            Text(wine.name)
+                .font(.system(size: 14, design: .serif))
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+                .lineLimit(2)
+            Text(wine.producer)
+                .font(PariTheme.uiFont(size: 12))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+                .lineLimit(1)
+        }
+        .frame(width: 120)
     }
     
     private var followingEmptyState: some View {
@@ -273,7 +369,8 @@ struct FeedView: View {
                         canDelete: viewModel.currentUserId == item.userId,
                         currentUserId: viewModel.currentUserId,
                         hasAlsoRated: viewModel.currentUserId != item.userId && viewModel.hasTasted(wineId: item.wineId),
-                        isTasteTwin: viewModel.isTwin(userId: item.userId)
+                        isTasteTwin: viewModel.isTwin(userId: item.userId),
+                        friendsTastedCount: viewModel.friendsTastedCount(wineId: item.wineId)
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, index > 0 && index % 5 == 0 ? 0 : PariTheme.cardSpacingVertical / 2)
@@ -282,6 +379,22 @@ struct FeedView: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
+                .onAppear {
+                    // Trigger infinite scroll when 5 items from the end
+                    if index >= viewModel.items.count - 5 {
+                        Task { await viewModel.loadMore() }
+                    }
+                }
+            }
+            if viewModel.isLoadingMore {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(PariTheme.accent(for: colorScheme))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
