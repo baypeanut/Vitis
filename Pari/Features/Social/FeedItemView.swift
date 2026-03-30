@@ -31,6 +31,7 @@ struct FeedItemView: View {
     var currentUserId: UUID? = nil
     var hasAlsoRated: Bool = false
     var isTasteTwin: Bool = false
+    var friendsTastedCount: Int = 0
 
     @State private var showTrustHintPopover = false
     @State private var wineNavigationTarget: WineNavTarget?
@@ -411,6 +412,18 @@ struct FeedItemView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Cheers\(item.cheersCount > 0 ? ", \(item.cheersCount)" : "")")
             .accessibilityHint(item.hasCheered ? "Double tap to remove" : "Double tap to cheer")
+
+            if friendsTastedCount > 1 {
+                HStack(spacing: 3) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 10))
+                    Text("\(friendsTastedCount) tried")
+                        .font(PariTheme.uiFont(size: 11))
+                }
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            }
 
             if item.activityType == .hadWine, let onWishlist = onWishlistToggle {
                 Button {

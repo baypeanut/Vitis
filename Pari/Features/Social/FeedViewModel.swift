@@ -44,17 +44,23 @@ final class FeedViewModel {
     var tab: Tab = .global
     var items: [FeedItem] = []
     var suggestedUsers: [SocialService.FollowListUser] = []
+    var staffPicks: [Wine] = []
     var wishlistWineIds: Set<UUID> = []
     var tastedWineIds: Set<UUID> = []
     var wishlistSourceUserIds: [UUID] = []
     var wishlistErrorToast: String?
     var twinIds: Set<UUID> = []
+    /// wineId → count of unique friends (people I follow) who have tasted this wine in current feed
+    var friendsTastedCounts: [UUID: Int] = [:]
     var isRefreshing = false
+    var isLoadingMore = false
+    var hasMorePages = true
     var errorMessage: String?
     private var realtimeTask: RealtimeChannelTask?
     private var refreshTask: Task<Void, Never>?
     private(set) var currentUserId: UUID?
     private var mutedUserIds: Set<UUID> = MuteService.mutedUserIds()
+    private let pageSize = 30
 
     var mode: FeedMode {
         switch tab {
@@ -89,16 +95,63 @@ final class FeedViewModel {
                 errorMessage = ErrorMessage.userFacing(for: error)
             }
         }
-        if tab == .following && items.isEmpty {
-            suggestedUsers = await SocialService.fetchSuggestedUsersToFollow(limit: 5)
+        if items.isEmpty {
+            if tab == .following {
+                suggestedUsers = await SocialService.fetchSuggestedUsersToFollow(limit: 5)
+            }
+            if tab == .global {
+                staffPicks = (try? await WineService.fetchAllWines(limit: 12)) ?? []
+                suggestedUsers = await SocialService.fetchSuggestedUsersToFollow(limit: 5)
+            }
         } else {
             suggestedUsers = []
+            staffPicks = []
         }
         isRefreshing = false
     }
 
+    /// Load next page using keyset cursor from last item's createdAt.
+    func loadMore() async {
+        guard !isLoadingMore, !isRefreshing, hasMorePages else { return }
+        guard let cursor = items.last?.createdAt else { return }
+        isLoadingMore = true
+        do {
+            var fetched: [FeedItem]
+            switch mode {
+            case .global:
+                fetched = try await FeedService.shared.fetchGlobal(cursor: cursor)
+            case .following:
+                fetched = try await FeedService.shared.fetchFollowing(cursor: cursor)
+            }
+            if fetched.count < pageSize { hasMorePages = false }
+            let filtered = fetched.filter {
+                $0.username.trimmingCharacters(in: .whitespaces).lowercased() != "guest"
+                && !mutedUserIds.contains($0.userId)
+            }
+            // Enrich with like data
+            let ids = filtered.map(\.id)
+            let likeCounts = (try? await SocialService.fetchLikeCounts(activityIDs: ids)) ?? [:]
+            var likedIDs: Set<UUID> = []
+            if let uid = currentUserId {
+                likedIDs = (try? await SocialService.fetchLikedActivityIDs(userId: uid)) ?? []
+            }
+            var enriched = filtered
+            for i in enriched.indices {
+                enriched[i].cheersCount = likeCounts[enriched[i].id] ?? 0
+                enriched[i].hasCheered = likedIDs.contains(enriched[i].id)
+            }
+            items.append(contentsOf: enriched)
+            computeFriendsTastedCounts()
+            FeedService.shared.saveToCache(items, mode: mode)
+        } catch {
+            if !isCancellation(error) { errorMessage = ErrorMessage.userFacing(for: error) }
+        }
+        isLoadingMore = false
+    }
+
     /// Core fetch + enrich + apply pipeline. Extracted so retry can call it without duplication.
     private func fetchAndApply() async throws {
+        hasMorePages = true
         var fetched: [FeedItem]
         switch mode {
         case .global:
@@ -106,6 +159,7 @@ final class FeedViewModel {
         case .following:
             fetched = try await FeedService.shared.fetchFollowing()
         }
+        if fetched.count < pageSize { hasMorePages = false }
         let ids = fetched.map(\.id)
         let likeCounts: [UUID: Int]
         var likedIDs: Set<UUID> = []
@@ -137,6 +191,7 @@ final class FeedViewModel {
         #endif
         items = filtered
         patchCurrentUserOverrides()
+        computeFriendsTastedCounts()
         FeedService.shared.saveToCache(items, mode: mode)
         if let uid = currentUserId {
             do {
@@ -161,6 +216,17 @@ final class FeedViewModel {
     func hasTasted(wineId: UUID) -> Bool { tastedWineIds.contains(wineId) }
 
     func isTwin(userId: UUID) -> Bool { twinIds.contains(userId) }
+
+    func friendsTastedCount(wineId: UUID) -> Int { friendsTastedCounts[wineId] ?? 0 }
+
+    /// Count unique users per wine across all visible feed items (social proof).
+    private func computeFriendsTastedCounts() {
+        var wineUsers: [UUID: Set<UUID>] = [:]
+        for item in items where item.activityType == .hadWine {
+            wineUsers[item.wineId, default: []].insert(item.userId)
+        }
+        friendsTastedCounts = wineUsers.mapValues(\.count)
+    }
 
     /// Toggle wishlist for feed item's wine. Optimistic update; reverts and shows toast on failure.
     func toggleWishlist(_ item: FeedItem) async {
@@ -231,6 +297,11 @@ final class FeedViewModel {
             items[idx] = u
             AnalyticsService.likeToggle(activityId: item.id, added: u.hasCheered)
             FeedService.shared.saveToCache(items, mode: mode)
+            NotificationCenter.default.post(
+                name: .pariLikeToggled,
+                object: nil,
+                userInfo: ["activityId": item.id, "hasCheered": u.hasCheered, "cheersCount": u.cheersCount]
+            )
             if u.hasCheered, let actorId = currentUserId, actorId != item.userId {
                 Task { await NotificationService.createLikeNotification(recipientId: item.userId, actorId: actorId, postId: item.id) }
             }

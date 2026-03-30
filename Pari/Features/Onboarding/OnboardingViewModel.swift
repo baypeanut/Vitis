@@ -2,7 +2,8 @@
 //  OnboardingViewModel.swift
 //  Pari
 //
-//  State, validation, and completion for onboarding. MVVM.
+//  State, validation, and completion for 3-step onboarding. MVVM.
+//  Steps: Phone → Account (email+password) → Identity (name+username)
 //
 
 import Foundation
@@ -17,29 +18,21 @@ final class OnboardingViewModel {
     var phoneRaw = ""
     var phoneError: String?
 
-    // Step 2: Email
+    // Step 2: Account (email + password)
     var email = ""
     var emailError: String?
-
-    // Step 3: Password
     var password = ""
     var showPassword = false
     var passwordError: String?
 
-    // Step 4: Name
+    // Step 3: Identity (name + username)
     var firstName = ""
     var lastName = ""
-
-    // Step 5: Username
     var username = ""
     var usernameAvailable: Bool?
     var usernameChecking = false
     var usernameError: String?
     private var usernameTask: Task<Void, Never>?
-
-    // Step 6: Photo
-    var avatarJpegData: Data?
-    var photoSkipped = false
 
     var isLoading = false
     var completionError: String?
@@ -82,42 +75,43 @@ final class OnboardingViewModel {
     func canContinuePhone() -> Bool {
         phoneError = nil
         let digits = phoneRaw.filter { $0.isNumber }
-        
+
         // For US numbers, require exactly 10 digits
         if countryCode == "+1" {
             return digits.count == 10 && isPhoneValid
         }
-        
+
         // For other countries, use standard validation
         return isPhoneValid
     }
 
-    func canContinueEmail() -> Bool {
+    func canContinueAccount() -> Bool {
         emailError = nil
-        guard isEmailValid else {
+        passwordError = nil
+
+        let emailOk: Bool
+        if !isEmailValid {
             if !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 emailError = "Please enter a valid email."
             }
-            return false
+            emailOk = false
+        } else {
+            emailOk = true
         }
-        return true
-    }
 
-    func canContinuePassword() -> Bool {
-        passwordError = nil
-        guard isPasswordValid else {
+        let passwordOk: Bool
+        if !isPasswordValid {
             if !password.isEmpty { passwordError = "Password must meet requirements." }
-            return false
+            passwordOk = false
+        } else {
+            passwordOk = true
         }
-        return true
+
+        return emailOk && passwordOk
     }
 
-    func canContinueName() -> Bool {
-        isNameValid
-    }
-
-    func canContinueUsername() -> Bool {
-        isUsernameValid
+    func canContinueIdentity() -> Bool {
+        isNameValid && isUsernameValid
     }
 
     // MARK: - Username availability (debounced)
@@ -158,42 +152,22 @@ final class OnboardingViewModel {
         switch currentStep {
         case .phone:
             if !canContinuePhone() { return }
-            currentStep = .email
-        case .email:
-            if !canContinueEmail() { return }
-            currentStep = .password
-        case .password:
-            if !canContinuePassword() { return }
-            currentStep = .name
-        case .name:
-            if !canContinueName() { return }
-            currentStep = .username
+            currentStep = .account
+        case .account:
+            if !canContinueAccount() { return }
+            currentStep = .identity
             scheduleUsernameCheck()
-        case .username:
-            if !canContinueUsername() { return }
-            currentStep = .photo
-        case .photo:
-            break
+        case .identity:
+            if !canContinueIdentity() { return }
+            Task { await completeOnboarding() }
         }
-    }
-
-    func skipPhoto() {
-        photoSkipped = true
-        Task { await completeOnboarding() }
-    }
-
-    func submitPhotoAndContinue() {
-        Task { await completeOnboarding() }
     }
 
     var canContinueForCurrentStep: Bool {
         switch currentStep {
         case .phone: return isPhoneValid
-        case .email: return isEmailValid
-        case .password: return isPasswordValid
-        case .name: return isNameValid
-        case .username: return isUsernameValid
-        case .photo: return true
+        case .account: return isEmailValid && isPasswordValid
+        case .identity: return isNameValid && isUsernameValid
         }
     }
 
@@ -208,7 +182,7 @@ final class OnboardingViewModel {
         let un = username.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !em.isEmpty, pw.count >= 8, !fn.isEmpty, un.count >= 2, usernameAvailable == true else {
-            completionError = "Lütfen tüm zorunlu alanları doldurun."
+            completionError = "Please fill in all required fields."
             return
         }
 
@@ -223,7 +197,7 @@ final class OnboardingViewModel {
                 firstName: fn,
                 lastName: ln.isEmpty ? nil : ln,
                 username: un,
-                avatarJpegData: avatarJpegData
+                avatarJpegData: nil
             )
         } catch {
             completionError = (error as NSError).localizedDescription

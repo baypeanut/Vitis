@@ -50,4 +50,6 @@ extension Notification.Name {
     static let pariTastingCreated = Notification.Name("pariTastingCreated")
     /// User tried to add an already-tasted wine to wishlist. Observers show toast.
     static let pariAlreadyTastedToast = Notification.Name("pariAlreadyTastedToast")
+    /// Like toggled on an activity. userInfo: ["activityId": UUID, "hasCheered": Bool, "cheersCount": Int]
+    static let pariLikeToggled = Notification.Name("pariLikeToggled")
 }

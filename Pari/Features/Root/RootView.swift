@@ -21,6 +21,8 @@ struct RootView: View {
     @State private var showAddWineFromCarousel = false
     @State private var showDrinkResponsibly = false
     @State private var showLabelScan = false
+    @State private var deepLinkWine: Wine?
+    @State private var deepLinkProfileUsername: String?
     @ObservedObject private var recovery = AuthRecoveryState.shared
 
     var body: some View {
@@ -48,6 +50,25 @@ struct RootView: View {
                         ProfileSetupView(userId: userId)
                     } else {
                         mainTabs
+                            .onChange(of: DeepLinkRouter.shared.pendingRoute) { _, route in
+                                guard let route else { return }
+                                handleDeepLink(route)
+                            }
+                            .sheet(item: $deepLinkWine) { wine in
+                                NavigationStack {
+                                    WineCardView(wine: wine, activityId: nil, currentUserId: userId)
+                                }
+                            }
+                            .sheet(isPresented: Binding(
+                                get: { deepLinkProfileUsername != nil },
+                                set: { if !$0 { deepLinkProfileUsername = nil } }
+                            )) {
+                                if let username = deepLinkProfileUsername {
+                                    DeepLinkProfileResolver(username: username) {
+                                        deepLinkProfileUsername = nil
+                                    }
+                                }
+                            }
                             .fullScreenCover(isPresented: $showAddWineFromCarousel) {
                                 AddWineSheet(
                                     isPresented: $showAddWineFromCarousel,
@@ -149,6 +170,19 @@ struct RootView: View {
         }
     }
 
+    private func handleDeepLink(_ route: DeepLinkRouter.Route) {
+        _ = DeepLinkRouter.shared.consumeRoute()
+        switch route {
+        case .wine(let id):
+            Task {
+                guard let wine = try? await WineService.fetchWine(id: id) else { return }
+                deepLinkWine = wine
+            }
+        case .profile(let username):
+            deepLinkProfileUsername = username
+        }
+    }
+
     private func didSignOut() {
         AnalyticsService.reset()
         Task {
@@ -246,5 +280,34 @@ private struct CentralScanButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+/// Resolves a username to a userId, then presents UserProfileView.
+private struct DeepLinkProfileResolver: View {
+    let username: String
+    let onDismiss: () -> Void
+    @State private var resolvedUserId: UUID?
+    @State private var notFound = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let userId = resolvedUserId {
+                    UserProfileView(userId: userId, onDismiss: onDismiss)
+                } else if notFound {
+                    ContentUnavailableView("User not found", systemImage: "person.slash", description: Text("@\(username) doesn't exist."))
+                } else {
+                    ProgressView()
+                }
+            }
+            .task {
+                if let uid = await ProfileService.fetchUserId(byUsername: username) {
+                    resolvedUserId = uid
+                } else {
+                    notFound = true
+                }
+            }
+        }
     }
 }

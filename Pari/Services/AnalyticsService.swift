@@ -1,9 +1,3 @@
-//
-//  AnalyticsService.swift
-//  Pari
-//
-//  PostHog analytics. Fire-and-forget. No PII. Keys from Config/Secrets.xcconfig.
-//
 
 import Foundation
 import PostHog

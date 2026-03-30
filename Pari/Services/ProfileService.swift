@@ -110,6 +110,20 @@ enum ProfileService {
         return nil
     }
 
+    /// Look up a user's UUID by username (case-insensitive). Returns nil if not found.
+    static func fetchUserId(byUsername username: String) async -> UUID? {
+        struct Row: Decodable { let id: UUID }
+        let rows: [Row]? = try? await supabase
+            .from("profiles")
+            .select("id")
+            .ilike("username", pattern: username)
+            .is("deleted_at", value: nil)
+            .limit(1)
+            .execute()
+            .value
+        return rows?.first?.id
+    }
+
     /// Returns true if username is available (case-insensitive). Debounce in caller (e.g. 300ms).
     static func checkUsernameAvailable(_ username: String) async -> Bool {
         let u = username.trimmingCharacters(in: .whitespacesAndNewlines)
