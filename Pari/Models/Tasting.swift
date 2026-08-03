@@ -40,6 +40,8 @@ struct Tasting: Identifiable, Sendable {
     /// Vintage of the bottle this user actually drank. Catalog rows are vintage-agnostic,
     /// so this - not `wine.vintage` - is the source of truth for a logged tasting.
     let vintage: Int?
+    /// WSET structural reading. Optional throughout; most tastings will not have it.
+    let structure: PalateStructure
     let wine: Wine
 
     init(
@@ -53,6 +55,7 @@ struct Tasting: Identifiable, Sendable {
         source: String? = nil,
         visibility: TastingVisibility = .everyone,
         vintage: Int? = nil,
+        structure: PalateStructure = .empty,
         wine: Wine
     ) {
         self.id = id
@@ -65,6 +68,7 @@ struct Tasting: Identifiable, Sendable {
         self.source = source
         self.visibility = visibility
         self.vintage = vintage
+        self.structure = structure
         self.wine = wine
     }
 }

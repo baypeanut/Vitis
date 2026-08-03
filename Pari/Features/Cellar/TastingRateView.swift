@@ -18,6 +18,8 @@ struct TastingRateView: View {
     @Binding var momentImageData: Data?
     /// Vintage of the bottle in hand. Stored on the tasting, not the shared catalog row.
     @Binding var vintage: Int?
+    /// WSET structural reading. Hidden from novices entirely.
+    @Binding var structure: PalateStructure
     var onCheers: () -> Void
     var isEditMode: Bool = false
 
@@ -49,6 +51,17 @@ struct TastingRateView: View {
                     .padding(.top, 32)
                 notesSection
                     .padding(.top, 24)
+                // Withheld from novices: someone logging their fourth wine ever does
+                // not have the vocabulary yet, and asking anyway teaches them to
+                // answer at random, which poisons the signal we are here to collect.
+                if expertiseTier != .novice {
+                    PalateStructureView(
+                        structure: $structure,
+                        wineCategory: wine.category,
+                        accentColor: wineTypeColor
+                    )
+                    .padding(.top, 24)
+                }
                 momentPhotoSection
                     .padding(.top, 24)
                 commentSection

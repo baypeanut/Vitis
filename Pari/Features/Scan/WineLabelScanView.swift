@@ -24,6 +24,7 @@ struct WineLabelScanView: View {
     @State private var visibility: TastingVisibility = .everyone
     @State private var momentImageData: Data? = nil
     @State private var vintage: Int? = nil
+    @State private var structure = PalateStructure.empty
     @State private var isSaving = false
     @State private var saveError: String? = nil
 
@@ -267,7 +268,8 @@ struct WineLabelScanView: View {
             comment: $comment,
             visibility: $visibility,
             momentImageData: $momentImageData,
-            vintage: $vintage
+            vintage: $vintage,
+            structure: $structure
         ) {
             Task {
                 let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
@@ -383,6 +385,7 @@ struct WineLabelScanView: View {
                 source: "scan",
                 visibility: visibility,
                 vintage: vintage,
+                structure: structure,
                 momentImageURL: momentURL
             )
             AnalyticsService.tastingCreate(wineId: wine.id, rating: rating)

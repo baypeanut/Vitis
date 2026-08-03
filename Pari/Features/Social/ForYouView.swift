@@ -27,6 +27,7 @@ final class ForYouViewModel {
 struct ForYouView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = ForYouViewModel()
+    @State private var showListScan = false
     let currentUserId: UUID?
 
     var body: some View {
@@ -49,12 +50,43 @@ struct ForYouView: View {
             // A new tasting moves the taste vector, so the ranking is now stale.
             Task { await viewModel.load() }
         }
+        .fullScreenCover(isPresented: $showListScan) {
+            WineListScanView(isPresented: $showListScan, currentUserId: currentUserId)
+        }
+    }
+
+    /// Discovery is where someone goes when they have to choose, and the hardest
+    /// place to choose is in front of a restaurant list.
+    private var listScanButton: some View {
+        Button {
+            showListScan = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.text.viewfinder")
+                    .font(.system(size: 15))
+                Text("Scan a wine list")
+                    .font(PariTheme.uiFont(size: 14, weight: .medium))
+            }
+            .foregroundStyle(PariTheme.accent(for: colorScheme))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(PariTheme.backgroundSecondary(for: colorScheme))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(PariTheme.divider(for: colorScheme), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 24)
     }
 
     private var list: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
                 header
+                listScanButton
+                    .padding(.bottom, 16)
                 ForEach(viewModel.recommendations) { rec in
                     NavigationLink {
                         WineCardView(wine: rec.wine, activityId: nil, currentUserId: currentUserId)
@@ -175,6 +207,8 @@ struct ForYouView: View {
                 .font(PariTheme.uiFont(size: 14))
                 .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
                 .multilineTextAlignment(.center)
+            listScanButton
+                .padding(.top, 12)
         }
         .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

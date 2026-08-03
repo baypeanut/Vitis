@@ -12,7 +12,7 @@ enum TastingService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
 
     /// `vintage` here is the tasting's own vintage; `wines(vintage)` is the catalog row's.
-    private static let selectColumns = "id, user_id, wine_id, rating, note_tags, comment, created_at, source, vintage, wines(name, producer, vintage, variety, region, label_image_url, category)"
+    private static let selectColumns = "id, user_id, wine_id, rating, note_tags, comment, created_at, source, vintage, acidity, tannin, body, sweetness, aroma_intensity, finish, wines(name, producer, vintage, variety, region, label_image_url, category)"
 
     private struct TastingRow: Decodable {
         let id: UUID
@@ -24,7 +24,20 @@ enum TastingService {
         let created_at: Date
         let source: String?
         let vintage: Int?
+        let acidity: Int?
+        let tannin: Int?
+        let body: Int?
+        let sweetness: Int?
+        let aroma_intensity: Int?
+        let finish: Int?
         let wines: WineRef?
+
+        var structure: PalateStructure {
+            PalateStructure(
+                acidity: acidity, tannin: tannin, body: body,
+                sweetness: sweetness, aromaIntensity: aroma_intensity, finish: finish
+            )
+        }
         struct WineRef: Decodable {
             let name: String
             let producer: String
@@ -46,6 +59,7 @@ enum TastingService {
         source: String? = nil,
         visibility: TastingVisibility = .everyone,
         vintage: Int? = nil,
+        structure: PalateStructure = .empty,
         momentImageURL: String? = nil
     ) async throws -> Tasting {
         // Insert tasting
@@ -58,6 +72,12 @@ enum TastingService {
             let source: String?
             let visibility: String?
             let vintage: Int?
+            let acidity: Int?
+            let tannin: Int?
+            let body: Int?
+            let sweetness: Int?
+            let aroma_intensity: Int?
+            let finish: Int?
             let moment_image_url: String?
         }
         let payload = Insert(
@@ -69,6 +89,12 @@ enum TastingService {
             source: source,
             visibility: visibility.rawValue,
             vintage: vintage,
+            acidity: structure.acidity,
+            tannin: structure.tannin,
+            body: structure.body,
+            sweetness: structure.sweetness,
+            aroma_intensity: structure.aromaIntensity,
+            finish: structure.finish,
             moment_image_url: momentImageURL
         )
         let inserted: [TastingRow] = try await supabase
@@ -115,6 +141,9 @@ enum TastingService {
 
         NotificationCenter.default.post(name: .pariTastingCreated, object: nil)
         await ProfileStore.shared.incrementTastingCount()
+        // The taste vector just moved, so anything ranked against the cached copy is
+        // now scoring against a palate one wine out of date.
+        await TasteVectorCache.shared.invalidate()
 
         // Remove from wishlist if present (user has now tried this wine)
         try? await CellarService.removeFromWishlist(wineId: wineId)
@@ -130,6 +159,7 @@ enum TastingService {
             source: row.source,
             visibility: visibility,
             vintage: row.vintage,
+            structure: row.structure,
             wine: wine
         )
     }
@@ -178,6 +208,7 @@ enum TastingService {
                 createdAt: row.created_at,
                 source: row.source,
                 vintage: row.vintage,
+                structure: row.structure,
                 wine: wine
             )
         }
@@ -287,6 +318,7 @@ enum TastingService {
             createdAt: row.created_at,
             source: row.source,
             vintage: row.vintage,
+            structure: row.structure,
             wine: wine
         )
     }
@@ -390,6 +422,7 @@ enum TastingService {
             createdAt: row.created_at,
             source: row.source,
             vintage: row.vintage,
+            structure: row.structure,
             wine: wine
         )
     }
