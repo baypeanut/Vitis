@@ -54,6 +54,7 @@ struct AddWineSheet: View {
     @State private var visibility: TastingVisibility = .everyone
     @State private var momentImageData: Data? = nil
     @State private var vintage: Int? = nil
+    @State private var structure = PalateStructure.empty
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var showLabelScan = false
@@ -117,7 +118,7 @@ struct AddWineSheet: View {
         case .search:
             searchContent
         case .rating(let wine):
-            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes, comment: $comment, visibility: $visibility, momentImageData: $momentImageData, vintage: $vintage) {
+            TastingRateView(wine: wine, rating: $rating, selectedNotes: $selectedNotes, comment: $comment, visibility: $visibility, momentImageData: $momentImageData, vintage: $vintage, structure: $structure) {
                 Task {
                     let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
                     await saveTasting(wine: wine, rating: rating, notes: notesArray, comment: comment, visibility: visibility)
@@ -373,6 +374,7 @@ struct AddWineSheet: View {
                 source: "search",
                 visibility: visibility,
                 vintage: vintage,
+                structure: structure,
                 momentImageURL: momentURL
             )
             if let wid = wineIdToRemoveFromWishlist, wid == wine.id {
@@ -450,6 +452,7 @@ struct AddWineSheet: View {
         visibility = .everyone
         momentImageData = nil
         vintage = nil
+        structure = .empty
         viewModel.query = ""
         viewModel.results = []
         saveError = nil
