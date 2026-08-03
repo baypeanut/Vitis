@@ -67,7 +67,7 @@ struct TasteProfileDrillDownView: View {
                             .font(colorScheme == .dark ? PariTheme.ratingFont() : PariTheme.uiFont(size: 24, weight: .semibold))
                             .foregroundStyle(PariTheme.ratingColor(for: colorScheme))
                     }
-                    if let v = tasting.wine.vintage {
+                    if let v = tasting.displayVintage {
                         Text(String(v))
                             .font(PariTheme.detailFont())
                             .foregroundStyle(PariTheme.secondaryText(for: colorScheme))

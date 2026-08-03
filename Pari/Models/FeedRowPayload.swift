@@ -33,6 +33,9 @@ struct FeedRowPayload: Codable, Sendable {
     let tastingRating: Double?
     let tastingComment: String?
     let tastingMomentImageUrl: String?
+    /// Vintage of the bottle the author drank. Overrides the catalog row's vintage,
+    /// which is nil for wines that span multiple vintages.
+    let tastingVintage: Int?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -60,6 +63,7 @@ struct FeedRowPayload: Codable, Sendable {
         case tastingRating = "tasting_rating"
         case tastingComment = "tasting_comment"
         case tastingMomentImageUrl = "tasting_moment_image_url"
+        case tastingVintage = "tasting_vintage"
     }
 }
 
@@ -77,7 +81,8 @@ extension FeedItem {
             wineId: row.wineId,
             wineName: row.wineName,
             wineProducer: row.wineProducer,
-            wineVintage: row.wineVintage,
+            // Prefer the vintage the author actually drank over the catalog row's.
+            wineVintage: row.tastingVintage ?? row.wineVintage,
             wineLabelURL: row.wineLabelUrl,
             wineRegion: row.wineRegion,
             wineCategory: row.wineCategory,

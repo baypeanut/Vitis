@@ -83,6 +83,7 @@ struct FeedView: View {
     private var tabBar: some View {
         HStack(spacing: 0) {
             HStack(spacing: 0) {
+                tabButton(.forYou, label: "For You")
                 tabButton(.global, label: "Global")
                 tabButton(.following, label: "Following")
             }
@@ -129,7 +130,9 @@ struct FeedView: View {
 
     @ViewBuilder
     private var feedContent: some View {
-        if let err = viewModel.errorMessage {
+        if viewModel.tab == .forYou {
+            ForYouView(currentUserId: currentUserId)
+        } else if let err = viewModel.errorMessage {
             Text(err)
                 .font(PariTheme.uiFont(size: 14))
                 .foregroundStyle(.red)

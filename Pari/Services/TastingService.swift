@@ -11,6 +11,9 @@ import Supabase
 enum TastingService {
     static var supabase: SupabaseClient { SupabaseManager.shared.supabase }
 
+    /// `vintage` here is the tasting's own vintage; `wines(vintage)` is the catalog row's.
+    private static let selectColumns = "id, user_id, wine_id, rating, note_tags, comment, created_at, source, vintage, wines(name, producer, vintage, variety, region, label_image_url, category)"
+
     private struct TastingRow: Decodable {
         let id: UUID
         let user_id: UUID
@@ -20,6 +23,7 @@ enum TastingService {
         let comment: String?
         let created_at: Date
         let source: String?
+        let vintage: Int?
         let wines: WineRef?
         struct WineRef: Decodable {
             let name: String
@@ -41,6 +45,7 @@ enum TastingService {
         comment: String? = nil,
         source: String? = nil,
         visibility: TastingVisibility = .everyone,
+        vintage: Int? = nil,
         momentImageURL: String? = nil
     ) async throws -> Tasting {
         // Insert tasting
@@ -52,6 +57,7 @@ enum TastingService {
             let comment: String?
             let source: String?
             let visibility: String?
+            let vintage: Int?
             let moment_image_url: String?
         }
         let payload = Insert(
@@ -62,12 +68,13 @@ enum TastingService {
             comment: comment?.isEmpty == false ? comment : nil,
             source: source,
             visibility: visibility.rawValue,
+            vintage: vintage,
             moment_image_url: momentImageURL
         )
         let inserted: [TastingRow] = try await supabase
             .from("tastings")
             .insert(payload)
-            .select("id, user_id, wine_id, rating, note_tags, comment, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
+            .select(selectColumns)
             .execute()
             .value
 
@@ -122,6 +129,7 @@ enum TastingService {
             createdAt: row.created_at,
             source: row.source,
             visibility: visibility,
+            vintage: row.vintage,
             wine: wine
         )
     }
@@ -141,7 +149,7 @@ enum TastingService {
     static func fetchTastings(userId: UUID, limit: Int = 100, offset: Int = 0) async throws -> [Tasting] {
         let raw: [TastingRow] = try await supabase
             .from("tastings")
-            .select("id, user_id, wine_id, rating, note_tags, comment, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
+            .select(selectColumns)
             .eq("user_id", value: userId)
             .order("created_at", ascending: false)
             .range(from: offset, to: offset + limit - 1)
@@ -169,6 +177,7 @@ enum TastingService {
                 comment: row.comment,
                 createdAt: row.created_at,
                 source: row.source,
+                vintage: row.vintage,
                 wine: wine
             )
         }
@@ -223,23 +232,26 @@ enum TastingService {
         id: UUID,
         rating: Double,
         noteTags: [String]? = nil,
-        comment: String? = nil
+        comment: String? = nil,
+        vintage: Int? = nil
     ) async throws -> Tasting {
         struct Update: Encodable {
             let rating: Double
             let note_tags: [String]?
             let comment: String?
+            let vintage: Int?
         }
         let payload = Update(
             rating: rating,
             note_tags: noteTags?.isEmpty == false ? noteTags : nil,
-            comment: comment?.isEmpty == false ? comment : nil
+            comment: comment?.isEmpty == false ? comment : nil,
+            vintage: vintage
         )
         let updated: [TastingRow] = try await supabase
             .from("tastings")
             .update(payload)
             .eq("id", value: id)
-            .select("id, user_id, wine_id, rating, note_tags, comment, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
+            .select(selectColumns)
             .execute()
             .value
         
@@ -274,10 +286,11 @@ enum TastingService {
             comment: row.comment,
             createdAt: row.created_at,
             source: row.source,
+            vintage: row.vintage,
             wine: wine
         )
     }
-    
+
     /// Delete a tasting and its associated activity_feed row.
     static func deleteTasting(id: UUID) async throws {
         // First, fetch the tasting to get user_id, wine_id, and created_at
@@ -346,7 +359,7 @@ enum TastingService {
     static func fetchUserTastingForWine(userId: UUID, wineId: UUID) async throws -> Tasting? {
         let raw: [TastingRow] = try await supabase
             .from("tastings")
-            .select("id, user_id, wine_id, rating, note_tags, comment, created_at, source, wines(name, producer, vintage, variety, region, label_image_url, category)")
+            .select(selectColumns)
             .eq("user_id", value: userId)
             .eq("wine_id", value: wineId)
             .order("created_at", ascending: false)
@@ -376,6 +389,7 @@ enum TastingService {
             comment: row.comment,
             createdAt: row.created_at,
             source: row.source,
+            vintage: row.vintage,
             wine: wine
         )
     }

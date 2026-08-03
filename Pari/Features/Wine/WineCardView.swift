@@ -28,6 +28,7 @@ struct WineCardView: View {
     @State private var editSelectedNotes: Set<String> = []
     @State private var editComment: String = ""
     @State private var editVisibility: TastingVisibility = .everyone
+    @State private var editVintage: Int? = nil
     @Environment(\.dismiss) private var dismiss
     
     private var wineColor: Color {
@@ -98,6 +99,7 @@ struct WineCardView: View {
                     comment: $editComment,
                     visibility: $editVisibility,
                     momentImageData: .constant(nil),
+                    vintage: $editVintage,
                     onCheers: {
                         Task {
                             await saveEditedTasting()
@@ -546,6 +548,7 @@ struct WineCardView: View {
         editSelectedNotes = Set(tasting.noteTags ?? [])
         editComment = tasting.comment ?? ""
         editVisibility = tasting.visibility
+        editVintage = tasting.displayVintage
         showEditSheet = true
     }
     
@@ -557,7 +560,8 @@ struct WineCardView: View {
                 id: tasting.id,
                 rating: editRating,
                 noteTags: Array(editSelectedNotes),
-                comment: editComment
+                comment: editComment,
+                vintage: editVintage
             )
             userTasting = updatedTasting
             showEditSheet = false

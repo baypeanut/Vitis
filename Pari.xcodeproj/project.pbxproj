@@ -11,8 +11,19 @@
 		E3595A052F26E2000010DFC1 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E3595A042F26E2000010DFC1 /* PostHog */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E35960082F26D4010010DFC1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E35950612F26D4010010DFC1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E35950682F26D4010010DFC1;
+			remoteInfo = Pari;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		E35950692F26D4010010DFC1 /* Pari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pari.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E35960012F26D4010010DFC1 /* PariTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PariTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3595A012F26E1000010DFC1 /* Pari.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Pari.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -36,6 +47,11 @@
 			path = Pari;
 			sourceTree = "<group>";
 		};
+		E35960022F26D4010010DFC1 /* PariTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PariTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +64,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E35960052F26D4010010DFC1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -55,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				E359506B2F26D4010010DFC1 /* Pari */,
+				E35960022F26D4010010DFC1 /* PariTests */,
 				E3595A022F26E1000010DFC1 /* Pari/Config */,
 				E359506A2F26D4010010DFC1 /* Products */,
 			);
@@ -64,6 +88,7 @@
 			isa = PBXGroup;
 			children = (
 				E35950692F26D4010010DFC1 /* Pari.app */,
+				E35960012F26D4010010DFC1 /* PariTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -104,6 +129,29 @@
 			productReference = E35950692F26D4010010DFC1 /* Pari.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E35960032F26D4010010DFC1 /* PariTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E359600B2F26D4010010DFC1 /* Build configuration list for PBXNativeTarget "PariTests" */;
+			buildPhases = (
+				E35960042F26D4010010DFC1 /* Sources */,
+				E35960052F26D4010010DFC1 /* Frameworks */,
+				E35960062F26D4010010DFC1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E35960072F26D4010010DFC1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E35960022F26D4010010DFC1 /* PariTests */,
+			);
+			name = PariTests;
+			packageProductDependencies = (
+			);
+			productName = PariTests;
+			productReference = E35960012F26D4010010DFC1 /* PariTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -116,6 +164,10 @@
 				TargetAttributes = {
 					E35950682F26D4010010DFC1 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					E35960032F26D4010010DFC1 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = E35950682F26D4010010DFC1;
 					};
 				};
 			};
@@ -138,12 +190,20 @@
 			projectRoot = "";
 			targets = (
 				E35950682F26D4010010DFC1 /* Pari */,
+				E35960032F26D4010010DFC1 /* PariTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		E35950672F26D4010010DFC1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E35960062F26D4010010DFC1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -184,7 +244,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E35960042F26D4010010DFC1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E35960072F26D4010010DFC1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E35950682F26D4010010DFC1 /* Pari */;
+			targetProxy = E35960082F26D4010010DFC1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E35950722F26D4020010DFC1 /* Debug */ = {
@@ -364,6 +439,46 @@
 			};
 			name = Release;
 		};
+		E35960092F26D4010010DFC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ahmet.pari.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Pari.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Pari";
+			};
+			name = Debug;
+		};
+		E359600A2F26D4010010DFC1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ahmet.pari.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Pari.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Pari";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -381,6 +496,15 @@
 			buildConfigurations = (
 				E35950752F26D4020010DFC1 /* Debug */,
 				E35950762F26D4020010DFC1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E359600B2F26D4010010DFC1 /* Build configuration list for PBXNativeTarget "PariTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E35960092F26D4010010DFC1 /* Debug */,
+				E359600A2F26D4010010DFC1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

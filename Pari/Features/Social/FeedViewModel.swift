@@ -39,7 +39,13 @@ private func isTransientNetworkError(_ error: Error) -> Bool {
 @MainActor
 @Observable
 final class FeedViewModel {
-    enum Tab { case global, following }
+    /// `forYou` is a discovery surface rather than an activity stream: it renders
+    /// ForYouView and does not participate in feed fetching or caching.
+    enum Tab {
+        case global, following, forYou
+
+        var isFeed: Bool { self != .forYou }
+    }
 
     var tab: Tab = .global
     var items: [FeedItem] = []
@@ -64,8 +70,9 @@ final class FeedViewModel {
 
     var mode: FeedMode {
         switch tab {
-        case .global: return .global
         case .following: return .following
+        // forYou does not fetch a feed; global is the harmless default for cache keys.
+        case .global, .forYou: return .global
         }
     }
 
@@ -268,6 +275,7 @@ final class FeedViewModel {
     func switchTab(to newTab: Tab) {
         guard newTab != tab else { return }
         tab = newTab
+        guard newTab.isFeed else { return }
         loadFromCache()
         Task { await refresh() }
     }

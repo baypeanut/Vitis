@@ -23,6 +23,7 @@ struct WineLabelScanView: View {
     @State private var comment: String = ""
     @State private var visibility: TastingVisibility = .everyone
     @State private var momentImageData: Data? = nil
+    @State private var vintage: Int? = nil
     @State private var isSaving = false
     @State private var saveError: String? = nil
 
@@ -201,6 +202,9 @@ struct WineLabelScanView: View {
                 VStack(spacing: 12) {
                     if let wine {
                         Button {
+                            // The catalog row is vintage-agnostic, so carry the year read
+                            // off the label into the tasting itself.
+                            vintage = scan.vintage
                             viewModel.proceedToRating(wine)
                         } label: {
                             Text("Rate This Wine")
@@ -262,7 +266,8 @@ struct WineLabelScanView: View {
             selectedNotes: $selectedNotes,
             comment: $comment,
             visibility: $visibility,
-            momentImageData: $momentImageData
+            momentImageData: $momentImageData,
+            vintage: $vintage
         ) {
             Task {
                 let notesArray = selectedNotes.isEmpty ? nil : Array(selectedNotes)
@@ -377,6 +382,7 @@ struct WineLabelScanView: View {
                 comment: comment.isEmpty ? nil : comment,
                 source: "scan",
                 visibility: visibility,
+                vintage: vintage,
                 momentImageURL: momentURL
             )
             AnalyticsService.tastingCreate(wineId: wine.id, rating: rating)

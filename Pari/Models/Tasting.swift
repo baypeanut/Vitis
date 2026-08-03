@@ -37,6 +37,9 @@ struct Tasting: Identifiable, Sendable {
     let createdAt: Date
     let source: String?
     let visibility: TastingVisibility
+    /// Vintage of the bottle this user actually drank. Catalog rows are vintage-agnostic,
+    /// so this - not `wine.vintage` - is the source of truth for a logged tasting.
+    let vintage: Int?
     let wine: Wine
 
     init(
@@ -49,6 +52,7 @@ struct Tasting: Identifiable, Sendable {
         createdAt: Date,
         source: String? = nil,
         visibility: TastingVisibility = .everyone,
+        vintage: Int? = nil,
         wine: Wine
     ) {
         self.id = id
@@ -60,6 +64,7 @@ struct Tasting: Identifiable, Sendable {
         self.createdAt = createdAt
         self.source = source
         self.visibility = visibility
+        self.vintage = vintage
         self.wine = wine
     }
 }
@@ -70,6 +75,10 @@ extension Tasting {
         guard let tags = noteTags, !tags.isEmpty else { return nil }
         return tags.joined(separator: ", ")
     }
+
+    /// Vintage to show for this tasting. Falls back to the catalog row for tastings
+    /// logged before vintage moved onto `tastings`.
+    var displayVintage: Int? { vintage ?? wine.vintage }
 }
 
 // MARK: - TastingWithProfile
