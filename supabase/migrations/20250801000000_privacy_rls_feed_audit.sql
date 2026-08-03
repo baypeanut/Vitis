@@ -12,6 +12,15 @@ CREATE TABLE IF NOT EXISTS public.app_config (
 INSERT INTO public.app_config (key, value) VALUES ('app_env', 'production')
 ON CONFLICT (key) DO NOTHING;
 
+-- This row decides whether the dev-mock RLS policies below are live, so a client
+-- that could write it could switch the database into local mode and unlock them.
+-- Readable, never writable except by the service role. setup_schema.sql already had
+-- this; the migration path did not, which made a database built from migrations more
+-- permissive than one built from the schema file.
+ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "app_config_read_all" ON public.app_config;
+CREATE POLICY "app_config_read_all" ON public.app_config FOR SELECT USING (true);
+
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS deleted_at timestamptz NULL;
 
 -- -----------------------------------------------------------------------------

@@ -1,6 +1,11 @@
 -- Add wine_variety to feed_with_details for better color resolution
 
-CREATE OR REPLACE VIEW public.feed_with_details AS
+-- CREATE OR REPLACE VIEW cannot rename or reorder existing columns, and this
+-- redefinition does both. On a database built from setup_schema.sql the view
+-- happened to already have the target shape, so this ran; building from the
+-- migration chain it does not. Drop and recreate instead.
+DROP VIEW IF EXISTS public.feed_with_details CASCADE;
+CREATE VIEW public.feed_with_details AS
 SELECT DISTINCT ON (a.id)
   a.id,
   a.user_id,

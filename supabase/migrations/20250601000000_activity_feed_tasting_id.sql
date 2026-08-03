@@ -7,7 +7,12 @@ ADD COLUMN IF NOT EXISTS tasting_id uuid REFERENCES public.tastings(id) ON DELET
 CREATE INDEX IF NOT EXISTS idx_activity_feed_tasting_id ON public.activity_feed (tasting_id) WHERE tasting_id IS NOT NULL;
 
 -- Recreate view: prefer tasting_id when present; fallback to time window for legacy.
-CREATE OR REPLACE VIEW public.feed_with_details AS
+-- CREATE OR REPLACE VIEW cannot rename or reorder existing columns, and this
+-- redefinition does both. On a database built from setup_schema.sql the view
+-- happened to already have the target shape, so this ran; building from the
+-- migration chain it does not. Drop and recreate instead.
+DROP VIEW IF EXISTS public.feed_with_details CASCADE;
+CREATE VIEW public.feed_with_details AS
 SELECT DISTINCT ON (a.id)
   a.id,
   a.user_id,
