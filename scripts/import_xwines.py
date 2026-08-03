@@ -45,8 +45,22 @@ def parse_python_list(raw: str) -> list[str]:
         return []
 
 
-def first_or_empty(lst: list[str]) -> str:
-    return lst[0] if lst else ""
+def join_grapes(lst: list[str]) -> str:
+    """Join the full grape list, preserving order and dropping duplicates.
+
+    Keeping only the first grape collapsed every blend to its lead varietal, so a
+    Bordeaux blend imported as plain "Cabernet Sauvignon". That loses real information
+    twice over: the catalog reads wrong, and compute_wine_embedding derives the wine
+    vector from (category, variety, region), so the blend never reaches the taste model.
+    """
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for grape in lst:
+        key = grape.casefold()
+        if grape and key not in seen:
+            seen.add(key)
+            ordered.append(grape)
+    return ", ".join(ordered)
 
 
 def build_region(region_name: str, country: str) -> str:
@@ -80,7 +94,7 @@ def transform(input_path: str, output_path: str) -> None:
 
             category = CATEGORY_MAP.get(row.get("Type", "").strip(), "")
             grapes   = parse_python_list(row.get("Grapes", ""))
-            variety  = first_or_empty(grapes)
+            variety  = join_grapes(grapes)
             region   = build_region(row.get("RegionName", ""), row.get("Country", ""))
 
             rows.append({

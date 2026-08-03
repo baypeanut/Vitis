@@ -16,10 +16,13 @@ struct TastingRateView: View {
     @Binding var comment: String
     @Binding var visibility: TastingVisibility
     @Binding var momentImageData: Data?
+    /// Vintage of the bottle in hand. Stored on the tasting, not the shared catalog row.
+    @Binding var vintage: Int?
     var onCheers: () -> Void
     var isEditMode: Bool = false
 
     @State private var showCamera = false
+    @State private var vintageText = ""
 
     private var wineTypeColor: Color {
         WineColorResolver.resolveWineDisplayColor(wine: wine)
@@ -60,6 +63,11 @@ struct TastingRateView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+        .onAppear {
+            // Seed from the tasting being edited, else from the scanned/catalog vintage.
+            vintageText = (vintage ?? wine.vintage).map(String.init) ?? ""
+            vintage = vintage ?? wine.vintage
+        }
     }
 
     // MARK: - Wine Identity
@@ -79,20 +87,53 @@ struct TastingRateView: View {
                                  : WineColorResolver.resolveWineDisplayColor(wine: wine))
                 .multilineTextAlignment(.center)
 
-            if let v = wine.vintage {
-                Text(String(v))
-                    .font(PariTheme.detailFont())
-                    .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
-            }
             if let r = wine.region {
                 Text(r)
                     .font(PariTheme.detailFont())
                     .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
             }
+
+            vintageField
+                .padding(.top, 6)
         }
         .multilineTextAlignment(.center)
         .padding(.top, 32)
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Vintage
+
+    /// Editable because vintage describes the bottle, not the wine. A catalog row covers
+    /// every vintage of a wine, so the year has to come from the person drinking it.
+    private var vintageField: some View {
+        HStack(spacing: 8) {
+            Text("Vintage")
+                .font(PariTheme.uiFont(size: 13))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+
+            TextField("NV", text: $vintageText)
+                .font(PariTheme.detailFont())
+                .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .frame(width: 68)
+                .padding(.vertical, 6)
+                .background(PariTheme.backgroundSecondary(for: colorScheme))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(PariTheme.divider(for: colorScheme), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .onChange(of: vintageText) { _, newValue in
+                    let digits = String(newValue.filter(\.isNumber).prefix(4))
+                    if digits != newValue { vintageText = digits }
+                    // Partial input (e.g. "20") stays nil rather than committing a bad year.
+                    vintage = Int(digits).flatMap { (1800...2100).contains($0) ? $0 : nil }
+                }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Vintage")
+        .accessibilityHint("Enter the year on the bottle, or leave empty for non-vintage")
     }
 
     // MARK: - Rating

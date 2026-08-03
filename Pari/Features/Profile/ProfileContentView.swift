@@ -472,7 +472,7 @@ struct ProfileContentView: View {
     }
 
     private func tastingActivityRow(_ tasting: Tasting) -> some View {
-        let wine = tasting.wine.vintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
+        let wine = tasting.displayVintage.map { "\($0) \(tasting.wine.name)" } ?? tasting.wine.name
         let cheersCount = viewModel.tastingCheersCounts[tasting.id] ?? 0
         return NavigationLink(destination: WineCardView(wine: tasting.wine, activityId: nil, currentUserId: viewModel.userId, sourceUserId: viewModel.userId, sourceContext: "profile")) {
             HStack(alignment: .top, spacing: 12) {

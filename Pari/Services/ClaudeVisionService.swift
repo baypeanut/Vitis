@@ -78,7 +78,7 @@ enum ClaudeVisionService {
         } catch let fnError as FunctionsError {
             switch fnError {
             case .httpError(let code, _):
-                throw ClaudeVisionError.apiError(status: code, message: "Label scanning unavailable (HTTP \(code)).")
+                throw ClaudeVisionError.apiError(status: code, message: message(forStatus: code))
             default:
                 throw ClaudeVisionError.networkError(fnError)
             }
@@ -90,6 +90,23 @@ enum ClaudeVisionService {
             return try JSONDecoder().decode(LabelScanResult.self, from: data)
         } catch {
             throw ClaudeVisionError.decodingError(error)
+        }
+    }
+
+    /// The edge function gates scans on auth, payload size and a per-user quota. Each of
+    /// those is something the person can act on, so say which one it was.
+    private static func message(forStatus code: Int) -> String {
+        switch code {
+        case 401:
+            return "Sign in to scan wine labels."
+        case 413:
+            return "That photo is too large. Try again with a closer shot of the label."
+        case 429:
+            return "You've hit the scan limit for now. Try again in a little while."
+        case 503:
+            return "Label scanning is temporarily unavailable. Please try again shortly."
+        default:
+            return "Label scanning unavailable (HTTP \(code))."
         }
     }
 }

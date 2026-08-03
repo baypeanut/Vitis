@@ -1,672 +1,185 @@
 # Pari
 
-A wine logging and rating iOS app built with SwiftUI and Supabase. Users search for wines, rate them, add optional tasting notes, and share their tastings in a social feed.
+An iOS app for people who drink wine and want to remember what they liked.
+
+You log a wine, give it a score out of 10, and add a note if you feel like it. Over time Pari learns your palate, finds other users whose ratings line up with yours, and uses them to suggest bottles you have not tried.
 
 ---
 
-## Table of Contents
+## What you can do in the app
 
-1. [What is Pari?](#what-is-pari)
-2. [Tech Stack](#tech-stack)
-3. [Architecture Overview](#architecture-overview)
-4. [Project Structure](#project-structure)
-5. [Setup Instructions](#setup-instructions)
-6. [Database Schema](#database-schema)
-7. [Key Features & User Flows](#key-features--user-flows)
-8. [Code Structure Deep Dive](#code-structure-deep-dive)
-9. [Running & Debugging](#running--debugging)
-10. [Common Tasks](#common-tasks)
-11. [Important Concepts](#important-concepts)
+**Log a wine.** Search the catalog (about 100,000 wines) or point your camera at a label and let the app read it.
+
+**Score it.** One slider, 1.0 to 10.0. Notes and a photo are optional. You choose whether the post is public or friends only.
+
+**See what others are drinking.** A feed of recent tastings you can react to and comment on.
+
+**Get suggestions.** A "For You" list of wines picked from your own ratings and from people who rate like you.
+
+**Track your palate.** Your profile shows which grapes and regions you gravitate toward, and who your closest taste matches are.
 
 ---
 
-## What is Pari?
+## How it fits together
 
-Pari is an iOS app for wine enthusiasts to:
-- **Log wines**: Search for wines (via Open Food Facts API), rate them 1.0-10.0, add optional tasting notes
-- **Track history**: View your tasting history in "My Cellar" with ratings, notes, and timestamps
-- **Social feed**: See what wines others have tasted, cheer (like) and comment on their posts
-- **Profile**: View your own and others' profiles with tasting history
+```mermaid
+flowchart TD
+    A[iPhone app<br/>SwiftUI] -->|search, log, read feed| B[(Supabase<br/>Postgres + Auth + Storage)]
+    A -->|photo of a label| C[Edge function]
+    C -->|reads the label| D[Claude Haiku]
+    C --> B
+    B -->|suggestions| A
 
-**Design**: Minimal, clean UI with white backgrounds, burgundy (#4A0E0E) accents, serif fonts for wine names, lots of whitespace.
-
----
-
-## Tech Stack
-
-- **Frontend**: SwiftUI (iOS 17+)
-- **Backend**: Supabase (PostgreSQL database, Auth, Storage)
-- **Wine Search**: Open Food Facts API (world.openfoodfacts.org)
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **State Management**: SwiftUI `@Observable` / `@State` / `@Binding`
-- **Networking**: Supabase Swift SDK (PostgREST client)
-
----
-
-## Architecture Overview
-
-### MVVM Pattern
-
-- **Models** (`Pari/Models/`): Data structures (Wine, Tasting, Profile, FeedItem, etc.)
-- **Views** (`Pari/Features/`): SwiftUI views (CellarView, FeedView, ProfileView, etc.)
-- **ViewModels** (`*ViewModel.swift`): Business logic, state management, API calls
-- **Services** (`Pari/Services/`): API clients (TastingService, FeedService, AuthService, etc.)
-
-### Data Flow
-
-```
-User Action → View → ViewModel → Service → Supabase API → Database
-                ↓
-            Update State → View Re-renders
+    style A fill:#4A0E0E,color:#fff
+    style D fill:#8B6F47,color:#fff
 ```
 
-### Key Services
-
-- **TastingService**: Create/fetch tastings (wine logs with rating + notes)
-- **FeedService**: Fetch social feed (only "had wine" activities)
-- **AuthService**: Authentication, profile management
-- **WineService**: Upsert wines from Open Food Facts
-- **WineSearchService**: Search wines via OFF API
-- **SocialService**: Likes (Cheers), comments, follows
+There is no server of our own to run. The app talks straight to Supabase, which handles the database, sign in, and file storage. The one exception is label scanning: that goes through a small edge function so the Anthropic API key stays on the server and never ships inside the app.
 
 ---
 
-## Project Structure
+## The data
+
+Five tables carry most of the app.
+
+```mermaid
+erDiagram
+    PROFILES ||--o{ TASTINGS : "logs"
+    WINES    ||--o{ TASTINGS : "is rated in"
+    PROFILES ||--o{ FOLLOWS : "follows"
+    TASTINGS ||--o| ACTIVITY_FEED : "shows up as"
+    PROFILES ||--o{ TASTE_SIMILARITY : "is matched with"
+
+    WINES {
+        uuid id
+        text name
+        text producer
+        text variety "grape or blend"
+        text region
+        vector embedding "64 numbers describing style"
+    }
+    TASTINGS {
+        uuid id
+        float rating "1.0 to 10.0"
+        int vintage "the year on YOUR bottle"
+        text comment
+        text visibility
+    }
+    PROFILES {
+        uuid id
+        text username
+        text avatar_url
+    }
+    TASTE_SIMILARITY {
+        float score "0 to 1"
+        int shared_count
+    }
+```
+
+One thing worth calling out: a row in `wines` is a *wine*, not a bottle. "Opus One" is one row, covering every year it has ever been made. The year lives on your tasting, because the 2019 you drank and the 2021 your friend drank are the same wine but different bottles.
+
+---
+
+## How the suggestions actually work
+
+This is the part that makes Pari different from a notebook.
+
+**Step 1. Every wine gets a fingerprint.** Sixty four numbers describing its style, worked out from its grapes and where it comes from. Wines that taste alike end up with similar fingerprints, so Cabernet Sauvignon and Cabernet Franc sit close together while Cabernet and Riesling sit far apart.
+
+**Step 2. You get a fingerprint too.** It is the average of the wines you rated, weighted by how much you liked them. Score something a 9 and it pulls your fingerprint toward it. Score it a 3 and it pushes away.
+
+**Step 3. Find your taste twins.** Two signals get blended. If you and another user have rated a lot of the same wines, we compare those scores directly. If you have barely overlapped, we compare fingerprints instead. New users get useful matches on day one rather than waiting to build history.
+
+**Step 4. Suggest.** Pull the wines closest to your fingerprint, then reorder them by what your twins scored. A wine with one enthusiastic rating does not outrank a wine with forty solid ones.
+
+---
+
+## Getting it running
+
+You need a Mac with Xcode 16 or newer, and a free Supabase account.
+
+**1. Open the project**
+
+```bash
+open Pari.xcodeproj
+```
+
+Xcode pulls the Swift packages on its own. If it does not, use File then Packages then Resolve Package Versions.
+
+**2. Point it at your Supabase project**
+
+```bash
+cp Pari/Core/SupabaseConfig.example.swift Pari/Core/SupabaseConfig.swift
+```
+
+Open that file and paste in your project URL and anon key, both from the Supabase dashboard under Settings then API. The file is gitignored, so your keys stay on your machine.
+
+**3. Build the database**
+
+In the Supabase dashboard, open the SQL Editor and run `supabase/setup_schema.sql`. That creates every table, view, function, and access rule in one go.
+
+If you already have a database from an earlier version, run the files in `supabase/migrations/` in filename order instead. Order matters, since later ones build on earlier ones.
+
+**4. Turn on label scanning (optional)**
+
+```bash
+supabase functions deploy claude-vision
+supabase secrets set CLAUDE_API_KEY=sk-ant-...
+```
+
+Skip this and everything else still works. You just add wines by searching instead of scanning.
+
+**5. Run it**
+
+Pick a simulator in Xcode and press Cmd+R.
+
+---
+
+## Where things live
 
 ```
 Pari/
-├── Pari/
-│   ├── Core/                    # App-wide config
-│   │   ├── AppConstants.swift   # Bundle ID, auth flags, debug UUIDs
-│   │   └── SupabaseConfig.swift  # Supabase URL + anon key (gitignored)
-│   │
-│   ├── Models/                  # Data models
-│   │   ├── Wine.swift           # Wine entity
-│   │   ├── Tasting.swift        # Tasting log (rating + notes)
-│   │   ├── Profile.swift        # User profile
-│   │   ├── FeedItem.swift       # Feed display model
-│   │   └── ...
-│   │
-│   ├── Services/                # API clients
-│   │   ├── TastingService.swift # Create/fetch tastings
-│   │   ├── FeedService.swift    # Fetch feed
-│   │   ├── AuthService.swift    # Auth + profile
-│   │   ├── WineService.swift    # Upsert wines
-│   │   └── ...
-│   │
-│   ├── Features/                # Feature modules
-│   │   ├── Cellar/              # My Cellar (tasting history)
-│   │   │   ├── CellarView.swift
-│   │   │   ├── CellarViewModel.swift
-│   │   │   ├── AddWineSheet.swift      # Multi-step: Search → Rate+Notes
-│   │   │   └── TastingRateView.swift   # Rating slider + notes chips
-│   │   │
-│   │   ├── Social/              # Social feed
-│   │   │   ├── FeedView.swift
-│   │   │   ├── FeedViewModel.swift
-│   │   │   ├── FeedItemView.swift
-│   │   │   └── CommentSheetView.swift
-│   │   │
-│   │   ├── Profile/             # User profiles
-│   │   │   ├── ProfileView.swift
-│   │   │   ├── ProfileViewModel.swift
-│   │   │   └── ...
-│   │   │
-│   │   ├── Auth/                # Authentication
-│   │   │   └── ...
-│   │   │
-│   │   └── Root/                # Root navigation
-│   │       └── RootView.swift   # Auth gate + TabView
-│   │
-│   ├── Themes/                  # Design system
-│   │   └── PariTheme.swift     # Colors, fonts, timestamps
-│   │
-│   └── PariApp.swift           # App entry point
-│
-├── supabase/
-│   ├── setup_schema.sql         # Complete database schema (run once)
-│   └── migrations/              # Incremental migrations
-│       └── 20250228000000_tastings.sql
-│
-└── docs/
-    └── SETUP.md                 # Collaboration setup guide
+  Models/       plain data: Wine, Tasting, Profile
+  Services/     everything that talks to Supabase or Claude
+  Features/     one folder per screen, each with its view and view model
+  Themes/       colors, fonts, spacing
+  Core/         config and app wide constants
+
+PariTests/      unit tests
+supabase/
+  setup_schema.sql   the whole database in one file
+  migrations/        incremental changes, run in filename order
+  functions/         the label scanning edge function
+scripts/
+  import_xwines.py   turns the X-Wines dataset into a CSV you can upload
 ```
+
+Screens follow the same shape throughout. A view draws things, a view model holds the state, a service does the talking. If you are adding a screen, copy the pattern from `Features/Cellar`.
 
 ---
 
-## Setup Instructions
-
-### Prerequisites
-
-- macOS with Xcode 15+ (iOS 17+ target)
-- Supabase account (free tier works)
-- Git
-
-### Step 1: Clone the Repository
+## Tests
 
 ```bash
-git clone https://github.com/baypeanut/Vitis.git
-cd Vitis
+xcodebuild test -project Pari.xcodeproj -scheme Pari -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-### Step 2: Open in Xcode
+---
 
-1. Open `Pari.xcodeproj` in Xcode
-2. Wait for Swift Package Manager to resolve dependencies (Supabase SDK, etc.)
-   - If it doesn't auto-resolve: **File → Packages → Resolve Package Versions**
+## Built with
 
-### Step 3: Configure Supabase
-
-1. **Create Supabase project** (if you don't have one):
-   - Go to [supabase.com](https://supabase.com) → New Project
-   - Note your **Project URL** and **anon (public) key**
-
-2. **Set up config file**:
-   ```bash
-   cd Pari/Core
-   cp SupabaseConfig.example.swift SupabaseConfig.swift
-   ```
-   Open `SupabaseConfig.swift` and replace:
-   - `YOUR_PROJECT_REF` → Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
-   - `YOUR_ANON_KEY` → Your anon public key
-
-   **Important**: `SupabaseConfig.swift` is gitignored. Never commit it.
-
-3. **PostHog (analytics)**:
-   ```bash
-   cp Pari/Config/Secrets.xcconfig.example Pari/Config/Secrets.xcconfig
-   ```
-   Paste your PostHog API key in `Pari/Config/Secrets.xcconfig` (replace `phc_replace_me`).
-   This file is gitignored. Analytics events will be sent when the key is configured.
-
-### Step 4: Set Up Database
-
-1. Open Supabase Dashboard → **SQL Editor**
-2. Run `supabase/setup_schema.sql` (copy entire file, paste, Run)
-   - This creates all tables, views, RLS policies, functions
-   - Creates `tastings` table, updates `activity_feed`, `feed_with_details` view
-
-3. **Verify tables exist**:
-   - Go to **Table Editor** → You should see: `wines`, `tastings`, `activity_feed`, `profiles`, `likes`, `comments`, `follows`, etc.
-
-### Step 5: Run the App
-
-1. In Xcode, select **Pari** scheme and **iPhone Simulator** (e.g., iPhone 17)
-2. Press **Cmd+R** (or click Run)
-3. App should launch and show main tabs (Cellar, Social, Profile)
-
-### Step 6: Test the Flow
-
-1. **Add a wine**:
-   - Tap **Cellar** tab → Tap **+** button
-   - Search for a wine (e.g., "chardonnay")
-   - Select a wine → Rate it (1.0-10.0 slider) → Add notes (optional) → Tap **Cheers**
-   - Wine should appear in "My Cellar" with rating, notes, timestamp
-
-2. **Check feed**:
-   - Tap **Social** tab → Should show "had wine" posts
-   - Tap **Cheers** or **Comment** to interact
-
-3. **View profile**:
-   - Tap **Profile** tab → See your tasting history in "Recent Activity"
+SwiftUI on iOS 17 and up. Supabase for database, auth, and storage, with pgvector for the taste matching. Claude Haiku for reading labels. Wine catalog from the [X-Wines dataset](https://github.com/rogerioxavier/X-Wines), public domain.
 
 ---
 
-## Database Schema
+## If something breaks
 
-### Core Tables
+**Cannot connect.** Check that `SupabaseConfig.swift` exists and the values match your dashboard.
 
-#### `public.wines`
-- Wine catalog (from Open Food Facts)
-- Columns: `id`, `name`, `producer`, `vintage`, `variety`, `region`, `label_image_url`, `category`, `off_code`
-- No RLS (public read)
+**"row violates row level security".** The schema did not finish running. Run `setup_schema.sql` again, it is safe to repeat.
 
-#### `public.tastings` ⭐ **Main table for wine logs**
-- User's wine tasting logs
-- Columns:
-  - `id` (UUID, PK)
-  - `user_id` (UUID, FK → auth.users)
-  - `wine_id` (UUID, FK → wines)
-  - `rating` (double, 1.0-10.0)
-  - `note_tags` (text[], optional)
-  - `created_at` (timestamptz)
-  - `source` (text, nullable)
-- RLS: Users can manage own tastings; public read for feed
+**Feed is empty.** Nothing has been logged yet, or the account you are viewing follows nobody. Log a wine and it will show up.
 
-#### `public.activity_feed`
-- Social feed activities
-- Columns: `id`, `user_id`, `activity_type` (`'had_wine'`, `'rank_update'`, `'new_entry'`, `'duel_win'`), `wine_id`, `target_wine_id`, `content_text`, `created_at`
-- RLS: Public read, users insert own
-- **Note**: Feed now only shows `activity_type = 'had_wine'`
+**Scanning returns an error.** The edge function is not deployed, or `CLAUDE_API_KEY` is not set. Scans are also capped at 30 per hour per account.
 
-#### `public.profiles`
-- User profiles
-- Columns: `id` (matches auth.users.id), `username`, `full_name`, `avatar_url`, `bio`, `instagram_url`, taste snapshot fields, `weekly_goal`
-- RLS: Public read, users update own
-
-#### `public.likes` / `public.comments`
-- Social interactions (Cheers/Likes and Comments on feed items)
-- Reference `activity_feed.id`
-
-#### `public.follows`
-- User follows (follower_id → followed_id)
-
-### Views
-
-#### `public.feed_with_details`
-- Joined view: `activity_feed` + `profiles` + `wines` + `tastings`
-- Includes: `tasting_note_tags`, `tasting_rating`, `wine_region`, `wine_category`
-- Used by `FeedService` to fetch feed
-
-### Functions
-
-#### `public.feed_following(p_follower_id, p_limit, p_offset)`
-- Returns feed items from users you follow
-- Filters: `WHERE activity_type = 'had_wine'`
-
-### RLS (Row-Level Security)
-
-- **Authenticated users**: Can read/write own data (tastings, profiles, etc.)
-- **Public read**: Feed, profiles, tastings (for social feed)
-- **Dev mock**: When `auth.uid() IS NULL`, allows operations for a developer-specific UUID (configured in `setup_schema.sql`). Each developer should use their own UUID from their Supabase project.
-
----
-
-## Key Features & User Flows
-
-### 1. Add Wine & Rate Flow
-
-**Path**: Cellar → + → Search → Select → Rate+Notes → Save
-
-1. User taps **+** in Cellar tab
-2. `AddWineSheet` opens → Search wines (OFF API)
-3. User selects a wine → `WineService.upsertFromOFF` creates/updates wine in DB
-4. `TastingRateView` shows:
-   - Wine info (producer, name, vintage, region)
-   - Rating slider (1.0-10.0, step 0.1)
-   - Wine glass icon as thumb (tinted by category: red/white/rose/sparkling)
-   - Category-based notes chips (optional; e.g., Red: "Blackberry", "Cherry", "Vanilla")
-   - **Cheers** button (saves)
-5. `TastingService.createTasting`:
-   - Inserts row into `tastings` table
-   - Inserts row into `activity_feed` (`activity_type = 'had_wine'`, notes in `content_text`)
-6. Sheet closes → Cellar refreshes → New tasting appears at top
-
-### 2. Social Feed Flow
-
-**Path**: Social tab → Global/Following tabs → Feed items
-
-1. `FeedView` loads → `FeedViewModel.refresh()`
-2. `FeedService.fetchGlobal()` or `fetchFollowing()`:
-   - Queries `feed_with_details` view
-   - Filters: `WHERE activity_type = 'had_wine'`
-   - Orders by `created_at DESC`
-3. For each item, fetches:
-   - Like counts (`SocialService.fetchLikeCounts`)
-   - User's liked status (`SocialService.fetchLikedActivityIDs`)
-4. `FeedItemView` renders:
-   - Statement: "Mert had 2019 Chardonnay." (name in serif, burgundy)
-   - **Rating and country**: "8.0 · Chile" (left-aligned, rating in burgundy)
-   - **Notes**: "Vanilla, Floral" (if available, left-aligned, gray)
-   - **Date/time**: "Jan 29 · 9:53 AM" (right-aligned, gray)
-   - Wine thumbnail (icon tinted by category: red/white/rose/sparkling)
-   - **Cheers** and **Comment** buttons
-5. User taps **Cheers** → `SocialService.toggleLike` → Updates local state
-6. User taps **Comment** → `CommentSheetView` opens → Shows comments with timestamps
-
-### 3. My Cellar Flow
-
-**Path**: Cellar tab → List of tastings
-
-1. `CellarView` loads → `CellarViewModel.load()`
-2. `TastingService.fetchTastings(userId:)`:
-   - Queries `tastings` table
-   - Joins `wines` for wine details
-   - Orders by `created_at DESC`
-3. Each row shows:
-   - Producer (serif, gray)
-   - Wine name (serif, black)
-   - Vintage (if available)
-   - Rating (e.g., "8.5") + Notes (e.g., "· Berry, vanilla")
-   - Timestamp (e.g., "Jan 28 · 9:42 PM")
-4. Swipe to delete → `TastingService.deleteTasting` → Removes from list
-
-### 4. Profile Recent Activity Flow
-
-**Path**: Profile tab → Recent Activity tab
-
-1. `ProfileView` loads → `ProfileViewModel.load()`
-2. `TastingService.fetchTastings(userId:)` → `recentTastings`
-3. `ProfileContentView` renders:
-   - "Mert had 2019 Chardonnay."
-   - Rating + notes line (e.g., "8.0 · Vanilla, Floral")
-   - Timestamp (e.g., "Jan 29 · 9:53 AM")
-
----
-
-## Code Structure Deep Dive
-
-### Models
-
-#### `Tasting.swift`
-```swift
-struct Tasting: Identifiable {
-    let id: UUID
-    let userId: UUID
-    let wineId: UUID
-    let rating: Double          // 1.0-10.0
-    let noteTags: [String]?     // Optional array
-    let createdAt: Date
-    let source: String?         // "search" or future "barcode"
-    let wine: Wine              // Embedded wine details
-}
-```
-
-#### `Wine.swift`
-```swift
-struct Wine: Identifiable {
-    let id: UUID
-    let name: String
-    let producer: String
-    let vintage: Int?
-    let variety: String?
-    let region: String?
-    let labelImageURL: String?
-    let category: String?       // "Red", "White", "Rose", "Sparkling"
-}
-```
-
-#### `FeedItem.swift`
-- Display model for feed
-- Contains: user info, wine info, activity type, notes (from `contentText`), rating (`tastingRating`), region (`wineRegion`), category (`wineCategory`), cheers/comment counts
-- Properties:
-  - `tastingRating: Double?` - Rating (1.0-10.0) for `had_wine` activities
-  - `wineRegion: String?` - Wine country/region (e.g., "Chile", "Tuscany")
-  - `wineCategory: String?` - Wine category ("Red", "White", "Rose", "Sparkling") - used for icon tinting
-
-### Services
-
-#### `TastingService`
-- **`createTasting(userId:wineId:rating:noteTags:source:)`**:
-  - Inserts into `tastings` table
-  - Inserts into `activity_feed` (`had_wine`)
-  - Returns `Tasting` with embedded `Wine`
-- **`fetchTastings(userId:limit:offset:)`**:
-  - Queries `tastings` + `wines` join
-  - Returns `[Tasting]` ordered by `created_at DESC`
-
-#### `FeedService`
-- **`fetchGlobal(limit:offset:)`**:
-  - Queries `feed_with_details` view
-  - Filters: `activity_type = 'had_wine'`
-  - Returns `[FeedItem]`
-- **`fetchFollowing(limit:offset:)`**:
-  - Calls `feed_following` RPC function
-  - Returns feed from users you follow (filtered to `had_wine`)
-
-#### `WineService`
-- **`upsertFromOFF(product:)`**:
-  - Calls `upsert_wine_from_off` RPC
-  - Creates/updates wine in `wines` table
-  - Returns `Wine`
-
-#### `WineSearchService`
-- **`search(query:)`**:
-  - Calls Open Food Facts API (`world.openfoodfacts.org/cgi/search.pl`)
-  - Returns `[OFFProduct]`
-
-### ViewModels
-
-#### `CellarViewModel`
-- **State**: `tastings: [Tasting]`, `isLoading`, `errorMessage`, `needsAuth`, `currentUserId`
-- **Methods**:
-  - `load()`: Fetches tastings via `TastingService`
-  - `removeTasting(_:)`: Deletes tasting
-
-#### `FeedViewModel`
-- **State**: `items: [FeedItem]`, `tab` (global/following), `isLoading`, `errorMessage`, `currentUserId`
-- **Methods**:
-  - `refresh()`: Fetches feed, enriches with likes/comments
-  - `cheer(_:)`: Toggles like
-  - `statementParts(for:)`: Builds "Mert had X." statement
-
-#### `AddWineViewModel`
-- **State**: `query`, `results: [OFFProduct]`, `isLoading`, `isUpserting`
-- **Methods**:
-  - `search()`: Debounced OFF search
-  - `upsert(product:)`: Creates/updates wine
-
-### Views
-
-#### `CellarView`
-- Header: "My Cellar" + **+** button
-- List of `Tasting` rows (rating, notes, timestamp)
-- Empty state: "Your cellar is empty. Add wines you've tasted."
-- Swipe to delete
-
-#### `AddWineSheet`
-- Multi-step flow via `TastingFlowStep` enum:
-  - `.search`: Search bar + results list
-  - `.rating(Wine)`: `TastingRateView` (rating + optional notes)
-- On save: Calls `TastingService.createTasting`
-
-#### `TastingRateView`
-- Wine info display
-- Custom slider: Wine glass icon thumb, category-tinted
-- Rating value display (e.g., "8.5")
-- Optional notes chips (`TastingNotes.notesForCategory`)
-- **Cheers** button (saves)
-
-#### `FeedView`
-- Global/Following tabs
-- List of `FeedItemView`
-- Pull-to-refresh
-- Realtime subscription (new activities)
-
-#### `FeedItemView`
-- Statement: "Mert had 2019 Chardonnay." (name in serif, burgundy)
-- For `had_wine` activities, shows detailed info:
-  - **Rating and country**: "8.0 · Chile" (rating in burgundy, country in gray)
-  - **Notes**: "Vanilla, Floral" (if available, in gray)
-  - **Date/time**: "Jan 29 · 9:53 AM" (right-aligned, gray)
-- Wine thumbnail:
-  - Wine glass icon (if no label image) tinted by category:
-    - Red: dark red tint
-    - White: light yellow/beige tint
-    - Rose: light pink tint
-    - Sparkling: light gray tint
-  - Typography: Producer (serif, gray), Wine name (serif, black), Vintage (serif, gray)
-- **Cheers** / **Comment** buttons
-
----
-
-## Running & Debugging
-
-### Run in Simulator
-
-1. Open Xcode → Select **Pari** scheme
-2. Select simulator (e.g., **iPhone 17**)
-3. Press **Cmd+R** or click **Run**
-
-### Debug Mode
-
-- **Auth bypass**: `AppConstants.authRequired = false` (default)
-  - App skips login, uses dev account from `DevSignupService` or real session
-- **Dev mock user**: Each developer configures their own UUID in `setup_schema.sql`
-  - RLS policies allow the configured UUID when `auth.uid() IS NULL`
-  - No hardcoded UUIDs in code - each developer uses their own Supabase user
-
-### Common Issues
-
-**"Invalid Supabase URL or anon key"**
-- Check `SupabaseConfig.swift` exists and has correct values
-- Verify Supabase project is active
-
-**"new row violates row-level security policy"**
-- Ensure `setup_schema.sql` was run (RLS policies must exist)
-- Check if you're using dev mock user correctly
-- Verify `tastings` table has `tastings_select_public` policy
-
-**Feed is empty**
-- Check `activity_feed` table has rows with `activity_type = 'had_wine'`
-- Verify `feed_with_details` view exists and joins correctly
-- Check `FeedService.fetchGlobal` filters correctly
-
-**Rating/country not showing in feed**
-- Verify `feed_with_details` view includes `tasting_rating` and `wine_region` columns
-- Check `FeedRowPayload` has `tastingRating` and `wineRegion` properties
-- Ensure `FeedItem.from(row:)` maps these correctly
-- Verify `FeedItemView.hadWineDetails` is rendered for `activityType == .hadWine`
-
-**Icon tint not working**
-- Check `FeedItem.wineCategory` is populated from `FeedRowPayload.wineCategory`
-- Verify `FeedItemView.categoryColor(for:)` function handles category strings correctly
-- Ensure wine glass icon uses `categoryColor(for: category)` instead of fixed color
-
-**Build errors**
-- Clean build folder: **Product → Clean Build Folder** (Cmd+Shift+K)
-- Reset packages: **File → Packages → Reset Package Caches**
-- Resolve packages: **File → Packages → Resolve Package Versions**
-
----
-
-## Common Tasks
-
-### Add a New Feature
-
-1. **Database**: Add table/column in `setup_schema.sql` + migration
-2. **Model**: Create model in `Pari/Models/`
-3. **Service**: Create service in `Pari/Services/` (API calls)
-4. **ViewModel**: Create ViewModel (state + business logic)
-5. **View**: Create SwiftUI view
-6. **Wire up**: Add to navigation/routing
-
-### Update Database Schema
-
-1. Edit `supabase/setup_schema.sql`
-2. Create migration: `supabase/migrations/YYYYMMDDHHMMSS_description.sql`
-3. Run migration in Supabase SQL Editor
-4. Update app models/services if needed
-
-### Debug API Calls
-
-- Check Supabase Dashboard → **Logs** → **API Logs**
-- Check **Table Editor** to see if rows were inserted
-- Use `print()` statements in ViewModels (remove for production)
-
-### Test Social Features
-
-- Create multiple users (via Auth → Users or dev signup)
-- Have one user follow another
-- Create tastings from different users
-- Check feed shows correct items
-
----
-
-## Important Concepts
-
-### Authentication Modes
-
-**Production mode** (`AppConstants.authRequired = true`):
-- Users must sign up/login
-- Real Supabase Auth sessions
-- RLS uses `auth.uid()`
-
-**Dev mode** (`AppConstants.authRequired = false`):
-- No login required
-- Uses developer's own UUID (configured in `setup_schema.sql`)
-- RLS policies allow `auth.uid() IS NULL AND user_id = <developer's UUID>`
-- Each developer should replace the placeholder UUID in `setup_schema.sql` with their own
-
-### Row-Level Security (RLS)
-
-PostgreSQL feature enforced by Supabase:
-- Policies define who can SELECT/INSERT/UPDATE/DELETE
-- Example: `tastings_select_own` allows `auth.uid() = user_id`
-- `tastings_select_public` allows `true` (anyone can read)
-
-### Feed Architecture
-
-- **Source of truth**: `tastings` table
-- **Feed display**: `activity_feed` table (denormalized for performance)
-- **View**: `feed_with_details` joins everything
-- **Flow**: Create tasting → Insert into `tastings` + `activity_feed` → Feed queries `feed_with_details`
-
-### Wine Search Flow
-
-1. User types query → `AddWineViewModel.search()`
-2. `WineSearchService.search(query:)` → Calls OFF API
-3. Returns `[OFFProduct]` → Displayed in list
-4. User selects → `WineService.upsertFromOFF(product:)` → Creates/updates `wines` table
-5. Returns `Wine` → Used in tasting flow
-
-### Date/Time Formatting
-
-- **Format**: "MMM d · h:mm a" (e.g., "Jan 28 · 9:42 PM")
-- **Function**: `PariTheme.compactTimestamp(_ date: Date)`
-- **Used in**: Comments, Cellar rows, Profile activity
-
-### Design System
-
-- **Colors**: `PariTheme.accent` (#4A0E0E burgundy), `background` (white), `secondaryText` (gray)
-- **Fonts**: 
-  - Serif for wine names (`wineNameFont()`) - used in Cellar, Feed thumbnails
-  - Serif for producers (`producerSerifFont()`) - subtle gray
-  - SF Pro for UI (`uiFont()`) - buttons, metadata, timestamps
-- **Spacing**: Generous padding (24pt horizontal, 16-32pt vertical)
-- **No em dashes**: Use hyphens (-) in strings
-- **Icon tinting**: Wine glass icons tinted by category (red/white/rose/sparkling) without text labels
-
----
-
-## File Reference Quick Guide
-
-| File | Purpose |
-|------|---------|
-| `PariApp.swift` | App entry point, initializes Supabase |
-| `RootView.swift` | Auth gate, shows TabView or Onboarding |
-| `ContentView.swift` | Main TabView (Cellar, Social, Profile) |
-| `CellarView.swift` | My Cellar - tasting history list |
-| `AddWineSheet.swift` | Multi-step: Search → Rate+Notes → Save |
-| `TastingRateView.swift` | Rating slider + notes chips |
-| `FeedView.swift` | Social feed (Global/Following) |
-| `FeedItemView.swift` | Single feed item display (rating, country, notes, date/time) |
-| `ProfileView.swift` | User profile (own or other) |
-| `TastingService.swift` | Create/fetch tastings |
-| `FeedService.swift` | Fetch feed (global/following) |
-| `WineService.swift` | Upsert wines from OFF |
-| `AuthService.swift` | Authentication, profile management |
-| `PariTheme.swift` | Design system (colors, fonts, timestamps) |
-| `TastingNotes.swift` | Category-based tasting notes (Red/White/Rose/Sparkling) |
-| `setup_schema.sql` | Complete database schema |
-
----
-
-## Next Steps for New Engineers
-
-1. **Read this README** (you're doing it!)
-2. **Set up local environment** (follow Setup Instructions)
-3. **Run the app** and test the flow (Add wine → Rate → Notes → Save)
-4. **Explore the code**:
-   - Start with `RootView.swift` → `ContentView.swift` → `CellarView.swift`
-   - Follow the flow: `AddWineSheet` → `TastingRateView` → `TastingService`
-   - Check `FeedItemView.hadWineDetails` to see how feed items are rendered
-5. **Check Supabase Dashboard**:
-   - Table Editor → See `tastings`, `activity_feed`, `wines` tables
-   - SQL Editor → Run queries to inspect data
-   - Verify `feed_with_details` view includes `tasting_rating`, `wine_region`, `wine_category`
-6. **Read existing code**:
-   - Models: `Tasting.swift`, `Wine.swift`, `FeedItem.swift`, `FeedRowPayload.swift`
-   - Services: `TastingService.swift`, `FeedService.swift`
-   - Views: `CellarView.swift`, `FeedView.swift`, `FeedItemView.swift`
-
----
-
-## Questions?
-
-- **Database issues**: Check `supabase/setup_schema.sql` and Supabase Dashboard
-- **Build errors**: Clean build folder, reset packages
-- **API errors**: Check Supabase Dashboard → Logs
-- **UI questions**: Check `PariTheme.swift` for design system
-
----
+**Build fails after pulling.** Clean the build folder with Cmd+Shift+K, then File then Packages then Reset Package Caches.
