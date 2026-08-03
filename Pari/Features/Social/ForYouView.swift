@@ -12,13 +12,22 @@ import SwiftUI
 @Observable
 final class ForYouViewModel {
     var recommendations: [WineRecommendation] = []
+    /// Shown when the recommender has nothing to say yet. A person with a name beats
+    /// a worse algorithm.
+    var collections: [CuratedCollection] = []
+    var openTonight: [CellarBottle] = []
     var isLoading = false
     /// True once a load has finished, so an empty list can be distinguished from "not loaded yet".
     var hasLoaded = false
 
     func load() async {
         isLoading = true
-        recommendations = await RecommendationService.fetchRecommendations()
+        async let recs = RecommendationService.fetchRecommendations()
+        async let cols = CuratedCollectionService.collections(limit: 5)
+        async let cellar = CellarBottleService.openTonight(limit: 3)
+        recommendations = await recs
+        collections = await cols
+        openTonight = await cellar
         isLoading = false
         hasLoaded = true
     }
@@ -28,6 +37,7 @@ struct ForYouView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var viewModel = ForYouViewModel()
     @State private var showListScan = false
+    @State private var showTable = false
     let currentUserId: UUID?
 
     var body: some View {
@@ -37,7 +47,8 @@ struct ForYouView: View {
                     .progressViewStyle(.circular)
                     .tint(PariTheme.accent(for: colorScheme))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.hasLoaded && viewModel.recommendations.isEmpty {
+            } else if viewModel.hasLoaded && viewModel.recommendations.isEmpty
+                        && viewModel.collections.isEmpty && viewModel.openTonight.isEmpty {
                 emptyState
             } else {
                 list
@@ -53,18 +64,28 @@ struct ForYouView: View {
         .fullScreenCover(isPresented: $showListScan) {
             WineListScanView(isPresented: $showListScan, currentUserId: currentUserId)
         }
+        .fullScreenCover(isPresented: $showTable) {
+            TastingSessionView(isPresented: $showTable, currentUserId: currentUserId)
+        }
     }
 
-    /// Discovery is where someone goes when they have to choose, and the hardest
-    /// place to choose is in front of a restaurant list.
+    /// Discovery is where someone goes when they have to choose. The two hardest
+    /// versions of that are a restaurant list and a table of people who do not
+    /// agree, so both live here.
     private var listScanButton: some View {
-        Button {
-            showListScan = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "doc.text.viewfinder")
-                    .font(.system(size: 15))
-                Text("Scan a wine list")
+        HStack(spacing: 10) {
+            actionChip(icon: "doc.text.viewfinder", title: "Wine list") { showListScan = true }
+            actionChip(icon: "person.2.wave.2", title: "The table") { showTable = true }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private func actionChip(icon: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(title)
                     .font(PariTheme.uiFont(size: 14, weight: .medium))
             }
             .foregroundStyle(PariTheme.accent(for: colorScheme))
@@ -78,7 +99,6 @@ struct ForYouView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 24)
     }
 
     private var list: some View {
@@ -87,6 +107,28 @@ struct ForYouView: View {
                 header
                 listScanButton
                     .padding(.bottom, 16)
+
+                // Bottles you already own come before bottles you might buy. A wine
+                // closing its window is a decision with a deadline.
+                if !viewModel.openTonight.isEmpty {
+                    sectionHeading("From your cellar")
+                    ForEach(viewModel.openTonight) { bottle in
+                        cellarRow(bottle)
+                        Divider().padding(.leading, 24)
+                    }
+                }
+
+                if !viewModel.collections.isEmpty {
+                    sectionHeading("Chosen by people")
+                    ForEach(viewModel.collections) { collection in
+                        collectionRow(collection)
+                        Divider().padding(.leading, 24)
+                    }
+                }
+
+                if !viewModel.recommendations.isEmpty {
+                    sectionHeading("Matched to your palate")
+                }
                 ForEach(viewModel.recommendations) { rec in
                     NavigationLink {
                         WineCardView(wine: rec.wine, activityId: nil, currentUserId: currentUserId)
@@ -116,6 +158,80 @@ struct ForYouView: View {
         .padding(.horizontal, 24)
         .padding(.top, 8)
         .padding(.bottom, 16)
+    }
+
+    private func sectionHeading(_ text: String) -> some View {
+        Text(text)
+            .font(PariTheme.uiFont(size: 12, weight: .semibold))
+            .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+            .textCase(.uppercase)
+            .kerning(0.6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 8)
+    }
+
+    private func cellarRow(_ bottle: CellarBottle) -> some View {
+        HStack(spacing: 14) {
+            wineThumbnail(bottle.wine)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(bottle.wine.producer)
+                    .font(PariTheme.uiFont(size: 12))
+                    .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+                    .lineLimit(1)
+                Text(bottle.vintage.map { "\($0) \(bottle.wine.name)" } ?? bottle.wine.name)
+                    .font(PariTheme.wineNameFont(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+                    .lineLimit(2)
+                HStack(spacing: 6) {
+                    Text(bottle.urgency.label)
+                        .font(PariTheme.uiFont(size: 11, weight: .medium))
+                        .foregroundStyle(bottle.urgency == .past || bottle.urgency == .drinkNow
+                                         ? PariTheme.accent(for: colorScheme)
+                                         : PariTheme.textTertiary(for: colorScheme))
+                    if bottle.quantity > 1 {
+                        Text("· \(bottle.quantity) bottles")
+                            .font(PariTheme.uiFont(size: 11))
+                            .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+                    }
+                }
+                .padding(.top, 2)
+            }
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func collectionRow(_ collection: CuratedCollection) -> some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(collection.title)
+                    .font(PariTheme.wineNameFont(for: colorScheme))
+                    .foregroundStyle(PariTheme.textPrimary(for: colorScheme))
+                    .lineLimit(2)
+                if let subtitle = collection.subtitle {
+                    Text(subtitle)
+                        .font(PariTheme.uiFont(size: 12))
+                        .foregroundStyle(PariTheme.textSecondary(for: colorScheme))
+                        .lineLimit(2)
+                }
+                // The signature is the whole point of this section.
+                Text(collection.attribution)
+                    .font(PariTheme.uiFont(size: 11))
+                    .foregroundStyle(PariTheme.accent(for: colorScheme))
+                    .padding(.top, 2)
+            }
+            Spacer(minLength: 8)
+            Text("\(collection.wineCount)")
+                .font(.system(.body, design: .serif))
+                .foregroundStyle(PariTheme.textTertiary(for: colorScheme))
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
     }
 
     private func row(_ rec: WineRecommendation) -> some View {
