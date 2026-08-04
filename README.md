@@ -2,21 +2,23 @@
 
 An iOS app for people who drink wine and want to remember what they liked.
 
-You log a wine, give it a score out of 10, and add a note if you feel like it. Over time Pari learns your palate, finds other users whose ratings line up with yours, and uses them to suggest bottles you have not tried.
+You log a wine, give it a score out of ten, and add a note if you feel like it. Over time Pari learns your palate, finds the other users whose ratings line up with yours, and uses them to suggest bottles you have not tried.
+
+> **Source-available, not open source.** This repository is published so the work can be read. It is not set up to be cloned and run, there are no setup instructions, and no licence to use the code is granted. See [LICENSE](LICENSE).
 
 ---
 
-## What you can do in the app
+## What it does
 
-**Log a wine.** Search the catalog (about 100,000 wines) or point your camera at a label and let the app read it.
+**Log a wine.** Search a catalogue of about 100,000, or point the camera at a label and let the app read it.
 
-**Score it.** One slider, 1.0 to 10.0. Notes and a photo are optional. You choose whether the post is public or friends only.
+**Score it.** One slider, 1.0 to 10.0. A structural grid (acidity, tannin, body) is there for people who want it and hidden from people who do not.
 
-**See what others are drinking.** A feed of recent tastings you can react to and comment on.
+**Scan a wine list.** Photograph a restaurant list and get every wine on it ranked for your palate, with the ones we cannot identify shown as unidentified rather than guessed.
 
-**Get suggestions.** A "For You" list of wines picked from your own ratings and from people who rate like you.
+**Sit at a table.** Start a shared session, read a five-character code out, and get the bottle that suits everyone sitting there.
 
-**Track your palate.** Your profile shows which grapes and regions you gravitate toward, and who your closest taste matches are.
+**Keep a cellar.** Bottles you own, with estimated drinking windows and a view of what to open tonight before it closes.
 
 ---
 
@@ -25,8 +27,8 @@ You log a wine, give it a score out of 10, and add a note if you feel like it. O
 ```mermaid
 flowchart TD
     A[iPhone app<br/>SwiftUI] -->|search, log, read feed| B[(Supabase<br/>Postgres + Auth + Storage)]
-    A -->|photo of a label| C[Edge function]
-    C -->|reads the label| D[Claude Haiku]
+    A -->|photo of a label or a list| C[Edge functions]
+    C -->|reads the image| D[Claude]
     C --> B
     B -->|suggestions| A
 
@@ -34,152 +36,105 @@ flowchart TD
     style D fill:#8B6F47,color:#fff
 ```
 
-There is no server of our own to run. The app talks straight to Supabase, which handles the database, sign in, and file storage. The one exception is label scanning: that goes through a small edge function so the Anthropic API key stays on the server and never ships inside the app.
+There is no server of our own. The app talks to Supabase, which handles the database, sign in and file storage. The exception is image reading, which goes through small edge functions so the API key stays server-side and never ships inside the app.
+
+---
+
+## The interesting part
+
+Most of the work was not adding features. It was finding out that things which looked like they worked did not.
+
+### Vintage was on the wrong table
+
+A row in `wines` is a *wine*, not a bottle. "Opus One" is one row covering every year it has ever been made. But vintage was stored on that row, and the label scanner wrote to it. So the first person to scan a 2019 stamped that year onto the shared catalogue entry, and everyone who logged that wine afterwards recorded a vintage they had never drunk.
+
+The fix was to move vintage onto the tasting, where it belongs, and stop the scanner writing to the catalogue at all.
+
+### The taste model had never run
+
+Wine similarity is computed from a 64-dimension vector per user, built from the wines they rated. The function that builds it cast a `vector` to `double precision[]`, which pgvector does not support. It raised on the first row it touched.
+
+Every caller in the app caught the error and returned nothing, so it surfaced as "no taste twins yet" rather than as a failure. The content-based half of the recommendation engine had been dead the whole time and looked like a product that had not warmed up yet.
+
+That one only turned up when the migrations were run against a real Postgres for the first time.
+
+### The embedding did not mean anything
+
+Wine vectors were built by hashing the grape and region strings. Deterministic, cheap, and carrying no meaning at all: Cabernet Sauvignon and Cabernet Franc hashed to unrelated bit patterns.
+
+| | old | new |
+|---|---:|---:|
+| Cabernet Sauvignon ↔ Cabernet Franc | −0.15 | 0.99 |
+| Bordeaux blend ↔ its lead grape | 0.37 | 1.00 |
+| Cabernet Sauvignon ↔ Riesling | 0.25 | 0.21 |
+
+The old numbers were not just low, they were in the wrong order. An unrelated pair scored *higher* than two grapes from the same family. Rebuilt from a varietal and region taxonomy, with hashing kept only as a fallback for terms it does not recognise.
+
+### One bottle, several palates
+
+Four people at a table is a social choice problem, and it has more than one honest answer. Ranking by the average can pick a wine one person dislikes. Ranking by the worst-served person picks the bottle nobody objects to and nobody wants.
+
+Pari ranks by the average but excludes any wine where someone falls below a floor. The failure that matters at a table is one person stuck with a glass they hate, so that one is made impossible rather than merely unlikely.
+
+### Why it does not just show a rating out of five
+
+A global average has one target, and producers can aim at it. Wine has already run that experiment: under the 100-point regime, styles narrowed toward whatever scored well. A network of personal predictions has no single target to aim at.
+
+So the number Pari shows is "8.7 for you", not "8.7 out of 10", and it names the people it came from.
 
 ---
 
 ## The data
 
-Five tables carry most of the app.
-
 ```mermaid
 erDiagram
     PROFILES ||--o{ TASTINGS : "logs"
     WINES    ||--o{ TASTINGS : "is rated in"
-    PROFILES ||--o{ FOLLOWS : "follows"
-    TASTINGS ||--o| ACTIVITY_FEED : "shows up as"
     PROFILES ||--o{ TASTE_SIMILARITY : "is matched with"
+    PROFILES ||--o{ CELLAR_BOTTLES : "owns"
+    TASTING_SESSIONS ||--o{ SESSION_MEMBERS : "seats"
 
     WINES {
-        uuid id
         text name
-        text producer
         text variety "grape or blend"
         text region
         vector embedding "64 numbers describing style"
+        real embedding_confidence
     }
     TASTINGS {
-        uuid id
         float rating "1.0 to 10.0"
         int vintage "the year on YOUR bottle"
-        text comment
-        text visibility
-    }
-    PROFILES {
-        uuid id
-        text username
-        text avatar_url
+        int acidity "WSET 1-5"
+        int tannin "WSET 1-5"
+        int body "WSET 1-5"
     }
     TASTE_SIMILARITY {
         float score "0 to 1"
         int shared_count
     }
+    CELLAR_BOTTLES {
+        int quantity
+        int vintage
+        date purchase_date
+    }
 ```
 
-One thing worth calling out: a row in `wines` is a *wine*, not a bottle. "Opus One" is one row, covering every year it has ever been made. The year lives on your tasting, because the 2019 you drank and the 2021 your friend drank are the same wine but different bottles.
+The structural columns follow the WSET Systematic Approach to Tasting rather than a private vocabulary, because that scale is already taught in over 70 countries and anyone learning it here is learning something portable.
 
----
-
-## How the suggestions actually work
-
-This is the part that makes Pari different from a notebook.
-
-**Step 1. Every wine gets a fingerprint.** Sixty four numbers describing its style, worked out from its grapes and where it comes from. Wines that taste alike end up with similar fingerprints, so Cabernet Sauvignon and Cabernet Franc sit close together while Cabernet and Riesling sit far apart.
-
-**Step 2. You get a fingerprint too.** It is the average of the wines you rated, weighted by how much you liked them. Score something a 9 and it pulls your fingerprint toward it. Score it a 3 and it pushes away.
-
-**Step 3. Find your taste twins.** Two signals get blended. If you and another user have rated a lot of the same wines, we compare those scores directly. If you have barely overlapped, we compare fingerprints instead. New users get useful matches on day one rather than waiting to build history.
-
-**Step 4. Suggest.** Pull the wines closest to your fingerprint, then reorder them by what your twins scored. A wine with one enthusiastic rating does not outrank a wine with forty solid ones.
-
----
-
-## Getting it running
-
-You need a Mac with Xcode 16 or newer, and a free Supabase account.
-
-**1. Open the project**
-
-```bash
-open Pari.xcodeproj
-```
-
-Xcode pulls the Swift packages on its own. If it does not, use File then Packages then Resolve Package Versions.
-
-**2. Point it at your Supabase project**
-
-```bash
-cp Pari/Core/SupabaseConfig.example.swift Pari/Core/SupabaseConfig.swift
-```
-
-Open that file and paste in your project URL and anon key, both from the Supabase dashboard under Settings then API. The file is gitignored, so your keys stay on your machine.
-
-**3. Build the database**
-
-In the Supabase dashboard, open the SQL Editor and run `supabase/setup_schema.sql`. That creates every table, view, function, and access rule in one go.
-
-If you already have a database from an earlier version, run the files in `supabase/migrations/` in filename order instead. Order matters, since later ones build on earlier ones.
-
-**4. Turn on label scanning (optional)**
-
-```bash
-supabase functions deploy claude-vision
-supabase secrets set CLAUDE_API_KEY=sk-ant-...
-```
-
-Skip this and everything else still works. You just add wines by searching instead of scanning.
-
-**5. Run it**
-
-Pick a simulator in Xcode and press Cmd+R.
-
----
-
-## Where things live
-
-```
-Pari/
-  Models/       plain data: Wine, Tasting, Profile
-  Services/     everything that talks to Supabase or Claude
-  Features/     one folder per screen, each with its view and view model
-  Themes/       colors, fonts, spacing
-  Core/         config and app wide constants
-
-PariTests/      unit tests
-supabase/
-  setup_schema.sql   the whole database in one file
-  migrations/        incremental changes, run in filename order
-  functions/         the label scanning edge function
-scripts/
-  import_xwines.py   turns the X-Wines dataset into a CSV you can upload
-```
-
-Screens follow the same shape throughout. A view draws things, a view model holds the state, a service does the talking. If you are adding a screen, copy the pattern from `Features/Cellar`.
-
----
-
-## Tests
-
-```bash
-xcodebuild test -project Pari.xcodeproj -scheme Pari -destination 'platform=iOS Simulator,name=iPhone 17'
-```
+Those six numbers also do more work than the score does. The grape taxonomy gives each wine a starting guess at its structure; real tastings then move it, weighted so that the crowd overtakes the guess at around five observations. The catalogue gets more accurate every time somebody drinks something.
 
 ---
 
 ## Built with
 
-SwiftUI on iOS 17 and up. Supabase for database, auth, and storage, with pgvector for the taste matching. Claude Haiku for reading labels. Wine catalog from the [X-Wines dataset](https://github.com/rogerioxavier/X-Wines), public domain.
+SwiftUI on iOS 17 and up. Supabase for database, auth and storage, with pgvector for the taste matching and HNSW for retrieval. Claude for reading labels and wine lists. Catalogue from the [X-Wines dataset](https://github.com/rogerioxavier/X-Wines), public domain.
+
+Recommendations are measured, not assumed: there is an evaluation harness reporting NDCG, catalogue coverage and a concentration metric, because a recommender that scores well by showing everyone the same forty bottles has moved the problem rather than solved it.
 
 ---
 
-## If something breaks
+## Status
 
-**Cannot connect.** Check that `SupabaseConfig.swift` exists and the values match your dashboard.
+In development, not released. Screenshots and a TestFlight link will go here when there is something worth showing.
 
-**"row violates row level security".** The schema did not finish running. Run `setup_schema.sql` again, it is safe to repeat.
-
-**Feed is empty.** Nothing has been logged yet, or the account you are viewing follows nobody. Log a wine and it will show up.
-
-**Scanning returns an error.** The edge function is not deployed, or `CLAUDE_API_KEY` is not set. Scans are also capped at 30 per hour per account.
-
-**Build fails after pulling.** Clean the build folder with Cmd+Shift+K, then File then Packages then Reset Package Caches.
+Questions about the work are welcome at aderici@unc.edu. Requests to use the code are covered by [LICENSE](LICENSE).
